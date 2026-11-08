@@ -1,0 +1,73 @@
+{
+  "status": "PASS",
+  "checkedAt": "2026-11-08T17:16:30.154Z",
+  "parserRevision": "medicine-recovery-v1",
+  "syntheticDataOnly": true,
+  "model": "gpt-6.1-terra",
+  "results": [
+    {
+      "caseId": "patient-context",
+      "draft": {
+        "personId": "d",
+        "kind": "medication",
+        "name": "Омепразол",
+        "amount": "1",
+        "unit": "капс.",
+        "strength": "20 мг",
+        "celsius": "",
+        "occurredAt": "2026-11-08T17:11:04.572Z",
+        "timeZone": "Europe/Chisinau",
+        "carePhase": "",
+        "relatedRxId": "r",
+        "sourceText": "Даня получил капсулу омепрозола 20 мг пять минут назад",
+        "missing": [],
+        "notes": [],
+        "canAutoRecord": true
+      }
+    },
+    {
+      "caseId": "clear-other-medicine",
+      "draft": {
+        "personId": "d",
+        "kind": "medication",
+        "name": "Ибупрофен",
+        "amount": "1",
+        "unit": "табл.",
+        "strength": "200 мг",
+        "celsius": "",
+        "occurredAt": "2026-11-08T17:11:04.572Z",
+        "timeZone": "Europe/Chisinau",
+        "carePhase": "",
+        "relatedRxId": "",
+        "sourceText": "Даня получил таблетку ибупрофена 200 мг пять минут назад",
+        "missing": [],
+        "notes": [],
+        "canAutoRecord": true
+      }
+    },
+    {
+      "caseId": "absent-name",
+      "draft": {
+        "personId": "d",
+        "kind": "medication",
+        "name": "",
+        "amount": "1",
+        "unit": "табл.",
+        "strength": "",
+        "celsius": "",
+        "occurredAt": "2026-11-08T17:11:04.572Z",
+        "timeZone": "Europe/Chisinau",
+        "carePhase": "",
+        "relatedRxId": "",
+        "sourceText": "Даня получил какую-то таблетку пять минут назад",
+        "missing": [
+          "name"
+        ],
+        "notes": [
+          "Название лекарства неизвестно."
+        ],
+        "canAutoRecord": false
+      }
+    }
+  ]
+}

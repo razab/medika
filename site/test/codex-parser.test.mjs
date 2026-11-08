@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {validateCodexDraft} from '../lib/codex-parser.mjs';
+import {validateCodexDraft,codexPeople,knownMedicines} from '../lib/codex-parser.mjs';
 const state={people:[{id:'a',name:'Алиса'},{id:'d',name:'Даня',carePhase:'acute'}],prescriptions:[{id:'r',personId:'d',name:'ТестПрепарат'}]};
 const recordedAt=new Date(Date.now()-60000).toISOString();
 const output={personId:'d',kind:'temperature',name:'',amount:'',unit:'',strength:'',celsius:'38.2',timeMode:'relative',secondsAgo:120,date:'',clock:'',needsReview:false,notes:[]};
@@ -16,4 +16,10 @@ test('Terra: проверка человека, времени, дозы и св
   assert.equal(parse('Даня получил свечку ТестПрепарат',med).relatedRxId,'r');assert.equal(parse('Даня получил свечку ТестПрепарат',med).canAutoRecord,true);
   for(const amount of ['','-1','1–2'])assert.equal(parse('Даня получил ТестПрепарат',{...med,amount}).canAutoRecord,false);
   assert.throws(()=>parse('Даня рвота',{kind:'unknown'}));assert.throws(()=>parse('Даня рвота',{notes:['x'.repeat(501)]}));
+});
+
+test('Контекст восстановления: только имена и названия действующих лекарств',()=>{
+  const context=codexPeople({people:[{id:'d',name:'Даня',diagnosis:'private',age:6}],prescriptions:[{id:'r',personId:'d',name:'ТестПрепарат',dose:'secret dose'},{personId:'d',name:'ТестПрепарат'},{personId:'d',name:'Архив',archived:true},{personId:'other',name:'Чужое'}]});
+  assert.deepEqual(context,[{id:'d',name:'Даня',displayName:'Даня',medicines:['ТестПрепарат']}]);
+  assert.ok(knownMedicines.some(m=>m.name==='Парацетамол'));assert.ok(knownMedicines.every(m=>Object.keys(m).sort().join(',')==='aliases,name'));
 });

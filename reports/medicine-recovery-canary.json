@@ -1,0 +1,33 @@
+{
+  "status": "PASS",
+  "checkedAt": "2026-11-08T17:14:31.395Z",
+  "syntheticDataOnly": true,
+  "referencePhraseProvided": false,
+  "model": "gpt-6.1-terra",
+  "draft": {
+    "personId": "lab-danya",
+    "kind": "medication",
+    "name": "Парацетамол",
+    "amount": "0.5",
+    "unit": "табл.",
+    "strength": "250 мг",
+    "celsius": "",
+    "occurredAt": "2026-11-08T17:09:15.753Z",
+    "timeZone": "Europe/Chisinau",
+    "carePhase": "",
+    "relatedRxId": "",
+    "sourceText": "Даня получил половинку таблетки процитомола 250 миллиграмм 5 минут назад",
+    "missing": [],
+    "notes": [],
+    "canAutoRecord": true
+  },
+  "parserRevision": "medicine-recovery-v1",
+  "checks": [
+    "искажённое название восстановлено из общего словаря",
+    "половина таблетки и содержание 250 мг разделены",
+    "время пять минут назад сохранено",
+    "исходная расшифровка сохранена",
+    "результат сохранён, повтор и перезапуск не пересчитывают",
+    "эталон не передавался, клиническая база не использовалась"
+  ]
+}

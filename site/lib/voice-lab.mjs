@@ -3,7 +3,7 @@ import {join} from 'node:path';
 import {createHash} from 'node:crypto';
 import {assert,string,newId,occurrenceInput,InputError} from './domain.mjs';
 import {prepareAudio,transcribePrepared,voiceStatus} from './voice.mjs';
-import {parseWithCodex,codexStatus} from './codex-parser.mjs';
+import {parseWithCodex,codexStatus,codexPeople,parserRevision} from './codex-parser.mjs';
 
 export const labPhrases=[
   {id:'temperature',text:'Даня, две минуты назад температура тридцать восемь и два.',expected:{personId:'lab-danya',kind:'temperature',celsius:'38.2',secondsAgo:120}},
@@ -32,7 +32,9 @@ export function scoreLabDraft(phraseId,draft,capturedAt){
   if(expected.kind==='medication')checks.medicine=/парацетамол|paracetamol/iu.test(draft.name)&&draft.strength.includes(expected.strengthNumber)&&/мг|mg/iu.test(draft.strength);
   return {passed:Object.values(checks).every(Boolean),checks};
 }
-export async function createVoiceLab(dataDir,{prepare=prepareAudio,transcribe=transcribePrepared,parse=parseWithCodex,availability}={}){
+export async function createVoiceLab(dataDir,{prepare=prepareAudio,transcribe=transcribePrepared,parse=parseWithCodex,availability,context=()=>[]}={}){
+  function currentContext(){const people=context();return {...labState,prescriptions:labState.people.flatMap(p=>{const found=people.find(x=>[x.name,x.displayName].some(n=>n?.toLowerCase()===p.name.toLowerCase()));return (found?.medicines||[]).map(name=>({personId:p.id,name}));})};}
+  const analysisKey=state=>hash(Buffer.from(JSON.stringify({parserRevision,people:codexPeople(state)})));
   const dir=join(dataDir,'voice-lab');await mkdir(dir,{recursive:true,mode:0o700});let busy=null;
   const jsonPath=id=>join(dir,id+'.json'),wavPath=id=>join(dir,id+'.wav');
   async function load(id){assert(idOK(id),'Неизвестная запись',404);try{return JSON.parse(await readFile(jsonPath(id),'utf8'));}catch(e){if(e.code==='ENOENT')throw new InputError('Запись не найдена',404);throw e;}}
@@ -43,7 +45,7 @@ export async function createVoiceLab(dataDir,{prepare=prepareAudio,transcribe=tr
   return {
     async state(){
       const ready=availability?await availability():await Promise.all([voiceStatus('medium'),voiceStatus('small'),codexStatus()]).then(([medium,small,codex])=>({medium:medium.ready,small:small.ready,codex:codex.ready}));
-      return {phrases:labPhrases.map(({expected,...p})=>p),variants:labVariants.map(v=>({...v,reasoning:'low',ready:!!ready[v.asr]&&!!ready.codex})),recordings:(await records()).map(view),busy:!!busy};
+      return {analysisKey:analysisKey(currentContext()),phrases:labPhrases.map(({expected,...p})=>p),variants:labVariants.map(v=>({...v,reasoning:'low',ready:!!ready[v.asr]&&!!ready.codex})),recordings:(await records()).map(view),busy:!!busy};
     },
     async add(input){return locked('saving',async()=>{
       const clientKey=string(input.clientKey,'Ключ записи',120,true);assert(/^[a-zA-Z0-9_-]{8,120}$/.test(clientKey),'Некорректный ключ записи');
@@ -60,16 +62,17 @@ export async function createVoiceLab(dataDir,{prepare=prepareAudio,transcribe=tr
     async run(id,variantId){
       const variant=labVariants.find(v=>v.id===variantId);assert(variant,'Неизвестный вариант');
       return locked(id+':'+variantId,async()=>{
-        const record=await load(id),previous=record.results[variantId];if(previous?.status==='complete')return previous;
-        record.results[variantId]={status:'running',variantId};await save(record);
+        const record=await load(id),previous=record.results[variantId],contextState=currentContext(),key=analysisKey(contextState);if(previous?.status==='complete'&&previous.analysisKey===key)return previous;
+        if(previous&&previous.analysisKey!==key){record.resultHistory||=[];record.resultHistory.push(previous);}
+        record.results[variantId]={status:'running',variantId,analysisKey:key,parserRevision};await save(record);
         try{
           const bytes=await readFile(wavPath(id));assert(hash(bytes)===record.audioSha256,'Аудиофайл повреждён',422);
           const cached=!!record.transcripts[variant.asr];let transcript=record.transcripts[variant.asr];
           if(!transcript){const start=performance.now(),result=await transcribe(bytes,record.language,dataDir,variant.asr);transcript={text:result.text,asrMs:Math.round(performance.now()-start),audioSha256:record.audioSha256};record.transcripts[variant.asr]=transcript;await save(record);}
-          const start=performance.now(),draft=await parse(labState,{text:transcript.text,recordedAt:record.capturedAt,timeZone:record.timeZone},{model:variant.model}),parseMs=Math.round(performance.now()-start);
-          const result={status:'complete',variantId,asr:variant.asr,model:variant.model,reasoning:'low',audioSha256:record.audioSha256,transcript:transcript.text,asrMs:transcript.asrMs,parseMs,totalMs:transcript.asrMs+parseMs,asrCached:cached,draft,score:scoreLabDraft(record.phraseId,draft,record.capturedAt),finishedAt:new Date().toISOString(),verdict:''};
+          const start=performance.now(),draft=await parse(contextState,{text:transcript.text,recordedAt:record.capturedAt,timeZone:record.timeZone},{model:variant.model}),parseMs=Math.round(performance.now()-start);
+          const result={status:'complete',variantId,analysisKey:key,parserRevision,asr:variant.asr,model:variant.model,reasoning:'low',audioSha256:record.audioSha256,transcript:transcript.text,asrMs:transcript.asrMs,parseMs,totalMs:transcript.asrMs+parseMs,asrCached:cached,draft,score:scoreLabDraft(record.phraseId,draft,record.capturedAt),finishedAt:new Date().toISOString(),verdict:''};
           record.results[variantId]=result;await save(record);return result;
-        }catch(e){const result={status:'failed',variantId,error:e instanceof InputError?e.message:'Не удалось выполнить проверку',errorStatus:e.status||500,finishedAt:new Date().toISOString()};record.results[variantId]=result;await save(record);return result;}
+        }catch(e){const result={status:'failed',variantId,analysisKey:key,parserRevision,error:e instanceof InputError?e.message:'Не удалось выполнить проверку',errorStatus:e.status||500,finishedAt:new Date().toISOString()};record.results[variantId]=result;await save(record);return result;}
       });
     },
     async verdict(id,variantId,value){assert(['correct','wrong',''].includes(value),'Неизвестная оценка');return locked('verdict',async()=>{const record=await load(id);assert(record.results[variantId]?.status==='complete','Сначала выполните проверку');record.results[variantId].verdict=value;await save(record);return view(record);});},

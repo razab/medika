@@ -9,7 +9,7 @@ import { openStore } from './lib/store.mjs';
 import { assert, InputError, personInput, rxInput, temperatureInput, activityInput, day, newId, string, positive, scheduleFor, parseSuggestions, localParts,courseEnd } from './lib/domain.mjs';
 import { catalog, rules, referenceInfo, checkPerson, intakeWarnings } from './lib/reference.mjs';
 import { parseEntry } from './lib/entry-parser.mjs';
-import { parseWithCodex,codexStatus } from './lib/codex-parser.mjs';
+import { parseWithCodex,codexStatus,codexPeople } from './lib/codex-parser.mjs';
 import { voiceStatus,transcribeAudio } from './lib/voice.mjs';
 import { restoreBackup } from './lib/backup.mjs';
 import { createVoiceLab } from './lib/voice-lab.mjs';
@@ -24,7 +24,7 @@ export function imageType(bytes) {
 export async function createApp({dataDir=join(root,'data'),port=4382,publicHost='medika.localhost',additionalHosts=[],entryParser=parseEntry,voiceLabOptions={}}={}) {
   const store=openStore(dataDir), uploads=join(dataDir,'uploads');
   await mkdir(uploads,{recursive:true,mode:0o700});
-  const voiceLab=await createVoiceLab(dataDir,voiceLabOptions);
+  const voiceLab=await createVoiceLab(dataDir,{context:()=>codexPeople(store.state()),...voiceLabOptions});
   const token=randomBytes(32).toString('hex'), ocrBinary=join(root,'scripts/medika-ocr');
   let ocrReady=false,ocrBusy=false;
   try { await access(ocrBinary);ocrReady=true; } catch {}
