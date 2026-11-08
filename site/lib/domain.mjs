@@ -51,7 +51,7 @@ export function personInput(input) {
   const birthday = input.birthday ? day(input.birthday) : '';
   assert(!birthday || birthday <= new Date().toISOString().slice(0, 10), 'Дата рождения не может быть в будущем');
   const age={};if(input.ageYears!==''&&input.ageYears!=null){assert(Number.isInteger(Number(input.ageYears))&&Number(input.ageYears)>=0&&Number(input.ageYears)<=130,'Возраст: целое число от 0 до 130');age.ageYears=Number(input.ageYears);age.ageAsOf=day(input.ageAsOf||new Date().toISOString().slice(0,10));}
-  return { name: string(input.name, 'Имя', 100, true), birthday, weight: positive(input.weight, 'Вес', true), allergies: string(input.allergies, 'Аллергии', 1000), notes: string(input.notes, 'Примечания', 3000), color: ['mint','blue','peach','lilac'].includes(input.color) ? input.color : 'mint',...age };
+  return { name: string(input.name, 'Имя', 100, true), birthday, weight: positive(input.weight, 'Вес', true), allergies: string(input.allergies, 'Аллергии', 1000), notes: string(input.notes, 'Примечания', 3000), color: ['mint','blue','peach','lilac'].includes(input.color) ? input.color : 'mint',...age,...(input.displayName!==undefined?{displayName:string(input.displayName,'Имя на семейной доске',100)}:{}) };
 }
 export const units = ['табл.', 'капс.', 'мл', 'мг', 'мкг', 'г', 'кап.', 'доза', 'впрыскивание', 'пакет', 'свеча', 'нанесение'];
 export function courseEnd(startDate,count,unit){
@@ -85,6 +85,7 @@ export function rxInput(input) {
   const extra={};
   if(input.weekdays!==undefined){assert(Array.isArray(input.weekdays)&&input.weekdays.length>0&&input.weekdays.length<=7&&input.weekdays.every(n=>Number.isInteger(n)&&n>=0&&n<=6),'Выберите дни недели');assert(type==='daily','Дни недели применяются только к выбранным ежедневным часам');extra.weekdays=[...new Set(input.weekdays)].sort();}
   if(input.doseScope){assert(['each-nostril','total'].includes(input.doseScope),'Неизвестная область дозы');extra.doseScope=input.doseScope;}
+  if(input.purpose!==undefined)extra.purpose=string(input.purpose,'Зачем назначено',1000);
   return { name: string(input.name, 'Название препарата', 200, true), ingredients, form: string(input.form, 'Форма', 150), strength: string(input.strength, 'Концентрация', 150), dose: positive(input.dose, 'Доза на приём'), unit: input.unit, route: string(input.route, 'Способ применения', 150), startDate, endDate, type, times, timeZone, intervalHours, anchorTime, anchor, minHours: positive(input.minHours, 'Минимальный интервал', true), maxPer24h: positive(input.maxPer24h, 'Максимум приёмов за 24 часа', true), conditions: string(input.conditions, 'Условия приёма', 2000), sourceText: string(input.sourceText, 'Текст назначения', 10000), documentId: string(input.documentId, 'Документ', 80), confirmed: true,...extra };
 }
 export function scheduleFor(rx, date) {
@@ -100,7 +101,7 @@ export function scheduleFor(rx, date) {
   } else {
     instants = rx.times.map(time => zonedInstant(date, time, rx.timeZone));
   }
-  return instants.map(scheduledAt => ({ key: `${rx.id}@${scheduledAt}`, rxId: rx.id, personId: rx.personId, scheduledAt, ...localParts(scheduledAt, rx.timeZone), timeZone: rx.timeZone, name: rx.name, dose: rx.dose, unit: rx.unit, conditions: rx.conditions, ingredients: rx.ingredients,...(rx.doseScope?{doseScope:rx.doseScope}:{}) }));
+  return instants.map(scheduledAt => ({ key: `${rx.id}@${scheduledAt}`, rxId: rx.id, personId: rx.personId, scheduledAt, ...localParts(scheduledAt, rx.timeZone), timeZone: rx.timeZone, name: rx.name, dose: rx.dose, unit: rx.unit, conditions: rx.conditions, ingredients: rx.ingredients,...(rx.doseScope?{doseScope:rx.doseScope}:{}),...(rx.purpose?{purpose:rx.purpose}:{}) }));
 }
 
 // OCR suggestions deliberately keep missing dose, course dates and clock times empty.

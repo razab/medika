@@ -96,7 +96,7 @@ export async function createApp({dataDir=join(root,'data'),port=4382}={}) {
         const old=store.db.prepare('SELECT data FROM events WHERE event_key=?').get(key);
         assert(!old||JSON.parse(old.data).status==='void','Этот приём уже отмечен. Обновите расписание.',409);
         const actualDose=input.status==='taken'?positive(input.dose||rx.dose,'Фактическая доза'):rx.dose;
-        const record={...(event||{rxId:rx.id,personId:rx.personId,name:rx.name,dose:rx.dose,unit:rx.unit,timeZone:rx.timeZone,conditions:rx.conditions,ingredients:rx.ingredients,date,time:localParts(occurredAt,rx.timeZone).time,...(rx.doseScope?{doseScope:rx.doseScope}:{})}),key,status:input.status,occurredAt:new Date(occurredAt).toISOString(),actualDose,note:string(input.note,'Примечание',2000),author:string(input.author||'Я','Автор',100)};
+        const record={...(event||{rxId:rx.id,personId:rx.personId,name:rx.name,dose:rx.dose,unit:rx.unit,timeZone:rx.timeZone,conditions:rx.conditions,ingredients:rx.ingredients,date,time:localParts(occurredAt,rx.timeZone).time,...(rx.doseScope?{doseScope:rx.doseScope}:{}),...(rx.purpose?{purpose:rx.purpose}:{})}),key,status:input.status,occurredAt:new Date(occurredAt).toISOString(),actualDose,note:string(input.note,'Примечание',2000),author:string(input.author||'Я','Автор',100)};
         if(old) {const previous=JSON.parse(old.data);return send(200,store.update('events',previous.id,record,previous.version));}
         return send(201,store.insert('events',record));
       }
