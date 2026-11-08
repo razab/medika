@@ -77,9 +77,14 @@ function preview(d){
   $('[name="personId"]',modal).onchange=()=>{const select=$('[name="relatedRxId"]',modal);select.value='';for(const option of [...select.options].slice(1))option.remove();};
   $('[name="name"]',modal).oninput=()=>{$('[name="relatedRxId"]',modal).value='';};
 }
+function repeatSpeech(d){
+  dialog('Повторите событие',`<p>${d.notes.length?d.notes.map(e).join('<br>'):'Не удалось разобрать событие. Скажите ещё раз.'}</p><p class="source-text">${e(d.sourceText)}</p><div class="tools"><button type="button" class="primary" data-repeat-voice>● Повторить голосом</button><button type="button" data-edit-voice>Исправить вручную</button></div>`);
+  $('[data-repeat-voice]',modal).onclick=()=>{modal.close();voice();};
+  $('[data-edit-voice]',modal).onclick=()=>preview(d);
+}
 async function recordSpeech(text,recordedAt,clientKey){
   const result=await api('/record-entry',{body:{text,timeZone:tz(),recordedAt,clientKey}});
-  if(!result.record){preview(result.draft);return;}
+  if(!result.record){repeatSpeech(result.draft);return;}
   const record=result.record;patientId=record.personId;phrase='';textEntry=false;localStorage.setItem('medika-patient',patientId);await refresh();
   toast(label(person(record.personId))+' · '+title(record)+(amount(record)?' · '+amount(record):'')+' · '+time(record),record);
 }

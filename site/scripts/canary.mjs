@@ -41,12 +41,20 @@ try{
   await page.locator(`[data-patient="${alice.id}"]`).click();await type(page,'Алисе дала ТестСироп 2,5 мл сейчас');assert.equal(await page.locator('dialog [name="amount"]').inputValue(),'2.5');assert.equal(await page.locator('dialog [name="relatedRxId"]').inputValue(),rx.id);await save(page);const medication=(await api('/state')).activities.find(a=>a.kind==='medication');assert.equal(medication.relatedRxId,rx.id);assert.equal(medication.carePhase,'prevention');assert.equal(medication.sourceText,'Алисе дала ТестСироп 2,5 мл сейчас');check('Лекарство, фактическая доза, время, предписание и исходная фраза связаны');
   await type(page,'Алиса температура 38,1 вчера');assert.equal(await page.locator('dialog [name="occurredAt"]').inputValue(),'');const yesterday=await page.evaluate(()=>{const d=new Date(Date.now()-86400000);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,16);});await page.locator('dialog [name="occurredAt"]').fill(yesterday);await save(page);check('Неясное прошлое время не угадывается');
   if(await page.locator('#phrase').count())await page.getByRole('button',{name:'Текстом',exact:true}).click();
-  const voiceStarted=Date.now();
+  const beforeRetry=(await api('/state')).activities.length;let unclear=true;
+  await page.route('**/api/transcribe',async route=>{if(!unclear)return route.fallback();unclear=false;await route.fulfill({contentType:'application/json',body:JSON.stringify({text:'Даня, температура такая-то'})});});
+  let voiceStarted=Date.now();
   if(await page.evaluate(()=>window.isSecureContext)){
     await page.getByRole('button',{name:'● Событие голосом',exact:true}).click();await page.getByRole('button',{name:'■ Отправить',exact:true}).waitFor();
   }else{
     await page.getByRole('button',{name:'● Событие голосом',exact:true}).click();await page.locator('#audio-file').setInputFiles(join(directory,'speech.wav'));
   }
+  await page.getByRole('heading',{name:'Повторите событие',exact:true}).waitFor({timeout:100000});
+  assert.equal((await api('/state')).activities.length,beforeRetry);assert.equal(await page.locator('dialog input,dialog select,dialog textarea').count(),0);
+  voiceStarted=Date.now();await page.getByRole('button',{name:'● Повторить голосом',exact:true}).click();
+  if(await page.evaluate(()=>window.isSecureContext))await page.getByRole('button',{name:'■ Отправить',exact:true}).waitFor();
+  else await page.locator('#audio-file').setInputFiles(join(directory,'speech.wav'));
+  check('Неясный голосовой ввод не создаёт факта и не открывает клавиатуру; повтор запускается одной кнопкой');
   await page.locator(`[data-patient="${danya.id}"][aria-pressed="true"]`).waitFor({timeout:100000});
   assert.equal(await page.locator('dialog[open]').count(),0);assert.equal(await page.locator('#phrase').count(),0);assert.match(await page.locator('.last-temperature').innerText(),/39,0/);
   const spoken=(await api('/state')).activities.find(a=>a.personId===danya.id&&a.kind==='temperature');assert.equal(spoken.celsius,39);assert.ok(Math.abs(Date.parse(spoken.occurredAt)-(voiceStarted-120000))<3000);assert.ok(!(await readdir(data)).some(f=>f!=='voice-lab'&&f.startsWith('voice-')));
