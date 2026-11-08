@@ -1,0 +1,61 @@
+{
+  "verifiedAt": "2026-11-08T10:53:57.563Z",
+  "origin": "http://medika.localhost:4382",
+  "http": 200,
+  "health": {
+    "ok": true,
+    "app": "medika",
+    "version": "0.1.0",
+    "ocr": true
+  },
+  "liveData": {
+    "people": 0,
+    "prescriptions": 0,
+    "documents": 0,
+    "events": 0
+  },
+  "runtime": {
+    "projectId": "5bc913d8-ae85-470b-a91e-251a2a589364",
+    "serviceId": "web",
+    "state": "running",
+    "pid": 27137,
+    "startedAt": "2026-11-08T10:51:17.899Z",
+    "command": [
+      "/opt/homebrew/bin/node",
+      "server.mjs"
+    ],
+    "cwd": "site",
+    "exitCode": null,
+    "message": "Сервис готов",
+    "health": {
+      "kind": "http",
+      "checkedAt": "2026-11-08T10:53:57.140Z",
+      "ok": true,
+      "status": 200,
+      "consecutiveFailures": 0,
+      "error": null
+    },
+    "readyAt": "2026-11-08T10:51:19.912Z"
+  },
+  "watch": {
+    "projectId": "5bc913d8-ae85-470b-a91e-251a2a589364",
+    "serviceId": "web",
+    "enabled": true,
+    "paths": [
+      "site/public",
+      "site/lib",
+      "site/server.mjs"
+    ],
+    "debounceMs": 1000,
+    "fileCount": 8,
+    "pendingAt": null,
+    "restartInProgress": false,
+    "paused": false,
+    "error": null,
+    "restartCount": 0,
+    "lastRestartAt": null,
+    "lastChangedAt": null,
+    "revision": 1
+  },
+  "lifecycle": "active"
+}

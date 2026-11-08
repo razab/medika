@@ -1,0 +1,5 @@
+site/data/
+site/scripts/medika-ocr
+site/node_modules/
+reports/*-data/
+.DS_Store

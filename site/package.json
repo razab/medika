@@ -1,0 +1,13 @@
+{
+  "name": "medika-local",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Локальный семейный журнал назначений и приёма лекарств",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test test/*.test.mjs",
+    "ocr:build": "swiftc scripts/ocr.swift -o scripts/medika-ocr -O"
+  },
+  "engines": { "node": ">=24" }
+}

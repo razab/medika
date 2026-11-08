@@ -1,0 +1,37 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdtemp,rm} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {createApp} from '../server.mjs';
+import {localParts} from '../lib/domain.mjs';
+
+test('API: источник, изоляция, история, версии, PRN и полная копия',async()=>{
+  const directory=await mkdtemp(join(tmpdir(),'medika-api-')),port=14383,app=await createApp({dataDir:directory,port});
+  await new Promise(resolve=>app.server.listen(port,'127.0.0.1',resolve));const origin=`http://127.0.0.1:${port}`;
+  const token=(await(await fetch(origin+'/api/session')).json()).token;
+  const call=async(path,body,status=200,method=body?'POST':'GET')=>{const r=await fetch(origin+'/api'+path,{method,headers:{'X-Medika-Token':token,...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});const data=await r.json();assert.equal(r.status,status,JSON.stringify(data));return data;};
+  try{
+    const anna=await call('/people',{name:'Анна'},201),boris=await call('/people',{name:'Борис'},201);
+    const doc=await call('/documents',{personId:anna.id,name:'Текст',text:'Ибупрофен 100 мг/5 мл по 2,5 мл'},201);
+    const date=localParts(new Date(),'Europe/Chisinau').date;
+    const input={personId:anna.id,name:'Ибупрофен',dose:'2.5',unit:'мл',strength:'100 мг/5 мл',ingredients:'ибупрофен',startDate:date,type:'daily',times:'08:00',timeZone:'Europe/Chisinau',confirmed:true,documentId:doc.id};
+    await call('/prescriptions',{...input,personId:boris.id},400);
+    const rx=await call('/prescriptions',input,201),planned=(await call('/schedule?date='+date)).items[0];
+    const event=await call('/events',{rxId:rx.id,key:planned.key,date,status:'taken',dose:'2.5'},201);
+    await call('/prescriptions/'+rx.id,{...input,times:'10:00',dose:'3',version:rx.version},200,'PUT');
+    const changed=(await call('/schedule?date='+date)).items;
+    assert.ok(changed.some(i=>i.historical&&i.event.id===event.id&&i.event.dose==='2.5'));
+    await call('/prescriptions/'+rx.id,{...input,version:rx.version},409,'PUT');
+    const prn=await call('/prescriptions',{...input,type:'prn',documentId:''},201);
+    const record=await call('/events',{rxId:prn.id,date:'2020-01-01',status:'taken'},201);
+    assert.equal(record.date,date);
+    assert.match(record.time,/^\d\d:\d\d$/);
+    await call('/events/'+event.id+'/void',{version:event.version,reason:'Проверка исправления'});
+    const state=await call('/state');assert.equal(state.events.find(e=>e.id===event.id).status,'void');
+    assert.ok((await call('/audit')).some(a=>a.action==='update:events'));
+    const backup=await call('/backup');assert.equal((await call('/restore',backup)).inserted,0);
+    await call('/restore',{...backup,prescriptions:[{...backup.prescriptions[0],personId:'bad'}]},400);
+    assert.equal((await call('/state')).prescriptions.length,2);
+  }finally{await app.close();await rm(directory,{recursive:true,force:true});}
+});

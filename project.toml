@@ -1,0 +1,31 @@
+schemaVersion = 1
+reviewState = "ready"
+
+[[services]]
+id = "web"
+name = "Медика · локальное приложение"
+cwd = "site"
+executable = "/opt/homebrew/bin/node"
+args = ["server.mjs"]
+enabled = true
+dependsOn = []
+restart = "never"
+stopTimeoutSeconds = 10
+sideEffects = ["Хранит медицинские данные в site/data/medika.sqlite и site/data/uploads; распознаёт изображения локальным Apple Vision"]
+
+[services.env]
+PORT = "4382"
+
+[[services.endpoints]]
+protocol = "http"
+host = "127.0.0.1"
+port = 4382
+
+[services.readiness]
+kind = "http"
+url = "http://127.0.0.1:4382/api/health"
+timeoutSeconds = 15
+
+[network]
+proxyState = "direct-loopback"
+tlsState = "not-configured"
