@@ -1,5 +1,5 @@
 {
-  "verifiedAt": "2026-11-08T12:29:30.074Z",
+  "verifiedAt": "2026-11-08T12:58:02.738Z",
   "origin": "http://medika.localhost",
   "lanOrigin": "http://192.168.0.38",
   "bonjourOrigin": "http://macbook-air-5.local",
@@ -9,8 +9,8 @@
     "projectId": "5bc913d8-ae85-470b-a91e-251a2a589364",
     "serviceId": "web",
     "state": "running",
-    "pid": 48871,
-    "startedAt": "2026-11-08T12:15:21.985Z",
+    "pid": 7395,
+    "startedAt": "2026-11-08T12:56:55.883Z",
     "command": [
       "/opt/homebrew/bin/node",
       "server.mjs"
@@ -20,13 +20,13 @@
     "message": "Сервис готов",
     "health": {
       "kind": "http",
-      "checkedAt": "2026-11-08T12:29:29.806Z",
+      "checkedAt": "2026-11-08T12:58:00.844Z",
       "ok": true,
       "status": 200,
       "consecutiveFailures": 0,
       "error": null
     },
-    "readyAt": "2026-11-08T12:15:23.950Z"
+    "readyAt": "2026-11-08T12:56:57.955Z"
   },
   "watch": {
     "projectId": "5bc913d8-ae85-470b-a91e-251a2a589364",
@@ -46,6 +46,6 @@
     "restartCount": 2,
     "lastRestartAt": "2026-11-08T11:37:39.352Z",
     "lastChangedAt": null,
-    "revision": 13
+    "revision": 15
   }
 }

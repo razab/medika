@@ -1,0 +1,14 @@
+{
+  "status": "PASS",
+  "verifiedAt": "2026-11-08T12:58:02.737Z",
+  "origin": "http://192.168.0.38",
+  "temperatureFeaturePublished": true,
+  "existingDataUnchanged": true,
+  "people": 4,
+  "documents": 6,
+  "temperatures": 0,
+  "backupVersion": 2,
+  "syntheticRecordsAddedToLiveDatabase": 0,
+  "physicalPhoneTested": false,
+  "syntheticBrowserCheck": "temperature-canary.json"
+}

@@ -54,6 +54,15 @@ export function personInput(input) {
   return { name: string(input.name, 'Имя', 100, true), birthday, weight: positive(input.weight, 'Вес', true), allergies: string(input.allergies, 'Аллергии', 1000), notes: string(input.notes, 'Примечания', 3000), color: ['mint','blue','peach','lilac'].includes(input.color) ? input.color : 'mint',...age,...(input.displayName!==undefined?{displayName:string(input.displayName,'Имя на семейной доске',100)}:{}) };
 }
 export const units = ['табл.', 'капс.', 'мл', 'мг', 'мкг', 'г', 'кап.', 'доза', 'впрыскивание', 'пакет', 'свеча', 'нанесение'];
+export function temperatureInput(input){
+  assert(input&&typeof input==='object'&&!Array.isArray(input),'Ожидается измерение температуры');
+  const raw=String(input.celsius??'').trim().replace(',','.');
+  assert(/^\d{2}(?:\.\d{1,2})?$/.test(raw)&&Number(raw)>=20&&Number(raw)<=50,'Температура: укажите число от 20 до 50 °C');
+  assert(typeof input.occurredAt==='string'&&/T.*(?:Z|[+-]\d{2}:\d{2})$/.test(input.occurredAt)&&Number.isFinite(Date.parse(input.occurredAt)),'Укажите дату и время измерения');
+  day(input.occurredAt.slice(0,10));
+  assert(Date.parse(input.occurredAt)<=Date.now()+60000,'Измерение не может быть в будущем');
+  return {personId:string(input.personId,'Человек',80,true),celsius:Number(raw),occurredAt:new Date(input.occurredAt).toISOString(),timeZone:zone(input.timeZone||'Europe/Chisinau')};
+}
 export function courseEnd(startDate,count,unit){
   day(startDate);assert(Number.isInteger(Number(count))&&Number(count)>0&&Number(count)<=3660,'Длительность: положительное целое число');count=Number(count);
   assert(['days','weeks','months'].includes(unit),'Неизвестная единица длительности');

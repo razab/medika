@@ -15,6 +15,19 @@ body{line-height:1.5}h1,h2,h3,p{margin-top:0}h2{letter-spacing:-.45px;line-heigh
 .home-bar .date-control input{width:133px;font-size:14px;padding:5px}
 .home-bar .date-control button{min-width:32px;min-height:38px}
 .home-menu{position:relative;flex-shrink:0}
+.temperature-add{font-size:14px;font-weight:600;min-height:40px;padding:5px 9px;background:#edf3e8;flex-shrink:0}
+.current-temperatures{display:flex;flex-wrap:wrap;gap:5px;margin:0 0 7px}
+.current-temperatures button{display:flex;align-items:center;gap:6px;padding:5px 8px;min-height:30px;font-size:12px;border-radius:7px;background:#edf3e8}
+.current-temperatures time{font-size:10px;color:#71806a}
+.temperature-form{display:grid;gap:14px}
+.temperature-form input,.temperature-form select{font-size:16px}
+.temperature-row{display:flex;justify-content:space-between;align-items:center;gap:12px;border-top:1px solid #e1e8da;padding:13px 0}
+.temperature-row:first-child{border-top:0}
+.temperature-row>div{min-width:0}
+.temperature-row strong{font-size:21px;display:block}
+.temperature-row span,.temperature-row small{display:block;font-size:12px;color:#6b7c60;margin-top:3px;overflow-wrap:anywhere}
+.temperature-row.is-void strong{text-decoration:line-through;color:#8c9884}
+.temperature-row button{font-size:20px;min-height:44px;min-width:44px}
 .home-menu>summary{cursor:pointer;list-style:none;font-size:21px;padding:5px 10px;min-height:40px}
 .home-menu>summary::-webkit-details-marker{display:none}
 .home-menu nav{position:absolute;z-index:5;right:0;top:45px;width:235px;padding:8px;border:1px solid #d7e2dc;border-radius:12px;background:#fff;box-shadow:0 12px 45px #173d3026}

@@ -1,0 +1,15 @@
+{
+  "status": "PASS",
+  "verifiedAt": "2026-11-08T12:57:24.690Z",
+  "syntheticDataOnly": true,
+  "assetsOrigin": "http://192.168.0.38",
+  "checks": [
+    "Three-field entry with decimal comma and person selection",
+    "Backdated measurement does not replace newer reading",
+    "Separate latest values and histories for two family members",
+    "320/390/768/1024 without overflow; one-line phone header",
+    "Cancellation preserves original in filtered history and reveals previous latest value",
+    "SQLite restart and complete backup v2 restore without duplicate records",
+    "No prescription or intake created; no browser errors"
+  ]
+}
