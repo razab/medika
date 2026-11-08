@@ -15,6 +15,7 @@ sideEffects = ["Хранит медицинские данные в site/data/me
 
 [services.env]
 PORT = "4382"
+MEDIKA_LAN_HOSTS = "192.168.0.38,macbook-air-5.local"
 
 [[services.endpoints]]
 protocol = "http"

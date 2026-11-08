@@ -4,3 +4,10 @@ http://medika.localhost {
     respond @outside "Local access only" 403
     reverse_proxy 127.0.0.1:4382
 }
+
+# This Mac's current Wi-Fi address and existing Bonjour name; no custom DNS needed.
+http://192.168.0.38, http://macbook-air-5.local {
+    @outside not remote_ip 127.0.0.1 ::1 192.168.0.0/24 fe80::/10
+    respond @outside "Home network access only" 403
+    reverse_proxy 127.0.0.1:4382
+}

@@ -17,13 +17,13 @@ export function imageType(bytes) {
   if(bytes.toString('ascii',0,4)==='RIFF'&&bytes.toString('ascii',8,12)==='WEBP') return 'image/webp';
   return null;
 }
-export async function createApp({dataDir=join(root,'data'),port=4382,publicHost='medika.localhost'}={}) {
+export async function createApp({dataDir=join(root,'data'),port=4382,publicHost='medika.localhost',additionalHosts=[]}={}) {
   const store=openStore(dataDir), uploads=join(dataDir,'uploads');
   await mkdir(uploads,{recursive:true,mode:0o700});
   const token=randomBytes(32).toString('hex'), ocrBinary=join(root,'scripts/medika-ocr');
   let ocrReady=false,ocrBusy=false;
   try { await access(ocrBinary);ocrReady=true; } catch {}
-  const allowedHosts=new Set([publicHost,...(publicHost==='medika.localhost'?['medika.localhost:80']:[]),`medika.localhost:${port}`,`127.0.0.1:${port}`,`localhost:${port}`]);
+  const allowedHosts=new Set([publicHost,...additionalHosts,`medika.localhost:${port}`,`127.0.0.1:${port}`,`localhost:${port}`].flatMap(host=>host.includes(':')?[host.toLowerCase()]:[host.toLowerCase(),`${host.toLowerCase()}:80`]));
   async function body(req,limit=18*1024*1024) {
     assert(req.headers['content-type']?.startsWith('application/json'),'Ожидается JSON',415);
     const chunks=[];let length=0;
@@ -37,7 +37,7 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
     res.setHeader('Referrer-Policy','no-referrer');
     res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
     try {
-      assert(allowedHosts.has(req.headers.host),'Этот адрес не разрешён',403);
+      assert(allowedHosts.has(req.headers.host?.toLowerCase()),'Этот адрес не разрешён',403);
       const url=new URL(req.url,`http://${req.headers.host}`), route=url.pathname, method=req.method;
       assert(!req.headers.origin||req.headers.origin===url.origin,'Запрос с другого сайта отклонён',403);
       assert(req.headers['sec-fetch-site']!=='cross-site','Запрос с другого сайта отклонён',403);
@@ -161,7 +161,7 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
 }
 
 if(process.argv[1]&&fileURLToPath(import.meta.url)===process.argv[1]) {
-  const port=Number(process.env.PORT||4382),app=await createApp({port,dataDir:process.env.MEDIKA_DATA_DIR||join(root,'data')});
-  app.server.listen(port,'127.0.0.1',()=>console.log('Медика: http://medika.localhost · только на этом Mac'));
+  const port=Number(process.env.PORT||4382),additionalHosts=(process.env.MEDIKA_LAN_HOSTS||'').split(',').map(host=>host.trim()).filter(Boolean),app=await createApp({port,additionalHosts,dataDir:process.env.MEDIKA_DATA_DIR||join(root,'data')});
+  app.server.listen(port,'127.0.0.1',()=>console.log('Медика: http://medika.localhost'+additionalHosts.map(host=>` · http://${host}`).join('')));
   for(const signal of ['SIGINT','SIGTERM']) process.once(signal,async()=>{await app.close();process.exit(0);});
 }

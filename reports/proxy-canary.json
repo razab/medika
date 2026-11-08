@@ -1,13 +1,16 @@
 {
   "status": "PASS",
-  "verifiedAt": "2026-11-08T11:38:40.602Z",
+  "verifiedAt": "2026-11-08T11:52:18.387Z",
   "checks": [
     "Caddy reverse proxy with preserved Host",
-    "Browser UI and relative assets",
+    "LAN-IP browser UI and relative assets at tablet width",
     "Session cookie and authenticated API",
     "Foreign Origin rejected",
     "SQLite survives backend restart",
-    "Browser reopens through proxy without JS errors"
+    "Browser reopens through proxy without JS errors",
+    "Disallowed source subnet rejected despite forged X-Forwarded-For",
+    "Original localhost route still works"
   ],
-  "syntheticDataOnly": true
+  "syntheticDataOnly": true,
+  "physicalIPadTested": false
 }

@@ -1,0 +1,24 @@
+{
+  "status": "PASS",
+  "verifiedAt": "2026-11-08T11:53:30.869Z",
+  "origin": "http://192.168.0.38",
+  "allowedSubnet": "192.168.0.0/24",
+  "checks": [
+    "/ HTTP 200",
+    "/app.js HTTP 200",
+    "/style.css HTTP 200",
+    "/api/health HTTP 200",
+    "Session cookie and authenticated API",
+    "Foreign and mismatched Origin rejected",
+    "Original Mac domain still works",
+    "Bonjour hostname health HTTP 200",
+    "Wi-Fi IPv6 link-local health HTTP 200",
+    "Existing three Caddy routes preserved"
+  ],
+  "people": 4,
+  "documents": 6,
+  "physicalIPadTested": false,
+  "testLocation": "Mac using its Wi-Fi address; physical iPad must be checked by user",
+  "bonjourOrigin": "http://macbook-air-5.local",
+  "allowedIPv6": "fe80::/10 (link-local)"
+}

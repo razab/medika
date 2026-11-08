@@ -1,25 +1,16 @@
 {
-  "verifiedAt": "2026-11-08T11:42:07.617Z",
+  "verifiedAt": "2026-11-08T11:53:30.870Z",
   "origin": "http://medika.localhost",
-  "http": 200,
-  "health": {
-    "ok": true,
-    "app": "medika",
-    "version": "0.1.0",
-    "ocr": true
-  },
-  "liveData": {
-    "people": 4,
-    "documents": 6,
-    "prescriptions": 0,
-    "events": 0
-  },
+  "lanOrigin": "http://192.168.0.38",
+  "bonjourOrigin": "http://macbook-air-5.local",
+  "projectId": "5bc913d8-ae85-470b-a91e-251a2a589364",
+  "lifecycle": "active",
   "runtime": {
     "projectId": "5bc913d8-ae85-470b-a91e-251a2a589364",
     "serviceId": "web",
     "state": "running",
-    "pid": 98642,
-    "startedAt": "2026-11-08T11:42:05.788Z",
+    "pid": 11033,
+    "startedAt": "2026-11-08T11:50:04.422Z",
     "command": [
       "/opt/homebrew/bin/node",
       "server.mjs"
@@ -29,13 +20,13 @@
     "message": "Сервис готов",
     "health": {
       "kind": "http",
+      "checkedAt": "2026-11-08T11:53:30.007Z",
       "ok": true,
       "status": 200,
-      "checkedAt": "2026-11-08T11:42:07.381Z",
       "consecutiveFailures": 0,
       "error": null
     },
-    "readyAt": "2026-11-08T11:42:07.584Z"
+    "readyAt": "2026-11-08T11:50:06.406Z"
   },
   "watch": {
     "projectId": "5bc913d8-ae85-470b-a91e-251a2a589364",
@@ -55,7 +46,6 @@
     "restartCount": 2,
     "lastRestartAt": "2026-11-08T11:37:39.352Z",
     "lastChangedAt": null,
-    "revision": 7
-  },
-  "lifecycle": "active"
+    "revision": 9
+  }
 }

@@ -1,5 +1,7 @@
 # Проверка Медики 8 ноября 2026
 
+Дополнение для iPad: `npm test` (12) и полный canary (12 групп) повторно PASS. Proxy-canary на синтетической базе прошёл через Wi-Fi IP: интерфейс в размере планшета, запись, cookie/API, перезапуск и сохранение данных. Чужой Origin и запрещённая подсеть отклонены; поддельный X-Forwarded-For не даёт доступа. Рабочие IP/Bonjour-адреса проверены с самого Mac, четыре профиля и шесть документов сохранены. Подтверждение — `lan-access.json`; физический iPad не проверен.
+
 Результат: **PASS**. Приложение доступно по http://medika.localhost без порта; HTTP 200, Apple Vision готов. Диспетчер: lifecycle active, service web running, runtime.health.ok true, readiness HTTP. Состояние зафиксировано в [live-service.json](live-service.json). Проверка health выполнена спустя несколько минут после старта; PID не использовался как единственное доказательство готовности.
 
 Маршрут через существующий системный Caddy проверен отдельно: [local-domain.json](local-domain.json). Proxy-canary с настоящим Caddy подтвердил браузер, относительные ресурсы, сессию/API, отклонение чужого Origin и сохранение при перезапуске: [proxy-canary.json](proxy-canary.json). Оба прежних маршрута Caddy сохранены.
