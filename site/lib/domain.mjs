@@ -74,10 +74,10 @@ export function temperatureInput(input){
   assert(/^\d{2}(?:\.\d{1,2})?$/.test(raw)&&Number(raw)>=20&&Number(raw)<=50,'Температура: укажите число от 20 до 50 °C');
   return {...occurrence,celsius:Number(raw),...entryContext(input)};
 }
-export const activityKinds={temperature:'Температура',diarrhea:'Диарея',vomiting:'Рвота',inhalation:'Ингаляция',medication:'Лекарство',other:'Другое'};
+export const activityKinds={temperature:'Температура',diarrhea:'Диарея',vomiting:'Рвота',retching:'Позывы к рвоте',inhalation:'Ингаляция',medication:'Лекарство',other:'Другое'};
 export function activityInput(input){
   const occurrence=occurrenceInput(input);assert(Object.hasOwn(activityKinds,input.kind),'Выберите тип события');
-  const quick=['diarrhea','vomiting','temperature'].includes(input.kind),amount=positive(input.amount,'Количество',true)||'',unit=string(input.unit,'Единица',30);
+  const quick=['diarrhea','vomiting','retching','temperature'].includes(input.kind),amount=positive(input.amount,'Количество',true)||'',unit=string(input.unit,'Единица',30);
   assert((!amount&&!unit)||(amount&&units.includes(unit)),'Укажите количество и его единицу вместе');
   assert(!quick||!amount,'Для этого симптома количество препарата не требуется');
   const clientKey=string(input.clientKey,'Ключ записи',120,true);assert(/^[a-zA-Z0-9_-]{8,120}$/.test(clientKey),'Некорректный ключ записи');

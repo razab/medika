@@ -23,8 +23,23 @@ test('Фраза: препарат связан с пациентом; конц�
 });
 test('Фраза: неоднозначность не создаёт ложных фактов',()=>{
   const decimal=parse('температура 38-2 сейчас');assert.equal(decimal.celsius,'38.2');assert.ok(decimal.notes.length);
-  for(const text of ['температура 38-39 сейчас','температура 38,222 сейчас'])assert.ok(parse(text).missing.includes('celsius'));
+  for(const text of ['температура 38-39 сейчас','температура 38,222 сейчас','температура -38,2 сейчас','температура 38 и 39','температура 38 2','температура 38 - 39'])assert.ok(parse(text).missing.includes('celsius'));
   assert.equal(parse('рвоты не было').kind,'other');
   for(const text of ['рвота; температура 38,2','температура 38,2 и рвота','температура 38,2 дали Elizium 4 мл','не дала Elizium','завтра в 17:00 рвота','врач назначил Elizium 4 мл'])assert.throws(()=>parse(text));
   assert.equal(parse('погуляли сейчас').kind,'other');
+});
+test('Общее событие: относительное время, таблетка, свечка и позывы',()=>{
+  const temperature=parse('Даня, две минуты назад высокая температура 38,2');
+  assert.equal(temperature.personId,'d');assert.equal(temperature.occurredAt,'2026-11-08T17:58:00.000Z');assert.equal(temperature.celsius,'38.2');assert.equal(temperature.canAutoRecord,true);
+  assert.equal(parse('Даня, температура высокая, 38,2 две минуты назад').celsius,'38.2');
+  assert.equal(parse('Даня, позывы к рвоте пять минут назад').kind,'retching');assert.equal(parse('Даня, позывы к рвоте пять минут назад').canAutoRecord,true);
+  for(const [text,u] of [['Даня получил таблетку парацетамола 250 мг пять минут назад','табл.'],['Даня получил свечку парацетамола 125 мг минуту назад','свеча']]){
+    const r=parse(text);assert.equal(r.kind,'medication');assert.equal(r.unit,u);assert.equal(r.amount,'1');assert.equal(r.name,'парацетамола');assert.ok(r.strength);assert.equal(r.canAutoRecord,true);
+  }
+  assert.equal(parse('Даня получил две таблетки парацетамола 250 мг десять минут назад').amount,'2');
+  assert.equal(parse('Danya received a tablet of paracetamol two minutes ago').unit,'табл.');
+  assert.equal(parse('Даня, рвота полчаса назад').occurredAt,'2026-11-08T17:30:00.000Z');
+  assert.equal(parse('Даня, рвота пару минут назад').occurredAt,'2026-11-08T17:58:00.000Z');
+  assert.equal(parseEntry(state,{text:'Даня температура 39 две минуты назад',recordedAt:'2026-11-08T17:00:00Z'},{now}).occurredAt,'2026-11-08T16:58:00.000Z');
+  for(const text of ['Даня рвота 2 - 3 минуты назад','Даня рвота несколько минут назад','Даня рвота час и десять минут назад','Даня высокая температура','температура 38,2','Даня получил таблетку','Даня рвоты не было'])assert.equal(parse(text).canAutoRecord,false,text);
 });

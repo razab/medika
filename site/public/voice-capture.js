@@ -13,10 +13,17 @@ export async function captureVoice(onLimit){
     stream=await navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:true,noiseSuppression:true},video:false});
     await context.audioWorklet.addModule('/voice-recorder.js');
     const source=context.createMediaStreamSource(stream),recorder=new AudioWorkletNode(context,'medika-recorder'),silent=context.createGain();silent.gain.value=0;source.connect(recorder);recorder.connect(silent);silent.connect(context.destination);
-    const chunks=[];let finish,stopped=false;const finalChunk=new Promise(resolve=>finish=resolve);
-    recorder.port.onmessage=event=>{if(event.data.samples)chunks.push(event.data.samples);if(event.data.done)finish();};
+    const chunks=[];let finish,stopped=false,spokenMs=0,lastSpeech=0,ending=false;const finalChunk=new Promise(resolve=>finish=resolve),started=performance.now();
+    recorder.port.onmessage=event=>{
+      if(event.data.samples){
+        const samples=event.data.samples;chunks.push(samples);let power=0;for(const sample of samples)power+=sample*sample;
+        if(Math.sqrt(power/samples.length)>.012){spokenMs+=samples.length/context.sampleRate*1000;lastSpeech=performance.now();}
+      }
+      if(event.data.done)finish();
+    };
+    const pause=setInterval(()=>{if(!stopped&&!ending&&((spokenMs>=250&&performance.now()-lastSpeech>=1800)||(!lastSpeech&&performance.now()-started>=10000))){ending=true;onLimit();}},100);
     const limit=setTimeout(onLimit,45000);
-    const close=()=>{clearTimeout(limit);stream.getTracks().forEach(track=>track.stop());if(context.state!=='closed')context.close().catch(()=>{});};
+    const close=()=>{clearTimeout(limit);clearInterval(pause);stream.getTracks().forEach(track=>track.stop());if(context.state!=='closed')context.close().catch(()=>{});};
     return {cancel(){stopped=true;close();},async stop(){if(stopped)throw Error('Запись уже остановлена');stopped=true;clearTimeout(limit);try{recorder.port.postMessage('stop');await Promise.race([finalChunk,new Promise(resolve=>setTimeout(resolve,1000))]);return encodeWav(chunks,context.sampleRate);}finally{close();}}};
   }catch(error){stream?.getTracks().forEach(track=>track.stop());await context.close();throw error;}
 }

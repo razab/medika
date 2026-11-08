@@ -1,7 +1,7 @@
 import {captureVoice} from '/voice-capture.js';
 const $=(s,r=document)=>r.querySelector(s),root=$('#app'),modal=$('#modal');
-let state,token='',patientId=localStorage.getItem('medika-patient')||'',phrase='',busy=false,recording=null,voicePatient='',language=localStorage.getItem('medika-language')||'ru';
-const kinds={temperature:'Температура',diarrhea:'Диарея',vomiting:'Рвота',inhalation:'Ингаляция',medication:'Лекарство',other:'Другое'};
+let state,token='',patientId=localStorage.getItem('medika-patient')||'',phrase='',busy=false,recording=null,voiceAt='',textEntry=false,language=localStorage.getItem('medika-language')||'ru';
+const kinds={temperature:'Температура',diarrhea:'Диарея',vomiting:'Рвота',retching:'Позывы к рвоте',inhalation:'Ингаляция',medication:'Лекарство',other:'Другое'};
 const phases={'':'Не выбран',prevention:'Профилактика',acute:'Острая фаза'};
 const units=['мл','мг','свеча','табл.','капс.','кап.','впрыскивание','пакет','доза','г','мкг','нанесение'];
 const e=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -13,7 +13,11 @@ const value=r=>r.celsius.toLocaleString('ru-RU',{minimumFractionDigits:1,maximum
 const time=r=>new Date(r.occurredAt).toLocaleTimeString('ru-RU',{timeZone:r.timeZone,hour:'2-digit',minute:'2-digit'});
 const date=r=>new Date(r.occurredAt).toLocaleDateString('ru-RU',{timeZone:r.timeZone,day:'numeric',month:'long',year:'numeric'});
 function localInput(iso=new Date().toISOString()){if(!iso)return '';const d=new Date(iso);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,16);}
-function toast(text){$('#toast').textContent=text;clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('#toast').textContent='',5000);}
+function toast(text,record=null){
+  const node=$('#toast');node.textContent=text;clearTimeout(toast.timer);
+  if(record){const button=document.createElement('button');button.textContent='Отменить';button.onclick=async()=>{button.disabled=true;try{await api('/activities/'+record.id+'/void',{body:{version:record.version,reason:'Отменено после голосового ввода'}});await refresh();toast('Запись отменена');}catch(error){toast(error.message);}};node.append(button);}
+  toast.timer=setTimeout(()=>node.textContent='',record?15000:5000);
+}
 async function api(path,{body,method=body?'POST':'GET',retry=false}={}){
   if(!token){const r=await fetch('/api/session');if(!r.ok)throw Error('Приложение недоступно');token=(await r.json()).token;}
   const response=await fetch('/api'+path,{method,headers:{'X-Medika-Token':token,...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});
@@ -33,9 +37,9 @@ async function refresh(){
 function render(){
   if(!state.people.length){root.innerHTML='<main class="start"><h1>Медика</h1><button data-act="person">Добавить пациента</button></main>';return;}
   const p=current(),all=records(),active=all.filter(r=>r.status!=='void'),cancelled=all.filter(r=>r.status==='void'),last=active.find(r=>r.kind==='temperature');
-  root.innerHTML=`<div class="patient-app"><header class="patient-nav" aria-label="Пациенты">${state.people.map(p=>`<button data-patient="${p.id}" aria-pressed="${p.id===patientId}" ${busy||recording?'disabled':''}>${e(label(p))}</button>`).join('')}<button class="more" data-act="tools" aria-label="Ещё">⋯</button></header><section class="patient-summary"><h1>${e(label(p))}${p.ageYears!=null?`<small>${p.ageYears} лет</small>`:''}</h1>${last?`<span class="last-temperature">${value(last)} <time>${time(last)}</time></span>`:''}</section><details class="doctor"><summary>Врач <span>${e(phases[p.carePhase||''])}</span></summary><div class="doctor-body"><label>Контекст<select id="care-phase">${Object.entries(phases).map(([v,l])=>`<option value="${v}" ${v===(p.carePhase||'')?'selected':''}>${l}</option>`).join('')}</select></label>${doctorPlan()}<div class="source-actions"><button data-act="upload">Выписка</button><button data-act="rx">Назначение</button></div></div></details><main class="patient-history" aria-label="История пациента">${active.length?historyRows(active):'<p class="quiet">Событий пока нет</p>'}${cancelled.length?`<details class="cancelled"><summary>Отменённые · ${cancelled.length}</summary>${historyRows(cancelled)}</details>`:''}</main><form id="composer" class="composer"><textarea id="phrase" name="text" rows="1" placeholder="Что сделали, сколько и когда?" aria-label="Запись одной фразой" ${busy||recording?'disabled':''}>${e(phrase)}</textarea><div class="composer-actions"><button type="button" class="voice ${recording?'recording':''}" data-act="voice" ${busy?'disabled':''}>${recording?'■ Стоп':'● Говорить'}</button><select id="language" aria-label="Язык диктовки" ${busy||recording?'disabled':''}><option value="ru" ${language==='ru'?'selected':''}>RU</option><option value="en" ${language==='en'?'selected':''}>EN</option></select><span class="voice-status" role="status">${busy?'Разбираю…':recording?'Слушаю…':''}</span><button type="submit" class="primary" ${busy||recording?'disabled':''}>Проверить</button><button type="button" class="template" data-act="template" aria-label="Шаблон фразы">?</button></div></form></div>`;
+  root.innerHTML=`<div class="patient-app"><header class="patient-nav" aria-label="Пациенты">${state.people.map(p=>`<button data-patient="${p.id}" aria-pressed="${p.id===patientId}" ${busy||recording?'disabled':''}>${e(label(p))}</button>`).join('')}<button class="more" data-act="tools" aria-label="Ещё">⋯</button></header><section class="patient-summary"><h1>${e(label(p))}${p.ageYears!=null?`<small>${p.ageYears} лет</small>`:''}</h1>${last?`<span class="last-temperature">${value(last)} <time>${time(last)}</time></span>`:''}</section><details class="doctor"><summary>Врач <span>${e(phases[p.carePhase||''])}</span></summary><div class="doctor-body"><label>Контекст<select id="care-phase">${Object.entries(phases).map(([v,l])=>`<option value="${v}" ${v===(p.carePhase||'')?'selected':''}>${l}</option>`).join('')}</select></label>${doctorPlan()}<div class="source-actions"><button data-act="upload">Выписка</button><button data-act="rx">Назначение</button></div></div></details><main class="patient-history" aria-label="История пациента">${active.length?historyRows(active):'<p class="quiet">Событий пока нет</p>'}${cancelled.length?`<details class="cancelled"><summary>Отменённые · ${cancelled.length}</summary>${historyRows(cancelled)}</details>`:''}</main><form id="composer" class="composer" aria-label="Общее событие для семьи"><div class="composer-actions"><button type="button" class="voice ${recording?'recording':''}" data-act="voice" ${busy?'disabled':''}>${recording?'■ Отправить':'● Событие голосом'}</button><select id="language" aria-label="Язык диктовки" ${busy||recording?'disabled':''}><option value="ru" ${language==='ru'?'selected':''}>RU</option><option value="en" ${language==='en'?'selected':''}>EN</option></select><button type="button" class="text-toggle" data-act="text" ${busy||recording?'disabled':''}>Текстом</button></div><div class="voice-status" role="status">${busy?'Распознаю и записываю…':recording?'Скажите имя и событие · пауза отправит запись':'Имя, что произошло, сколько минут назад'}</div>${textEntry?`<div class="text-entry"><textarea id="phrase" name="text" rows="1" placeholder="Даня, две минуты назад температура 38,2" aria-label="Запись одной фразой" ${busy||recording?'disabled':''}>${e(phrase)}</textarea><button type="submit" class="primary" ${busy||recording?'disabled':''}>Проверить</button></div>`:''}</form></div>`;
   $('#composer').onsubmit=event=>{event.preventDefault();parsePhrase();};
-  $('#phrase').oninput=event=>phrase=event.target.value;
+  if($('#phrase'))$('#phrase').oninput=event=>phrase=event.target.value;
   $('#language').onchange=event=>{language=event.target.value;localStorage.setItem('medika-language',language);};
   $('#care-phase').onchange=async event=>{try{await api('/people/'+p.id,{method:'PUT',body:{...p,carePhase:event.target.value,version:p.version}});await refresh();$('.doctor').open=true;}catch(error){toast(error.message);}};
 }
@@ -57,7 +61,7 @@ function dialog(title,html,submit){
   $('form',modal).onsubmit=async event=>{event.preventDefault();const button=$('[type="submit"]',modal);if(button?.disabled)return;if(button)button.disabled=true;try{await submit?.(Object.fromEntries(new FormData(event.target)),event.target);}catch(error){$('.error',modal).textContent=error.message;}finally{if(button)button.disabled=false;}};
 }
 modal.addEventListener('click',event=>{if(event.target.closest('[data-close]'))modal.close();});
-async function parsePhrase(text=phrase,pid=patientId){
+async function parsePhrase(text=phrase,pid=''){
   if(!text.trim()||busy)return;busy=true;render();
   try{const draft=await api('/parse-entry',{body:{text,personId:pid,timeZone:tz()}});preview(draft);}catch(error){toast(error.message);}finally{busy=false;render();}
 }
@@ -67,21 +71,29 @@ function preview(d){
     const body={...data,sourceText:d.sourceText,timeZone:d.timeZone,occurredAt:new Date(data.occurredAt).toISOString(),clientKey};
     if(data.kind!=='temperature')delete body.celsius;
     if(!['medication','inhalation'].includes(data.kind)){body.amount='';body.unit='';body.relatedRxId='';}
-    const record=await api('/entries',{body});patientId=record.personId;phrase='';modal.close();await refresh();toast('Записано');
+    const record=await api('/entries',{body});patientId=record.personId;phrase='';textEntry=false;modal.close();await refresh();toast('Записано');
   });
   const choose=$('[name="kind"]',modal),update=()=>{for(const part of modal.querySelectorAll('[data-part]')){const visible=part.dataset.part.split(' ').includes(choose.value);part.hidden=!visible;for(const input of part.querySelectorAll('input,select'))input.disabled=!visible;} $('[name="celsius"]',modal).required=choose.value==='temperature';$('[name="name"]',modal).required=['medication','inhalation','other'].includes(choose.value);};choose.onchange=update;update();
   $('[name="personId"]',modal).onchange=()=>{const select=$('[name="relatedRxId"]',modal);select.value='';for(const option of [...select.options].slice(1))option.remove();};
   $('[name="name"]',modal).oninput=()=>{$('[name="relatedRxId"]',modal).value='';};
 }
-async function speechFile(file,pid=patientId){
-  if(!file||busy)return;busy=true;render();
-  try{const audio=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result.split(',')[1]);reader.onerror=reject;reader.readAsDataURL(file);});const result=await api('/transcribe',{body:{audio,language}});phrase=result.text;busy=false;await parsePhrase(phrase,pid);}catch(error){toast(error.message);}finally{busy=false;render();}
+async function recordSpeech(text,recordedAt,clientKey){
+  const result=await api('/record-entry',{body:{text,timeZone:tz(),recordedAt,clientKey}});
+  if(!result.record){preview(result.draft);return;}
+  const record=result.record;patientId=record.personId;phrase='';textEntry=false;localStorage.setItem('medika-patient',patientId);await refresh();
+  toast(label(person(record.personId))+' · '+title(record)+(amount(record)?' · '+amount(record):'')+' · '+time(record),record);
+}
+async function speechFile(file,recordedAt=new Date().toISOString()){
+  if(!file||busy)return;busy=true;render();const clientKey=key();
+  try{const audio=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result.split(',')[1]);reader.onerror=reject;reader.readAsDataURL(file);});const result=await api('/transcribe',{body:{audio,language}});phrase=result.text;await recordSpeech(result.text,recordedAt,clientKey);}catch(error){textEntry=!!phrase;toast(error.message);}finally{busy=false;render();}
 }
 async function voice(){
-  if(recording){const captured=recording;recording=null;busy=true;render();try{const blob=await captured.stop();busy=false;await speechFile(blob,voicePatient);}catch(error){toast(error.message);}finally{busy=false;render();}return;}
+  if(busy)return;
+  if(recording){const captured=recording;recording=null;busy=true;render();try{const blob=await captured.stop();busy=false;await speechFile(blob,voiceAt);}catch(error){toast(error.message);}finally{busy=false;render();}return;}
   if(!window.isSecureContext||!navigator.mediaDevices?.getUserMedia){voiceHelp();return;}
   if(!state.capabilities.voice?.ready){toast('Локальное распознавание ещё не готово');return;}
-  try{voicePatient=patientId;recording=await captureVoice(()=>voice());render();}catch(error){toast(error.name==='NotAllowedError'?'Разрешите доступ к микрофону в браузере':'Не удалось включить микрофон. Можно ввести текст или выбрать аудиозапись.');}
+  busy=true;phrase='';render();
+  try{recording=await captureVoice(()=>voice());voiceAt=new Date().toISOString();}catch(error){toast(error.name==='NotAllowedError'?'Разрешите доступ к микрофону в браузере':'Не удалось включить микрофон. Можно ввести текст или выбрать аудиозапись.');}finally{busy=false;render();}
 }
 function voiceHelp(){dialog('Микрофон на телефоне',`<p>Браузер разрешает микрофон через HTTPS. На iPad один раз установите локальный сертификат и включите доверие к нему.</p><ol><li><a href="/medika-ca.cer">Скачать сертификат Медики</a></li><li>Настройки → Загруженный профиль → Установить. Затем Основные → Об этом устройстве → Доверие сертификатам → включить локальный сертификат.</li><li><a href="${e(state.capabilities.voice?.secureOrigin||'https://macbook-air-5.local')}">Открыть HTTPS</a></li></ol><p class="quiet">Сейчас можно надиктовать текст микрофоном клавиатуры или выбрать готовую аудиозапись. Распознавание записи выполняется на Mac.</p><input type="file" id="audio-file" accept=".wav,.m4a,.mp4,.aif,.aiff" aria-label="Аудиозапись"><footer class="dialog-footer"><button type="button" data-close>Закрыть</button></footer>`);$('#audio-file',modal).onchange=event=>{modal.close();speechFile(event.target.files[0]);};}
 function template(){dialog('Шаблон фразы',`<p class="template-line">Кто → что сделали → сколько → когда</p><p>Можно говорить свободно. Одно событие — одна фраза. Неясные поля можно исправить перед записью.</p><footer class="dialog-footer"><button type="button" data-close>Понятно</button></footer>`);}
@@ -99,7 +111,7 @@ function rxForm(id='',suggestion={},documentId=''){
 root.addEventListener('click',async event=>{
   const tab=event.target.closest('[data-patient]');if(tab&&!busy&&!recording){patientId=tab.dataset.patient;localStorage.setItem('medika-patient',patientId);render();return;}
   const b=event.target.closest('[data-act]');if(!b)return;
-  try{const {act,id}=b.dataset;if(act==='voice')await voice();if(act==='tools')tools();if(act==='person')personForm(null);if(act==='template')template();if(act==='void')voidRecord(b.dataset.source,id);if(act==='document')documentView(id);if(act==='upload')upload();if(act==='rx')rxForm(id);if(act==='draft-rx'){const d=state.documents.find(d=>d.id===id);rxForm('',d.suggestions[Number(b.dataset.index)],d.id);}}catch(error){toast(error.message);}
+  try{const {act,id}=b.dataset;if(act==='voice')await voice();if(act==='text'){textEntry=!textEntry;render();if(textEntry)$('#phrase').focus();}if(act==='tools')tools();if(act==='person')personForm(null);if(act==='template')template();if(act==='void')voidRecord(b.dataset.source,id);if(act==='document')documentView(id);if(act==='upload')upload();if(act==='rx')rxForm(id);if(act==='draft-rx'){const d=state.documents.find(d=>d.id===id);rxForm('',d.suggestions[Number(b.dataset.index)],d.id);}}catch(error){toast(error.message);}
 });
 window.addEventListener('pagehide',()=>recording?.cancel());
 function viewport(){document.documentElement.style.setProperty('--screen-height',(window.visualViewport?.height||window.innerHeight)+'px');}window.visualViewport?.addEventListener('resize',viewport);viewport();

@@ -25,6 +25,13 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
   const token=randomBytes(32).toString('hex'), ocrBinary=join(root,'scripts/medika-ocr');
   let ocrReady=false,ocrBusy=false;
   try { await access(ocrBinary);ocrReady=true; } catch {}
+  function recordActivity(raw){
+    const input=activityInput({...raw,clientKey:raw.clientKey===undefined?newId():raw.clientKey});assert(store.get('people',input.personId),'Выберите человека');
+    if(input.relatedRxId)assert(store.get('prescriptions',input.relatedRxId)?.personId===input.personId,'Назначение принадлежит другому человеку');
+    const found=store.db.prepare('SELECT data FROM activities WHERE client_key=?').get(input.clientKey);
+    if(found){const old=JSON.parse(found.data);assert(old.status!=='void'&&Object.entries(input).every(([k,v])=>old[k]===v),'Ключ относится к другой или отменённой записи. Проверьте журнал.',409);return {status:200,record:old};}
+    return {status:201,record:store.insert('activities',{...input,status:'recorded'})};
+  }
   const allowedHosts=new Set([publicHost,...additionalHosts,`medika.localhost:${port}`,`127.0.0.1:${port}`,`localhost:${port}`].flatMap(host=>host.includes(':')?[host.toLowerCase()]:[host.toLowerCase(),`${host.toLowerCase()}:80`,`${host.toLowerCase()}:443`]));
   async function body(req,limit=18*1024*1024) {
     assert(req.headers['content-type']?.startsWith('application/json'),'Ожидается JSON',415);
@@ -53,15 +60,17 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       }
       if(route==='/api/state'&&method==='GET') return send(200,{...store.state(),catalog,rules,reference:referenceInfo,capabilities:{ocr:ocrReady,ocrLanguages:['ru-RU','en-US'],notifications:'open-tab-only',voice:await voiceStatus()}});
       if(route==='/api/parse-entry'&&method==='POST')return send(200,parseEntry(store.state(),await body(req)));
+      if(route==='/api/record-entry'&&method==='POST'){
+        const input=await body(req),draft=parseEntry(store.state(),{...input,personId:''});
+        if(!draft.canAutoRecord)return send(200,{draft,needsReview:true});
+        assert(input.recordedAt&&input.clientKey,'Отсутствует время или ключ записи');
+        const result=recordActivity({...draft,clientKey:input.clientKey});return send(result.status,{record:result.record});
+      }
       if(route==='/api/transcribe'&&method==='POST'){
         const input=await body(req,12*1024*1024);return send(200,await transcribeAudio(input,dataDir));
       }
       if(['/api/activities','/api/entries'].includes(route)&&method==='POST'){
-        const raw=await body(req),input=activityInput({...raw,clientKey:raw.clientKey===undefined?newId():raw.clientKey});assert(store.get('people',input.personId),'Выберите человека');
-        if(input.relatedRxId)assert(store.get('prescriptions',input.relatedRxId)?.personId===input.personId,'Назначение принадлежит другому человеку');
-        const found=store.db.prepare('SELECT data FROM activities WHERE client_key=?').get(input.clientKey);
-        if(found){const old=JSON.parse(found.data);assert(old.status!=='void'&&Object.entries(input).every(([k,v])=>old[k]===v),'Ключ относится к другой или отменённой записи. Проверьте журнал.',409);return send(200,old);}
-        return send(201,store.insert('activities',{...input,status:'recorded'}));
+        const result=recordActivity(await body(req));return send(result.status,result.record);
       }
       const activityVoid=route.match(/^\/api\/activities\/([a-f\d-]+)\/void$/);
       if(activityVoid&&method==='POST'){
