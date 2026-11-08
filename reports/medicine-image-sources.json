@@ -4,41 +4,118 @@
     "source": "https://www.topfarmacia.it/p-rinofluimucil-spray-nasale-10ml",
     "imageSource": "https://images.ctfassets.net/i5oh5hzamkwo/2FtQiXhx8nTJWfbWiPkrhj/3211c245a89c0a43e26509bab669c650/productImage-021993050-5372156_2.jpg",
     "bytes": 23445,
-    "sha256": "82724238028733c2b459208eaa37eb2ffb51b9fc954b8b8dd57c30bd48a88591"
+    "sha256": "82724238028733c2b459208eaa37eb2ffb51b9fc954b8b8dd57c30bd48a88591",
+    "kind": "package"
   },
   {
     "id": "neladex-ns",
     "source": "https://vivafarm.md/catalog/lekarstva_i_bady/otorinolaringologiya/neladeks_ns_sprey_nazalnyy_15ml/",
     "imageSource": "https://vivafarm.md/upload/iblock/290/l5aqq3x867qnzgcboo5hbyaj75io6b0y/1179.png",
     "bytes": 8657,
-    "sha256": "ec7aadd335ac84c65fd8f8c2de75b4269a2e82a87c818dd4ec3f997ce0ea8777"
+    "sha256": "ec7aadd335ac84c65fd8f8c2de75b4269a2e82a87c818dd4ec3f997ce0ea8777",
+    "kind": "package"
   },
   {
     "id": "elizium",
     "source": "https://farmacie.md/ru/product/elizium-solutie-orala-05mgml-120ml-n1",
     "imageSource": "https://media.ecom.md/swift/v1/AUTH_e78b75cf5be94082a583fedd6afb6222/ecom_prod/media/media/9/52789/e7d5be0368d24027a06b186472a8f8ff_vL01q9Y.webp",
     "bytes": 21610,
-    "sha256": "6c7109ba9eaa29af99da2f8e0c67865224da8385e078246079e5ab362b19d469"
+    "sha256": "6c7109ba9eaa29af99da2f8e0c67865224da8385e078246079e5ab362b19d469",
+    "kind": "package"
   },
   {
     "id": "zespira",
     "source": "https://felicia.md/product/zespira-5mg-comp-masticab-n14x2/",
     "imageSource": "https://felicia.md/upload/resize_cache/iblock/452/600_600_1/bcqc88gz08op886pbnt4w38589dn98et.webp",
     "bytes": 11543,
-    "sha256": "c3ab44ca2a978eec9407bf08355959357ed44c507c95af20ce58d091d43b2e43"
+    "sha256": "c3ab44ca2a978eec9407bf08355959357ed44c507c95af20ce58d091d43b2e43",
+    "kind": "package"
   },
   {
     "id": "kagocel",
     "source": "https://ff.md/products/kagocel-12mg-comp",
     "imageSource": "https://ff.md/cdn/shop/products/30576.jpg?crop=center&height=600&v=1645089540&width=600",
     "bytes": 17442,
-    "sha256": "ed96b6815a9a89edc71b654b86a6e9e8ff59bebb8395e9d62f388c2a256539ce"
+    "sha256": "ed96b6815a9a89edc71b654b86a6e9e8ff59bebb8395e9d62f388c2a256539ce",
+    "kind": "package"
   },
   {
     "id": "nasacort",
     "source": "https://fr.vivami.co/allergies/nasacort",
     "imageSource": "https://www.vivami-cdn.com/productimages/original/Nasacort-Spray-55mg-Front.png?v=May19",
     "bytes": 11473,
-    "sha256": "2336b9b0d1b3eb9a6bfa778b3def25acc2f43ab646ad9359dc034b00cd97796e"
+    "sha256": "2336b9b0d1b3eb9a6bfa778b3def25acc2f43ab646ad9359dc034b00cd97796e",
+    "kind": "package"
+  },
+  {
+    "id": "rinofluimucil",
+    "source": "https://www.redcare.it/medicinali/IT021993050/rinoflumucil-1-0-5-spray-nasale-soluzione.htm",
+    "imageSource": "https://cdn.redcare.it/images/IT0/219/930/50/IT021993050-p10.jpg",
+    "bytes": 11277,
+    "sha256": "9749f44ccf204e3ca4b67d074d433c22bf7241ad37cce482e255b395e3e4ac26",
+    "kind": "product"
+  },
+  {
+    "id": "nasacort",
+    "source": "https://www.healthwords.ai/shop/products/nasacort-hayfever-allergy-nasal-spray-30-sprays!d270c216-1519-4ff2-8c5b-e405ed02294f",
+    "imageSource": "https://storage.googleapis.com/healthwords/production/qLGmqLr4Sa6oJSbjUgcH3g2H.png",
+    "bytes": 7560,
+    "sha256": "8f8ed8590426730ba68282d5f3298a23a480e5786af967ae5e119281eb442a74",
+    "kind": "product"
+  },
+  {
+    "id": "kagocel",
+    "source": "https://kagocel.ru/",
+    "imageSource": "https://kagocel.ru/media/images/research-blister.png",
+    "bytes": 9931,
+    "sha256": "985eb71696bd2ad7b567737e15b480f61ef2fa2fecd43f63af57da5c9379007f",
+    "kind": "product"
+  },
+  {
+    "id": "zespira",
+    "imageSource": "https://prospektus.co/media/drug/05/78/05784a18996f708f15dfec10188bd31577d8c469628d6cf84a24f2b9c9af2c58.webp",
+    "source": "https://prospektus.co/ilaclar/zespira-5-mg-28-cigneme-tableti",
+    "bytes": 7819,
+    "sha256": "a20008f16b72dc58123a78c8a7dd55e8076d1e13d3cc16b27f25c50aa4fffe14",
+    "kind": "product",
+    "crop": [
+      0,
+      0,
+      198,
+      210,
+      320,
+      213
+    ]
+  },
+  {
+    "id": "neladex-ns",
+    "imageSource": "https://irecommend.ru/sites/default/files/imagecache/copyright1/user-images/1197197/F012nPB4UAkQGWqQSFrBw.jpg",
+    "source": "https://irecommend.ru/content/rabotaet-pomogaet-spravitsya-s-bakterialnoi-infektsiei-no-shchipet",
+    "bytes": 24953,
+    "sha256": "38e22a413a7eb9b1f58eef7e5c51126a381db66298ea73df43ea7c8c4f96713a",
+    "kind": "product",
+    "crop": [
+      0,
+      15,
+      100,
+      250,
+      215,
+      320
+    ]
+  },
+  {
+    "id": "elizium",
+    "kind": "product",
+    "src": "/medicine-images/elizium.jpg",
+    "source": "https://farmacie.md/ru/product/elizium-solutie-orala-05mgml-120ml-n1",
+    "crop": [
+      150,
+      62,
+      135,
+      250,
+      320,
+      320
+    ],
+    "reusesPackageImage": true
   }
 ]

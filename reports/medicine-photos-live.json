@@ -1,17 +1,26 @@
 {
   "status": "PASS",
-  "checkedAt": "2026-11-08T19:37:04.987Z",
+  "checkedAt": "2026-11-08T19:46:07.428Z",
   "checks": [
     {
       "origin": "http://192.168.0.38",
-      "images": 6,
-      "totalBytes": 94170,
+      "photos": 12,
+      "uniqueImages": 11,
+      "totalBytes": 155710,
+      "status": "PASS"
+    },
+    {
+      "origin": "https://192.168.0.38",
+      "photos": 12,
+      "uniqueImages": 11,
+      "totalBytes": 155710,
       "status": "PASS"
     },
     {
       "origin": "https://macbook-air-5.local",
-      "images": 6,
-      "totalBytes": 94170,
+      "photos": 12,
+      "uniqueImages": 11,
+      "totalBytes": 155710,
       "status": "PASS"
     }
   ],
