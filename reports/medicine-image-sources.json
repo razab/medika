@@ -1,0 +1,44 @@
+[
+  {
+    "id": "rinofluimucil",
+    "source": "https://www.topfarmacia.it/p-rinofluimucil-spray-nasale-10ml",
+    "imageSource": "https://images.ctfassets.net/i5oh5hzamkwo/2FtQiXhx8nTJWfbWiPkrhj/3211c245a89c0a43e26509bab669c650/productImage-021993050-5372156_2.jpg",
+    "bytes": 23445,
+    "sha256": "82724238028733c2b459208eaa37eb2ffb51b9fc954b8b8dd57c30bd48a88591"
+  },
+  {
+    "id": "neladex-ns",
+    "source": "https://vivafarm.md/catalog/lekarstva_i_bady/otorinolaringologiya/neladeks_ns_sprey_nazalnyy_15ml/",
+    "imageSource": "https://vivafarm.md/upload/iblock/290/l5aqq3x867qnzgcboo5hbyaj75io6b0y/1179.png",
+    "bytes": 8657,
+    "sha256": "ec7aadd335ac84c65fd8f8c2de75b4269a2e82a87c818dd4ec3f997ce0ea8777"
+  },
+  {
+    "id": "elizium",
+    "source": "https://farmacie.md/ru/product/elizium-solutie-orala-05mgml-120ml-n1",
+    "imageSource": "https://media.ecom.md/swift/v1/AUTH_e78b75cf5be94082a583fedd6afb6222/ecom_prod/media/media/9/52789/e7d5be0368d24027a06b186472a8f8ff_vL01q9Y.webp",
+    "bytes": 21610,
+    "sha256": "6c7109ba9eaa29af99da2f8e0c67865224da8385e078246079e5ab362b19d469"
+  },
+  {
+    "id": "zespira",
+    "source": "https://felicia.md/product/zespira-5mg-comp-masticab-n14x2/",
+    "imageSource": "https://felicia.md/upload/resize_cache/iblock/452/600_600_1/bcqc88gz08op886pbnt4w38589dn98et.webp",
+    "bytes": 11543,
+    "sha256": "c3ab44ca2a978eec9407bf08355959357ed44c507c95af20ce58d091d43b2e43"
+  },
+  {
+    "id": "kagocel",
+    "source": "https://ff.md/products/kagocel-12mg-comp",
+    "imageSource": "https://ff.md/cdn/shop/products/30576.jpg?crop=center&height=600&v=1645089540&width=600",
+    "bytes": 17442,
+    "sha256": "ed96b6815a9a89edc71b654b86a6e9e8ff59bebb8395e9d62f388c2a256539ce"
+  },
+  {
+    "id": "nasacort",
+    "source": "https://fr.vivami.co/allergies/nasacort",
+    "imageSource": "https://www.vivami-cdn.com/productimages/original/Nasacort-Spray-55mg-Front.png?v=May19",
+    "bytes": 11473,
+    "sha256": "2336b9b0d1b3eb9a6bfa778b3def25acc2f43ab646ad9359dc034b00cd97796e"
+  }
+]

@@ -1,5 +1,6 @@
 import {writeFile,unlink,readFile} from 'node:fs/promises';
 import {join} from 'node:path';
+import {medicinePhotoInput} from './medicine-photos.mjs';
 import {createHash} from 'node:crypto';
 import {assert,personInput,rxInput,temperatureInput,activityInput,day,string,positive,parseSuggestions,zone,units,phaseInput} from './domain.mjs';
 
@@ -14,7 +15,10 @@ export async function restoreBackup(store,uploads,input,imageType){
   if(input.version>=2||input.temperatures!==undefined)assert(Array.isArray(input.temperatures)&&input.temperatures.length<=10000,'Некорректный раздел копии: temperatures');
   if(input.version>=3||input.activities!==undefined)assert(Array.isArray(input.activities)&&input.activities.length<=10000,'Некорректный раздел копии: activities');
   assert(input.images&&typeof input.images==='object'&&!Array.isArray(input.images),'Отсутствует раздел изображений');
-  const data={people:[],documents:[],prescriptions:[],events:[],temperatures:[],activities:[]};
+  const data={people:[],documents:[],prescriptions:[],events:[],temperatures:[],activities:[],medicinePhotos:[]};
+  assert(input.medicinePhotos===undefined||Array.isArray(input.medicinePhotos)&&input.medicinePhotos.length<=1000,'Повреждён раздел фото лекарств');
+  data.medicinePhotos=(input.medicinePhotos||[]).map(p=>({...medicinePhotoInput(p),...metadata(p)}));
+  const photoKeys=new Set();for(const p of data.medicinePhotos){assert(!photoKeys.has(p.key),'Повторное фото лекарства');photoKeys.add(p.key);const old=store.state().medicinePhotos.find(x=>x.key===p.key);assert(!old||old.id===p.id,'Фото лекарства уже существует',409);}
   data.people=input.people.map(p=>({...personInput(p),...metadata(p)}));
   const personIds=new Set([...store.state().people,...data.people].map(p=>p.id));
   data.temperatures=(input.temperatures||[]).map(t=>{

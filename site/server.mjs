@@ -13,6 +13,8 @@ import { parseWithCodex,codexStatus,codexPeople } from './lib/codex-parser.mjs';
 import { voiceStatus,transcribeAudio } from './lib/voice.mjs';
 import { restoreBackup } from './lib/backup.mjs';
 import { createVoiceLab } from './lib/voice-lab.mjs';
+import {prepareMedicinePhotos,medicinePhotoInput} from './lib/medicine-photos.mjs';
+import {medicinePhotoKey} from './public/medicine-images.js';
 
 const exec=promisify(execFile), root=dirname(fileURLToPath(import.meta.url));
 export function imageType(bytes) {
@@ -26,7 +28,7 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
   await mkdir(uploads,{recursive:true,mode:0o700});
   const voiceLab=await createVoiceLab(dataDir,{context:()=>codexPeople(store.state()),...voiceLabOptions});
   const token=randomBytes(32).toString('hex'), ocrBinary=join(root,'scripts/medika-ocr');
-  let ocrReady=false,ocrBusy=false;
+  let ocrReady=false,ocrBusy=false,photoBusy=false;
   try { await access(ocrBinary);ocrReady=true; } catch {}
   function recordActivity(raw){
     const input=activityInput({...raw,clientKey:raw.clientKey===undefined?newId():raw.clientKey});assert(store.get('people',input.personId),'Выберите человека');
@@ -79,6 +81,14 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       const labRecordRoute=route.match(/^\/api\/voice-lab\/recordings\/([a-f\d-]+)$/),labRunRoute=route.match(/^\/api\/voice-lab\/recordings\/([a-f\d-]+)\/(run|verdict)$/);
       if(labRecordRoute&&method==='DELETE')return send(200,await voiceLab.remove(labRecordRoute[1]));
       if(labRunRoute&&method==='POST'){const input=await body(req);return send(200,labRunRoute[2]==='run'?await voiceLab.run(labRunRoute[1],input.variantId):await voiceLab.verdict(labRunRoute[1],input.variantId,input.verdict));}
+      if(route==='/api/medicine-photos'&&method==='POST'){
+        assert(!photoBusy,'Фото уже обрабатывается. Попробуйте ещё раз через несколько секунд.',429);photoBusy=true;
+        try {
+        const input=await body(req),name=string(input.name,'Название лекарства',200,true),key=medicinePhotoKey(name),old=store.state().medicinePhotos.find(p=>p.key===key);assert((input.version??0)===(old?.version??0),'Фото уже изменено. Обновите страницу.',409);
+        const photos=await prepareMedicinePhotos(input.images,dataDir,imageType),record=medicinePhotoInput({name,photos});const current=store.state().medicinePhotos.find(p=>p.key===key);assert((current?.version??0)===(old?.version??0),'Фото уже изменено. Обновите страницу.',409);
+        return send(200,current?store.update('medicinePhotos',current.id,record,current.version):store.insert('medicinePhotos',record));
+        }finally{photoBusy=false;}
+      }
       if(route==='/api/state'&&method==='GET') return send(200,{...store.state(),catalog,rules,reference:referenceInfo,capabilities:{ocr:ocrReady,ocrLanguages:['ru-RU','en-US'],notifications:'open-tab-only',voice:await voiceStatus(),entryParser:entryParser===parseWithCodex?await codexStatus():{model:'local-rules',cloud:false}}});
       if(route==='/api/parse-entry'&&method==='POST')return send(200,await entryParser(store.state(),await body(req)));
       if(route==='/api/record-entry'&&method==='POST'){
@@ -211,7 +221,8 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       assert(!route.startsWith('/api/'),'Метод или маршрут не найден',404);
       assert(method==='GET'||method==='HEAD','Метод не разрешён',405);
       if(route==='/medika-ca.cer'&&method==='GET'){res.writeHead(200,{'Content-Type':'application/x-x509-ca-cert','Content-Disposition':'attachment; filename=medika-ca.cer'});return res.end(await readFile(join(root,'data/medika-ca.cer')));}
-      const assets={'/':['index.html','text/html'],'/voice-lab':['voice-lab.html','text/html'],'/voice-lab/':['voice-lab.html','text/html'],'/voice-lab.js':['voice-lab.js','text/javascript'],'/voice-lab.css':['voice-lab.css','text/css'],'/prescription-summary.js':['prescription-summary.js','text/javascript'],'/app.js':['app.js','text/javascript'],'/style.css':['style.css','text/css'],'/icon.svg':['icon.svg','image/svg+xml'],'/voice-recorder.js':['voice-recorder.js','text/javascript'],'/voice-capture.js':['voice-capture.js','text/javascript']};
+      const packageImage=route.match(/^\/medicine-images\/([a-z0-9-]+\.jpg)$/);if(packageImage){let bytes;try{bytes=await readFile(join(root,'public/medicine-images',packageImage[1]));}catch{throw new InputError('Фото не найдено',404);}res.writeHead(200,{'Content-Type':'image/jpeg','Cache-Control':'public, max-age=86400'});return res.end(method==='HEAD'?undefined:bytes);}
+      const assets={'/':['index.html','text/html'],'/voice-lab':['voice-lab.html','text/html'],'/voice-lab/':['voice-lab.html','text/html'],'/voice-lab.js':['voice-lab.js','text/javascript'],'/voice-lab.css':['voice-lab.css','text/css'],'/prescription-summary.js':['prescription-summary.js','text/javascript'],'/medicine-images.js':['medicine-images.js','text/javascript'],'/app.js':['app.js','text/javascript'],'/style.css':['style.css','text/css'],'/icon.svg':['icon.svg','image/svg+xml'],'/voice-recorder.js':['voice-recorder.js','text/javascript'],'/voice-capture.js':['voice-capture.js','text/javascript']};
       assert(assets[route],'Страница не найдена',404);
       const [file,mime]=assets[route];res.writeHead(200,{'Content-Type':`${mime}; charset=utf-8`});res.end(method==='HEAD'?undefined:await readFile(join(root,'public',file)));
     } catch(e) {

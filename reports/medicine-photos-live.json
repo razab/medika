@@ -1,0 +1,29 @@
+{
+  "status": "PASS",
+  "checkedAt": "2026-11-08T19:37:04.987Z",
+  "checks": [
+    {
+      "origin": "http://192.168.0.38",
+      "images": 6,
+      "totalBytes": 94170,
+      "status": "PASS"
+    },
+    {
+      "origin": "https://macbook-air-5.local",
+      "images": 6,
+      "totalBytes": 94170,
+      "status": "PASS"
+    }
+  ],
+  "clinicalSectionsUnchanged": [
+    "people",
+    "documents",
+    "prescriptions",
+    "events",
+    "temperatures",
+    "activities",
+    "images",
+    "audit"
+  ],
+  "physicalDeviceTested": false
+}
