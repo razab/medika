@@ -1,0 +1,76 @@
+{
+  "syntheticDataOnly": true,
+  "parserRevision": "dual-asr-sol-v3",
+  "model": "gpt-6.1-sol",
+  "cases": [
+    {
+      "small": "Даня получил свечку. Две минуты назад.",
+      "medium": "Да нет, получил свечку парацетамола 125 мг две минуты назад.",
+      "draft": {
+        "personId": "d",
+        "kind": "medication",
+        "name": "Парацетамол",
+        "amount": "1",
+        "unit": "свеча",
+        "strength": "125 мг",
+        "celsius": "",
+        "occurredAt": "2026-11-08T20:57:55.823Z",
+        "timeZone": "Europe/Chisinau",
+        "carePhase": "",
+        "sourceText": "Whisper Small:\nДаня получил свечку. Две минуты назад.\n\nWhisper Medium:\nДа нет, получил свечку парацетамола 125 мг две минуты назад.",
+        "missing": [],
+        "notes": [],
+        "canAutoRecord": true
+      },
+      "passed": true
+    },
+    {
+      "small": "Да нет, получил таблетку парацетамола 250 мг пять минут назад.",
+      "medium": "Даня получил таблетку. Пять минут назад.",
+      "draft": {
+        "personId": "d",
+        "kind": "medication",
+        "name": "Парацетамол",
+        "amount": "1",
+        "unit": "табл.",
+        "strength": "250 мг",
+        "celsius": "",
+        "occurredAt": "2026-11-08T20:55:01.432Z",
+        "timeZone": "Europe/Chisinau",
+        "carePhase": "",
+        "sourceText": "Whisper Small:\nДа нет, получил таблетку парацетамола 250 мг пять минут назад.\n\nWhisper Medium:\nДаня получил таблетку. Пять минут назад.",
+        "missing": [],
+        "notes": [],
+        "canAutoRecord": true
+      },
+      "passed": true
+    },
+    {
+      "small": "Даня, температура 37,7 сейчас.",
+      "medium": "Даня, температура 38,7 сейчас.",
+      "draft": {
+        "personId": "d",
+        "kind": "temperature",
+        "name": "",
+        "amount": "",
+        "unit": "",
+        "strength": "",
+        "celsius": "",
+        "occurredAt": "2026-11-08T21:00:06.198Z",
+        "timeZone": "Europe/Chisinau",
+        "carePhase": "",
+        "relatedRxId": "",
+        "sourceText": "Whisper Small:\nДаня, температура 37,7 сейчас.\n\nWhisper Medium:\nДаня, температура 38,7 сейчас.",
+        "missing": [
+          "celsius"
+        ],
+        "notes": [
+          "Расхождение температуры: Whisper Small — 37.7, Whisper Medium — 38.7. Требуется уточнение."
+        ],
+        "canAutoRecord": false
+      },
+      "passed": true
+    }
+  ],
+  "status": "PASS"
+}

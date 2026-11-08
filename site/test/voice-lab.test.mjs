@@ -6,6 +6,7 @@ import {tmpdir} from 'node:os';
 import {createApp} from '../server.mjs';
 import {encodeWav} from '../public/voice-capture.js';
 import {parseEntry, namedPeople} from '../lib/entry-parser.mjs';
+import {createVoiceLab} from '../lib/voice-lab.mjs';
 import {InputError} from '../lib/domain.mjs';
 
 test('Тест голоса: единый WAV, кэш, границы, приватность, ошибка, возобновление и изоляция пациентов',async()=>{
@@ -28,8 +29,21 @@ test('Тест голоса: единый WAV, кэш, границы, прив�
     const verdict='/api/voice-lab/recordings/'+record.id+'/verdict';await call(verdict,{variantId:'medium-terra',verdict:'correct'});await call(verdict,{variantId:'medium-terra',verdict:'invalid'},400);await call(run,{variantId:'unknown'},400);
     const storedPath=join(data,'voice-lab',record.id+'.json'),stored=JSON.parse(await readFile(storedPath,'utf8'));stored.results['medium-terra'].analysisKey='old-parser';stored.results['small-luna']={status:'running',variantId:'small-luna'};await writeFile(storedPath,JSON.stringify(stored));
     await app.close();await start();const saved=(await call('/api/voice-lab')).recordings[0];assert.equal(saved.results['medium-terra'].verdict,'correct');assert.equal(saved.results['small-luna'].status,'interrupted');const complete=await call(run,{variantId:'small-luna'});assert.equal(complete.status,'complete');assert.equal(asrCalls,2);
-    const attempts=parseCalls;const updated=await call(run,{variantId:'medium-terra'});assert.equal(parseCalls,attempts+1);assert.equal(asrCalls,2);assert.notEqual(updated.analysisKey,'old-parser');assert.equal(updated.parserRevision,'person-and-medicine-recovery-v2');const revised=JSON.parse(await readFile(storedPath,'utf8'));assert.equal(revised.resultHistory.filter(r=>r.variantId==='medium-terra').length,1);assert.equal(revised.resultHistory.find(r=>r.variantId==='medium-terra').verdict,'correct');await call(run,{variantId:'medium-terra'});assert.equal(parseCalls,attempts+1);
+    const attempts=parseCalls;const updated=await call(run,{variantId:'medium-terra'});assert.equal(parseCalls,attempts+1);assert.equal(asrCalls,2);assert.notEqual(updated.analysisKey,'old-parser');assert.equal(updated.parserRevision,'dual-asr-sol-v3');const revised=JSON.parse(await readFile(storedPath,'utf8'));assert.equal(revised.resultHistory.filter(r=>r.variantId==='medium-terra').length,1);assert.equal(revised.resultHistory.find(r=>r.variantId==='medium-terra').verdict,'correct');await call(run,{variantId:'medium-terra'});assert.equal(parseCalls,attempts+1);
     const after=await call('/api/backup');for(const key of ['people','documents','prescriptions','events','temperatures','activities','audit'])assert.deepEqual(after[key],before[key]);
     await call('/api/voice-lab/recordings/'+record.id,undefined,200,'DELETE');assert.equal((await call('/api/voice-lab')).recordings.length,0);assert.equal((await fetch(origin+media,{headers:{Cookie:'medika_session='+token}})).status,404);
   }finally{await app?.close();await rm(data,{recursive:true,force:true});}
+});
+
+
+test('Две расшифровки → один Sol: общий WAV, частичный кэш, возобновление и недоступная модель',async()=>{
+ const data=await mkdtemp(join(tmpdir(),'medika-dual-lab-'));let asr=[],parses=0,fail=true;
+ try{
+  const wav=Buffer.from(await encodeWav([new Float32Array(16000).fill(.2)],16000).arrayBuffer());
+  const options={prepare:async()=>({bytes:wav,duration:1,language:'ru'}),availability:async()=>({small:true,medium:true,codex:true}),transcribe:async(bytes,language,dir,model)=>{assert.ok(bytes.equals(wav));asr.push(model);if(model==='medium'&&fail){fail=false;throw new InputError('Тестовая остановка',503);}return {text:model==='small'?'Даня получил свечку':'Да нет, парацетамол 125 мг'};},parse:async(state,input,{model})=>{parses++;assert.equal(model,'gpt-6.1-sol');assert.match(input.text,/Whisper Small:\nДаня/);assert.match(input.text,/Whisper Medium:\nДа нет/);return {personId:'lab-danya',kind:'medication',name:'Парацетамол',amount:'1',unit:'свеча',strength:'125 мг',occurredAt:input.recordedAt,timeZone:input.timeZone,sourceText:input.text,canAutoRecord:true,notes:[]};}};
+  let lab=await createVoiceLab(data,options);const record=await lab.add({audio:wav.toString('base64'),language:'ru',phraseId:'custom',capturedAt:new Date().toISOString(),timeZone:'Europe/Chisinau',clientKey:'dual-lab-fixture'});
+  assert.equal((await lab.run(record.id,'dual-sol')).status,'failed');assert.deepEqual(asr,['small','medium']);assert.equal(parses,0);
+  lab=await createVoiceLab(data,options);const result=await lab.run(record.id,'dual-sol');assert.equal(result.status,'complete');assert.deepEqual(asr,['small','medium','medium']);assert.equal(parses,1);assert.equal(result.audioSha256,record.audioSha256);assert.equal((await lab.run(record.id,'dual-sol')).transcript,result.transcript);assert.equal(parses,1);assert.equal(Object.keys((await lab.state()).recordings[0].transcripts).length,2);
+  lab=await createVoiceLab(data,{...options,availability:async()=>({small:true,medium:false,codex:true})});assert.equal((await lab.state()).variants.find(v=>v.id==='dual-sol').ready,false);
+ }finally{await rm(data,{recursive:true,force:true});}
 });

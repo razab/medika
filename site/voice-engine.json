@@ -1,7 +1,7 @@
 {
   "repository": "https://github.com/ggml-org/whisper.cpp.git",
   "commit": "f92e1e4d1056700c39d4e86c1140f0a088fe1ab6",
-  "defaultModel": "small",
+  "defaultModel": "all",
   "models": {
     "small": {
       "name": "Whisper Small",

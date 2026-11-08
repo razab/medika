@@ -8,7 +8,8 @@ const exec=promisify(execFile),site=join(dirname(fileURLToPath(import.meta.url))
 const binary=join(site,'tools/whisper.cpp/build/bin/whisper-cli');
 const models={small:join(site,'data/models/ggml-small.bin'),medium:join(site,'data/models/ggml-medium.bin')};
 let busy=false;
-export async function voiceStatus(modelId='small'){
+export async function voiceStatus(modelId='dual'){
+  if(modelId==='dual'){const [small,medium]=await Promise.all([voiceStatus('small'),voiceStatus('medium')]);return {...small,ready:small.ready&&medium.ready,model:'dual',models:['small','medium'],engine:'Whisper Small + Whisper Medium · локально на Mac'};}
   assert(Object.hasOwn(models,modelId),'Неизвестная модель речи');
   let ready=true;try{await Promise.all([access(binary),access(models[modelId])]);}catch{ready=false;}
   return {ready,engine:'Whisper '+(modelId==='small'?'Small':'Medium')+' · локально на Mac',model:modelId,languages:['ru','en'],maxSeconds:45,secureOrigin:'https://macbook-air-5.local'};
@@ -38,10 +39,11 @@ export async function prepareAudio(input,dataDir){
   }catch(error){if(error instanceof InputError)throw error;throw new InputError('Не удалось прочитать аудиозапись',422);}
   finally{if(directory)await rm(directory,{recursive:true,force:true});}
 }
-export async function transcribePrepared(bytes,language,dataDir,modelId='small'){
+async function recognizePrepared(bytes,language,dataDir,modelId){
+  assert(Object.hasOwn(models,modelId),'Неизвестная модель речи');
   assert(['ru','en'].includes(language),'Выберите русский или английский язык');
   assert(Buffer.isBuffer(bytes)&&bytes.length>44&&bytes.length<=1505536&&bytes.toString('ascii',0,4)==='RIFF'&&bytes.toString('ascii',8,12)==='WAVE','Некорректный подготовленный WAV');
-  assert(!busy,'Распознавание уже идёт. Дождитесь результата.',429);busy=true;let directory;
+  let directory;
   try{
     assert((await voiceStatus(modelId)).ready,'Локальный движок речи ещё не установлен',503);
     directory=await mkdtemp(join(dataDir,'voice-'));const converted=join(directory,'speech.wav'),result=join(directory,'result');await writeFile(converted,bytes,{mode:0o600});
@@ -50,6 +52,17 @@ export async function transcribePrepared(bytes,language,dataDir,modelId='small')
     assert(!/^\[.*\]$/u.test(text),'Речь не разобрана. Попробуйте ещё раз или введите текст.',422);
     return {text,language,model:modelId,engine:'whisper.cpp',local:true};
   }catch(error){if(error instanceof InputError)throw error;throw new InputError('Не удалось распознать запись. Можно ввести фразу текстом.',422);}
-  finally{busy=false;if(directory)await rm(directory,{recursive:true,force:true});}
+  finally{if(directory)await rm(directory,{recursive:true,force:true});}
 }
-export async function transcribeAudio(input,dataDir){const audio=await prepareAudio(input,dataDir);return {...await transcribePrepared(audio.bytes,audio.language,dataDir),duration:audio.duration};}
+async function recognitionLock(run){assert(!busy,'Распознавание уже идёт. Дождитесь результата.',429);busy=true;try{return await run();}finally{busy=false;}}
+export async function transcribePrepared(bytes,language,dataDir,modelId='small'){return recognitionLock(()=>recognizePrepared(bytes,language,dataDir,modelId));}
+export function combineTranscripts(transcripts){
+  assert(Array.isArray(transcripts)&&transcripts.length===2&&transcripts[0].model==='small'&&transcripts[1].model==='medium','Нужны расшифровки Whisper Small и Whisper Medium');
+  return string(transcripts.map(t=>'Whisper '+(t.model==='small'?'Small':'Medium')+':\n'+string(t.text,'Расшифровка',4000,true)).join('\n\n'),'Обе расшифровки',4000,true);
+}
+export async function transcribeAudio(input,dataDir){
+  return recognitionLock(async()=>{const audio=await prepareAudio(input,dataDir),transcripts=[];
+    for(const model of ['small','medium']){const start=performance.now(),result=await recognizePrepared(audio.bytes,audio.language,dataDir,model);transcripts.push({model,text:result.text,asrMs:Math.round(performance.now()-start)});}
+    return {text:combineTranscripts(transcripts),transcripts,language:audio.language,duration:audio.duration,model:'dual',engine:'whisper.cpp',local:true};
+  });
+}

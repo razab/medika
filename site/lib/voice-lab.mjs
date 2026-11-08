@@ -2,7 +2,7 @@ import {mkdir,readdir,readFile,writeFile,rename,unlink} from 'node:fs/promises';
 import {join} from 'node:path';
 import {createHash} from 'node:crypto';
 import {assert,string,newId,occurrenceInput,InputError} from './domain.mjs';
-import {prepareAudio,transcribePrepared,voiceStatus} from './voice.mjs';
+import {prepareAudio,transcribePrepared,voiceStatus,combineTranscripts} from './voice.mjs';
 import {parseWithCodex,codexStatus,codexPeople,parserRevision} from './codex-parser.mjs';
 
 export const labPhrases=[
@@ -14,6 +14,7 @@ export const labPhrases=[
   {id:'negative',text:'Даня не получил парацетамол.',expected:{noEvent:true}}
 ];
 export const labVariants=[
+  {id:'dual-sol',label:'Whisper Small + Whisper Medium → Sol',asr:'dual',model:'gpt-6.1-sol'},
   {id:'medium-terra',label:'Whisper Medium → Terra',asr:'medium',model:'gpt-6.1-terra'},
   {id:'small-terra',label:'Whisper Small → Terra',asr:'small',model:'gpt-6.1-terra'},
   {id:'medium-sol',label:'Whisper Medium → Sol',asr:'medium',model:'gpt-6.1-sol'},
@@ -45,7 +46,7 @@ export async function createVoiceLab(dataDir,{prepare=prepareAudio,transcribe=tr
   return {
     async state(){
       const ready=availability?await availability():await Promise.all([voiceStatus('medium'),voiceStatus('small'),codexStatus()]).then(([medium,small,codex])=>({medium:medium.ready,small:small.ready,codex:codex.ready}));
-      return {analysisKey:analysisKey(currentContext()),phrases:labPhrases.map(({expected,...p})=>p),variants:labVariants.map(v=>({...v,reasoning:'low',ready:!!ready[v.asr]&&!!ready.codex})),recordings:(await records()).map(view),busy:!!busy};
+      return {analysisKey:analysisKey(currentContext()),phrases:labPhrases.map(({expected,...p})=>p),variants:labVariants.map(v=>({...v,reasoning:'low',ready:(v.asr==='dual'?!!ready.small&&!!ready.medium:!!ready[v.asr])&&!!ready.codex})),recordings:(await records()).map(view),busy:!!busy};
     },
     async add(input){return locked('saving',async()=>{
       const clientKey=string(input.clientKey,'Ключ записи',120,true);assert(/^[a-zA-Z0-9_-]{8,120}$/.test(clientKey),'Некорректный ключ записи');
@@ -67,8 +68,9 @@ export async function createVoiceLab(dataDir,{prepare=prepareAudio,transcribe=tr
         record.results[variantId]={status:'running',variantId,analysisKey:key,parserRevision};await save(record);
         try{
           const bytes=await readFile(wavPath(id));assert(hash(bytes)===record.audioSha256,'Аудиофайл повреждён',422);
-          const cached=!!record.transcripts[variant.asr];let transcript=record.transcripts[variant.asr];
-          if(!transcript){const start=performance.now(),result=await transcribe(bytes,record.language,dataDir,variant.asr);transcript={text:result.text,asrMs:Math.round(performance.now()-start),audioSha256:record.audioSha256};record.transcripts[variant.asr]=transcript;await save(record);}
+          const engines=variant.asr==='dual'?['small','medium']:[variant.asr],cached=engines.every(model=>record.transcripts[model]),parts=[];
+          for(const model of engines){let t=record.transcripts[model];if(!t){const start=performance.now(),result=await transcribe(bytes,record.language,dataDir,model);t={text:result.text,asrMs:Math.round(performance.now()-start),audioSha256:record.audioSha256};record.transcripts[model]=t;await save(record);}parts.push({...t,model});}
+          const transcript={text:variant.asr==='dual'?combineTranscripts(parts):parts[0].text,asrMs:parts.reduce((sum,t)=>sum+t.asrMs,0)};
           const start=performance.now(),draft=await parse(contextState,{text:transcript.text,recordedAt:record.capturedAt,timeZone:record.timeZone},{model:variant.model}),parseMs=Math.round(performance.now()-start);
           const result={status:'complete',variantId,analysisKey:key,parserRevision,asr:variant.asr,model:variant.model,reasoning:'low',audioSha256:record.audioSha256,transcript:transcript.text,asrMs:transcript.asrMs,parseMs,totalMs:transcript.asrMs+parseMs,asrCached:cached,draft,score:scoreLabDraft(record.phraseId,draft,record.capturedAt),finishedAt:new Date().toISOString(),verdict:''};
           record.results[variantId]=result;await save(record);return result;

@@ -1,0 +1,31 @@
+{
+  "syntheticDataOnly": true,
+  "model": "gpt-6.1-sol",
+  "parserRevision": "dual-asr-sol-v3",
+  "checks": [
+    "Одна запись → настоящий Whisper Small и Whisper Medium последовательно",
+    "Один Sol → Даня, 38,2 °C, две минуты назад; обе исходные версии сохранены; повтор без дубля",
+    "Перезапуск и backup/restore сохраняют обе расшифровки без дублей"
+  ],
+  "transcription": {
+    "text": "Whisper Small:\nДаня, две минуты назад температура 38,2.\n\nWhisper Medium:\nДаня, две минуты назад температура 38,2.",
+    "transcripts": [
+      {
+        "model": "small",
+        "text": "Даня, две минуты назад температура 38,2.",
+        "asrMs": 807
+      },
+      {
+        "model": "medium",
+        "text": "Даня, две минуты назад температура 38,2.",
+        "asrMs": 2062
+      }
+    ],
+    "language": "ru",
+    "duration": 3.629,
+    "model": "dual",
+    "engine": "whisper.cpp",
+    "local": true
+  },
+  "status": "PASS"
+}
