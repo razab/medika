@@ -1,0 +1,15 @@
+{
+  "status": "PASS",
+  "verifiedAt": "2026-11-08T13:23:53.422Z",
+  "origin": "http://192.168.0.38",
+  "unifiedEntryPublished": true,
+  "existingDataUnchanged": true,
+  "people": 4,
+  "documents": 6,
+  "temperatures": 0,
+  "activities": 1,
+  "backupVersion": 3,
+  "syntheticRecordsAddedToLiveDatabase": 0,
+  "physicalPhoneTested": false,
+  "syntheticBrowserCheck": "activity-canary.json"
+}

@@ -15,7 +15,34 @@ body{line-height:1.5}h1,h2,h3,p{margin-top:0}h2{letter-spacing:-.45px;line-heigh
 .home-bar .date-control input{width:133px;font-size:14px;padding:5px}
 .home-bar .date-control button{min-width:32px;min-height:38px}
 .home-menu{position:relative;flex-shrink:0}
-.temperature-add{font-size:14px;font-weight:600;min-height:40px;padding:5px 9px;background:#edf3e8;flex-shrink:0}
+.quick-add{font-size:13px;font-weight:600;min-height:40px;padding:5px 8px;background:#edf3e8;white-space:nowrap;flex-shrink:0}
+.quick-people{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
+.quick-people button{flex:1;min-width:55px;padding:9px 7px;font-size:14px;min-height:44px}
+.quick-people button[aria-pressed="true"]{background:#185b4c;color:#fff;border-color:#185b4c}
+.quick-time{font-size:12px;color:#687d63;margin:0 0 13px}
+.quick-time summary{padding:5px 0;cursor:pointer}
+.quick-time input{font-size:16px;margin-top:7px}
+.quick-kinds{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.quick-kinds button{font-size:15px;min-height:52px;padding:10px 8px;background:#f3f6ee}
+.quick-kinds button:disabled{cursor:default;opacity:.5}
+.activity-form{display:grid;gap:14px}
+.activity-form input,.activity-form select,.activity-form textarea{font-size:16px}
+.activity-form details{font-size:12px;color:#617553}
+.activity-form details summary{cursor:pointer;padding:5px 0}
+.activity-form details label{margin-top:10px}
+.recent-activities{font-size:12px;border:1px solid #dce5d6;border-radius:7px;background:#f0f5eb;margin-bottom:7px}
+.recent-activities>summary{cursor:pointer;padding:8px 9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.recent-activities>summary small{color:#7c8c73;margin-left:7px;font-size:10px;white-space:nowrap}
+.activity-row{border-top:1px solid #e3e9dd}
+.activity-row>summary{display:flex;align-items:center;gap:11px;padding:10px 9px;list-style:none;cursor:pointer;min-height:52px}
+.activity-row>summary::-webkit-details-marker{display:none}
+.activity-row time{font-size:13px;min-width:38px;color:#56704c}
+.activity-row>summary>div{min-width:0}
+.activity-row strong{display:block;font-size:14px;line-height:1.4;overflow-wrap:anywhere}
+.activity-row span{display:block;font-size:11px;line-height:1.5;color:#7a8a70;overflow-wrap:anywhere}
+.activity-row.is-void strong{text-decoration:line-through;color:#95a18c}
+.activity-details{padding:0 12px 10px 58px;font-size:12px;line-height:1.6;overflow-wrap:anywhere}
+.activity-details p{margin:4px 0;white-space:pre-wrap}
 .current-temperatures{display:flex;flex-wrap:wrap;gap:5px;margin:0 0 7px}
 .current-temperatures button{display:flex;align-items:center;gap:6px;padding:5px 8px;min-height:30px;font-size:12px;border-radius:7px;background:#edf3e8}
 .current-temperatures time{font-size:10px;color:#71806a}
@@ -91,6 +118,7 @@ body{line-height:1.5}h1,h2,h3,p{margin-top:0}h2{letter-spacing:-.45px;line-heigh
 .home-shell .family-timeline .schedule-actions .text-button{font-size:15px;min-width:30px;padding:8px 3px}
 @media(max-width:760px){
   .home-bar{padding:4px 10px;min-height:48px;gap:5px}.home-bar h1{display:none}.home-main{padding:6px 9px 15px}
+  .home-bar .date-control input{width:115px;font-size:12px}.home-bar .date-control button{min-width:28px;padding:5px 4px}
   .draft-brief{grid-template-columns:minmax(0,1fr) 98px 83px;gap:10px;padding:10px 11px;min-height:75px}
   .draft-name h3{font-size:18px}.draft-dose,.draft-time{font-size:18px}.draft-name>span{font-size:10px;margin-top:3px}.draft-dose small{font-size:10px}.draft-dose.dose-missing{font-size:12px}
   .home-shell .family-board{grid-template-columns:1fr}.home-shell .time-group{grid-template-columns:55px minmax(0,1fr);padding:0 9px}.home-shell .time-group-heading h3{font-size:18px}.home-shell .family-timeline .medicine-info strong{font-size:18px}.home-shell .family-timeline .medicine-info>.row{gap:5px}.home-shell .family-timeline .dose,.home-shell .family-timeline .dose strong{font-size:17px}.home-shell .family-timeline .schedule-actions .text-button{min-width:22px}

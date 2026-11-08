@@ -6,7 +6,7 @@ import { randomBytes, createHash } from 'node:crypto';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { openStore } from './lib/store.mjs';
-import { assert, InputError, personInput, rxInput, temperatureInput, day, newId, string, positive, scheduleFor, parseSuggestions, localParts,courseEnd } from './lib/domain.mjs';
+import { assert, InputError, personInput, rxInput, temperatureInput, activityInput, day, newId, string, positive, scheduleFor, parseSuggestions, localParts,courseEnd } from './lib/domain.mjs';
 import { catalog, rules, referenceInfo, checkPerson, intakeWarnings } from './lib/reference.mjs';
 import { restoreBackup } from './lib/backup.mjs';
 
@@ -49,6 +49,17 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
         else assert(req.headers['x-medika-token']===token,'Сессия обновлена. Перезагрузите страницу.',403);
       }
       if(route==='/api/state'&&method==='GET') return send(200,{...store.state(),catalog,rules,reference:referenceInfo,capabilities:{ocr:ocrReady,ocrLanguages:['ru-RU','en-US'],notifications:'open-tab-only'}});
+      if(route==='/api/activities'&&method==='POST'){
+        const raw=await body(req),input=activityInput({...raw,clientKey:raw.clientKey===undefined?newId():raw.clientKey});assert(store.get('people',input.personId),'Выберите человека');
+        const found=store.db.prepare('SELECT data FROM activities WHERE client_key=?').get(input.clientKey);
+        if(found){const old=JSON.parse(found.data);assert(old.status!=='void'&&Object.entries(input).every(([k,v])=>old[k]===v),'Ключ относится к другой или отменённой записи. Проверьте журнал.',409);return send(200,old);}
+        return send(201,store.insert('activities',{...input,status:'recorded'}));
+      }
+      const activityVoid=route.match(/^\/api\/activities\/([a-f\d-]+)\/void$/);
+      if(activityVoid&&method==='POST'){
+        const input=await body(req),record=store.get('activities',activityVoid[1]);assert(record,'Событие не найдено',404);assert(record.status!=='void','Событие уже отменено',409);
+        return send(200,store.update('activities',record.id,{status:'void',voidReason:string(input.reason,'Причина отмены',1000,true)},input.version));
+      }
       if(route==='/api/temperatures'&&method==='POST'){
         const input=temperatureInput(await body(req));assert(store.get('people',input.personId),'Выберите человека');
         return send(201,store.insert('temperatures',{...input,status:'recorded'}));
@@ -150,7 +161,7 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       if(route==='/api/backup'&&method==='GET') {
         const state=store.state();
         const images={};for(const doc of state.documents) if(doc.mime) images[doc.id]=(await readFile(join(uploads,doc.id))).toString('base64');
-        return send(200,{...state,format:'medika-backup',version:2,exportedAt:new Date().toISOString(),images,audit:store.history()},{'Content-Disposition':`attachment; filename="medika-backup-${new Date().toISOString().slice(0,10)}.json"`});
+        return send(200,{...state,format:'medika-backup',version:3,exportedAt:new Date().toISOString(),images,audit:store.history()},{'Content-Disposition':`attachment; filename="medika-backup-${new Date().toISOString().slice(0,10)}.json"`});
       }
       if(route==='/api/restore'&&method==='POST') return send(200,await restoreBackup(store,uploads,await body(req,64*1024*1024),imageType));
       if(route==='/api/audit'&&method==='GET') return send(200,store.history().slice(-200).reverse());

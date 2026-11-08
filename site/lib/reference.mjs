@@ -39,7 +39,7 @@ export function checkPerson(state, {personId, candidate=null, excludeId='', at=n
     if(shared.length) findings.push({id:`duplicate-${a.id}-${b.id}`,severity:'important',title:'Повторяется действующее вещество',text:`${a.name} + ${b.name}: ${shared.map(x=>catalog.find(c=>c.id===x)?.name||x).join(', ')}. Сверьте назначения, чтобы исключить непреднамеренное повторение.`,source:'https://www.fda.gov/drugs/resources-drugs/drug-interactions-what-you-should-know',medicines:[a.name,b.name]});
     for (const rule of rules) if(sa.includes(rule.a)&&sb.includes(rule.b)||sa.includes(rule.b)&&sb.includes(rule.a)) findings.push({...rule,id:`${rule.id}-${a.id}-${b.id}`,medicines:[a.name,b.name]});
   }
-  return { status:'incomplete', findings, unknown:[...unknown], ...referenceInfo, historyNotice:'Завершённые курсы и остаточное действие препаратов не оцениваются автоматически. Возрастные дозы, состояния и перекрёстные аллергии требуют отдельной проверки.' };
+  return { status:'incomplete', findings, unknown:[...unknown], ...referenceInfo, historyNotice:'Записи препаратов и процедур вне схемы не включены в эту проверку. Завершённые курсы и остаточное действие препаратов не оцениваются автоматически. Возрастные дозы, состояния и перекрёстные аллергии требуют отдельной проверки.' };
 }
 
 export function intakeWarnings(state, rx, occurredAt) {

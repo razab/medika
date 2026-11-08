@@ -1,7 +1,7 @@
 import {writeFile,unlink,readFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {createHash} from 'node:crypto';
-import {assert,personInput,rxInput,temperatureInput,day,string,positive,parseSuggestions,zone,units} from './domain.mjs';
+import {assert,personInput,rxInput,temperatureInput,activityInput,day,string,positive,parseSuggestions,zone,units} from './domain.mjs';
 
 const idOK=id=>typeof id==='string'&&/^[a-f\d]{8}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{12}$/.test(id);
 const iso=s=>typeof s==='string'&&Number.isFinite(Date.parse(s));
@@ -9,17 +9,23 @@ const canonical=value=>JSON.stringify(value,(_,v)=>v&&typeof v==='object'&&!Arra
 function metadata(record){assert(idOK(record.id)&&Number.isInteger(record.version)&&record.version>=1&&iso(record.createdAt),'Повреждены идентификатор, версия или дата записи');if(record.updatedAt)assert(iso(record.updatedAt),'Повреждена дата изменения');return {id:record.id,version:record.version,createdAt:record.createdAt,...(record.updatedAt?{updatedAt:record.updatedAt}:{})};}
 
 export async function restoreBackup(store,uploads,input,imageType){
-  assert(input.format==='medika-backup'&&[1,2].includes(input.version),'Версия резервной копии Медики не поддерживается');
+  assert(input.format==='medika-backup'&&[1,2,3].includes(input.version),'Версия резервной копии Медики не поддерживается');
   for(const key of ['people','documents','prescriptions','events'])assert(Array.isArray(input[key])&&input[key].length<=10000,'Некорректный раздел копии: '+key);
-  if(input.version===2||input.temperatures!==undefined)assert(Array.isArray(input.temperatures)&&input.temperatures.length<=10000,'Некорректный раздел копии: temperatures');
+  if(input.version>=2||input.temperatures!==undefined)assert(Array.isArray(input.temperatures)&&input.temperatures.length<=10000,'Некорректный раздел копии: temperatures');
+  if(input.version>=3||input.activities!==undefined)assert(Array.isArray(input.activities)&&input.activities.length<=10000,'Некорректный раздел копии: activities');
   assert(input.images&&typeof input.images==='object'&&!Array.isArray(input.images),'Отсутствует раздел изображений');
-  const data={people:[],documents:[],prescriptions:[],events:[],temperatures:[]};
+  const data={people:[],documents:[],prescriptions:[],events:[],temperatures:[],activities:[]};
   data.people=input.people.map(p=>({...personInput(p),...metadata(p)}));
   const personIds=new Set([...store.state().people,...data.people].map(p=>p.id));
   data.temperatures=(input.temperatures||[]).map(t=>{
     const validated=temperatureInput(t);assert(personIds.has(t.personId),'Измерение ссылается на неизвестного человека');
     assert(['recorded','void'].includes(t.status),'Повреждён статус измерения');
     return {...validated,status:t.status,...(t.status==='void'?{voidReason:string(t.voidReason,'Причина отмены',1000,true)}:{}),...metadata(t)};
+  });
+  data.activities=(input.activities||[]).map(a=>{
+    const validated=activityInput(a);assert(personIds.has(a.personId),'Событие ссылается на неизвестного человека');
+    assert(['recorded','void'].includes(a.status),'Повреждён статус события');
+    return {...validated,status:a.status,...(a.status==='void'?{voidReason:string(a.voidReason,'Причина отмены',1000,true)}:{}),...metadata(a)};
   });
   data.documents=input.documents.map(d=>{
     assert(personIds.has(d.personId)&&/^[a-f\d]{64}$/.test(d.hash),'Повреждён документ или связь с человеком');
@@ -54,6 +60,7 @@ export async function restoreBackup(store,uploads,input,imageType){
     for(const record of records){assert(!ids.has(record.id),'Повторный идентификатор в копии');ids.add(record.id);let existing=store.get(table,record.id);if(table==='documents'&&existing)existing={...existing,suggestions:existing.sourceKind==='household'?[]:parseSuggestions(existing.text)};assert(!existing||canonical(existing)===canonical(record),'В копии другая версия существующей записи. Ничего не восстановлено.',409);if(!existing)planned.push([table,record]);}
   }
   const keys=new Set(store.state().events.map(r=>r.key));for(const [table,r]of planned)if(table==='events'){assert(!keys.has(r.key),'Дублируется отметка приёма');keys.add(r.key);}
+  const clientKeys=new Set(store.state().activities.map(r=>r.clientKey));for(const [table,r]of planned)if(table==='activities'){assert(!clientKeys.has(r.clientKey),'Дублируется ключ события');clientKeys.add(r.clientKey);}
   assert(!input.audit||Array.isArray(input.audit)&&input.audit.length<=50000,'Повреждён журнал изменений');
   const audit=input.audit||[];for(const a of audit)assert(idOK(a.id)&&iso(a.createdAt)&&typeof a.action==='string'&&JSON.stringify(a).length<=200000,'Повреждена запись журнала изменений');
   const images=[];
@@ -67,7 +74,7 @@ export async function restoreBackup(store,uploads,input,imageType){
       try{const old=await readFile(join(uploads,id));assert(old.equals(bytes),'Оригинал выписки отличается от копии',409);}catch(error){if(error.code!=='ENOENT')throw error;await writeFile(join(uploads,id),bytes,{flag:'wx',mode:0o600});written.push(id);}
     }
     store.transaction(()=>{
-      for(const[table,r]of planned){const cols=table==='documents'?['person_id','hash']:['prescriptions','temperatures'].includes(table)?['person_id']:table==='events'?['rx_id','event_key']:[];const values=table==='documents'?[r.personId,r.hash]:['prescriptions','temperatures'].includes(table)?[r.personId]:table==='events'?[r.rxId,r.key]:[];store.db.prepare(`INSERT INTO ${table}(id,data${cols.map(c=>','+c).join('')}) VALUES(${['?','?',...values.map(()=>'?')].join(',')})`).run(r.id,JSON.stringify(r),...values);}
+      for(const[table,r]of planned){const cols=table==='documents'?['person_id','hash']:table==='activities'?['person_id','client_key']:['prescriptions','temperatures'].includes(table)?['person_id']:table==='events'?['rx_id','event_key']:[];const values=table==='documents'?[r.personId,r.hash]:table==='activities'?[r.personId,r.clientKey]:['prescriptions','temperatures'].includes(table)?[r.personId]:table==='events'?[r.rxId,r.key]:[];store.db.prepare(`INSERT INTO ${table}(id,data${cols.map(c=>','+c).join('')}) VALUES(${['?','?',...values.map(()=>'?')].join(',')})`).run(r.id,JSON.stringify(r),...values);}
       for(const a of audit)store.db.prepare('INSERT OR IGNORE INTO audit VALUES(?,?,?)').run(a.id,a.createdAt,JSON.stringify(a));
     });
   }catch(error){for(const id of written)await unlink(join(uploads,id)).catch(()=>{});throw error;}

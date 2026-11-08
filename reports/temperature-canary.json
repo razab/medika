@@ -1,8 +1,8 @@
 {
   "status": "PASS",
-  "verifiedAt": "2026-11-08T12:57:24.690Z",
+  "verifiedAt": "2026-11-08T13:20:18.015Z",
   "syntheticDataOnly": true,
-  "assetsOrigin": "http://192.168.0.38",
+  "assetsOrigin": "http://127.0.0.1:14387",
   "checks": [
     "Three-field entry with decimal comma and person selection",
     "Backdated measurement does not replace newer reading",

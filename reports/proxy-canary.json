@@ -1,6 +1,6 @@
 {
   "status": "PASS",
-  "verifiedAt": "2026-11-08T12:54:47.042Z",
+  "verifiedAt": "2026-11-08T13:17:39.470Z",
   "checks": [
     "Caddy reverse proxy with preserved Host",
     "LAN-IP browser UI and relative assets at tablet width",

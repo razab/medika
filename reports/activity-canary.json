@@ -1,0 +1,17 @@
+{
+  "status": "PASS",
+  "verifiedAt": "2026-11-08T13:22:30.639Z",
+  "syntheticDataOnly": true,
+  "assetsOrigin": "http://192.168.0.38",
+  "checks": [
+    "Explicit family selection; double click records one vomiting episode",
+    "Explicit past time and empty time rejection; older action does not replace latest preview",
+    "One-tap diarrhea, temperature, water and medicine inhalations, standalone suppository, arbitrary escaped action",
+    "Unified personal journal includes temperature and independent medication quantities",
+    "CSV includes all types and escapes spreadsheet formulas",
+    "Cancellation preserves original, without modifying prescriptions",
+    "320/390/768/1024 remain compact without overflow",
+    "Restart and v3 backup restore to empty database without duplicates",
+    "Zero prescriptions or scheduled intake events created; no browser errors"
+  ]
+}

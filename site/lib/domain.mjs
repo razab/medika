@@ -54,14 +54,26 @@ export function personInput(input) {
   return { name: string(input.name, 'Имя', 100, true), birthday, weight: positive(input.weight, 'Вес', true), allergies: string(input.allergies, 'Аллергии', 1000), notes: string(input.notes, 'Примечания', 3000), color: ['mint','blue','peach','lilac'].includes(input.color) ? input.color : 'mint',...age,...(input.displayName!==undefined?{displayName:string(input.displayName,'Имя на семейной доске',100)}:{}) };
 }
 export const units = ['табл.', 'капс.', 'мл', 'мг', 'мкг', 'г', 'кап.', 'доза', 'впрыскивание', 'пакет', 'свеча', 'нанесение'];
-export function temperatureInput(input){
-  assert(input&&typeof input==='object'&&!Array.isArray(input),'Ожидается измерение температуры');
-  const raw=String(input.celsius??'').trim().replace(',','.');
-  assert(/^\d{2}(?:\.\d{1,2})?$/.test(raw)&&Number(raw)>=20&&Number(raw)<=50,'Температура: укажите число от 20 до 50 °C');
-  assert(typeof input.occurredAt==='string'&&/T.*(?:Z|[+-]\d{2}:\d{2})$/.test(input.occurredAt)&&Number.isFinite(Date.parse(input.occurredAt)),'Укажите дату и время измерения');
+export function occurrenceInput(input){
+  assert(input&&typeof input==='object'&&!Array.isArray(input),'Ожидается запись события');
+  assert(typeof input.occurredAt==='string'&&/T.*(?:Z|[+-]\d{2}:\d{2})$/.test(input.occurredAt)&&Number.isFinite(Date.parse(input.occurredAt)),'Укажите дату и время события');
   day(input.occurredAt.slice(0,10));
-  assert(Date.parse(input.occurredAt)<=Date.now()+60000,'Измерение не может быть в будущем');
-  return {personId:string(input.personId,'Человек',80,true),celsius:Number(raw),occurredAt:new Date(input.occurredAt).toISOString(),timeZone:zone(input.timeZone||'Europe/Chisinau')};
+  assert(Date.parse(input.occurredAt)<=Date.now()+60000,'Событие не может быть в будущем');
+  return {personId:string(input.personId,'Человек',80,true),occurredAt:new Date(input.occurredAt).toISOString(),timeZone:zone(input.timeZone||'Europe/Chisinau')};
+}
+export function temperatureInput(input){
+  const occurrence=occurrenceInput(input),raw=String(input.celsius??'').trim().replace(',','.');
+  assert(/^\d{2}(?:\.\d{1,2})?$/.test(raw)&&Number(raw)>=20&&Number(raw)<=50,'Температура: укажите число от 20 до 50 °C');
+  return {...occurrence,celsius:Number(raw)};
+}
+export const activityKinds={diarrhea:'Диарея',vomiting:'Рвота',inhalation:'Ингаляция',medication:'Лекарство',other:'Другое'};
+export function activityInput(input){
+  const occurrence=occurrenceInput(input);assert(Object.hasOwn(activityKinds,input.kind),'Выберите тип события');
+  const quick=['diarrhea','vomiting'].includes(input.kind),amount=positive(input.amount,'Количество',true)||'',unit=string(input.unit,'Единица',30);
+  assert((!amount&&!unit)||(amount&&units.includes(unit)),'Укажите количество и его единицу вместе');
+  assert(!quick||!amount,'Для этого симптома количество препарата не требуется');
+  const clientKey=string(input.clientKey,'Ключ записи',120,true);assert(/^[a-zA-Z0-9_-]{8,120}$/.test(clientKey),'Некорректный ключ записи');
+  return {...occurrence,kind:input.kind,name:quick?activityKinds[input.kind]:string(input.name,'Что сделали / препарат',200,true),amount,unit,strength:string(input.strength,'Концентрация',150),note:string(input.note,'Примечание',2000),author:string(input.author||'Я','Автор',100),clientKey};
 }
 export function courseEnd(startDate,count,unit){
   day(startDate);assert(Number.isInteger(Number(count))&&Number(count)>0&&Number(count)<=3660,'Длительность: положительное целое число');count=Number(count);
