@@ -13,6 +13,10 @@ test('API: источник, изоляция, история, версии, PRN
   const call=async(path,body,status=200,method=body?'POST':'GET')=>{const r=await fetch(origin+'/api'+path,{method,headers:{'X-Medika-Token':token,...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});const data=await r.json();assert.equal(r.status,status,JSON.stringify(data));return data;};
   try{
     const anna=await call('/people',{name:'Анна'},201),boris=await call('/people',{name:'Борис'},201);
+    const knownAge=await call('/people/'+anna.id,{name:anna.name,ageYears:4,ageAsOf:'2026-11-08',version:anna.version},200,'PUT');assert.equal(knownAge.ageYears,4);assert.equal(knownAge.birthday,'');
+    const home=await call('/documents',{personId:anna.id,name:'Синтетическая доска',text:'12:00 тестовый препарат 5 мл. План или факт не указан.',sourceKind:'household'},201);assert.deepEqual(home.suggestions,[]);
+    const homeEdited=await call('/documents/'+home.id,{reviewNotes:'Время не подтверждает факт приёма',version:home.version},200,'PUT');assert.equal(homeEdited.ocrText,home.text);assert.equal(homeEdited.reviewNotes,'Время не подтверждает факт приёма');
+    const end=await call('/course-end',{startDate:'2026-11-08',count:2,unit:'months'});assert.equal(end.endDate,'2027-01-07');
     const doc=await call('/documents',{personId:anna.id,name:'Текст',text:'Ибупрофен 100 мг/5 мл по 2,5 мл'},201);
     const date=localParts(new Date(),'Europe/Chisinau').date;
     const input={personId:anna.id,name:'Ибупрофен',dose:'2.5',unit:'мл',strength:'100 мг/5 мл',ingredients:'ибупрофен',startDate:date,type:'daily',times:'08:00',timeZone:'Europe/Chisinau',confirmed:true,documentId:doc.id};

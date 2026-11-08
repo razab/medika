@@ -1,5 +1,5 @@
 {
-  "verifiedAt": "2026-11-08T10:53:57.563Z",
+  "verifiedAt": "2026-11-08T11:14:53.152Z",
   "origin": "http://medika.localhost:4382",
   "http": 200,
   "health": {
@@ -9,17 +9,17 @@
     "ocr": true
   },
   "liveData": {
-    "people": 0,
+    "people": 2,
+    "documents": 6,
     "prescriptions": 0,
-    "documents": 0,
     "events": 0
   },
   "runtime": {
     "projectId": "5bc913d8-ae85-470b-a91e-251a2a589364",
     "serviceId": "web",
     "state": "running",
-    "pid": 27137,
-    "startedAt": "2026-11-08T10:51:17.899Z",
+    "pid": 59336,
+    "startedAt": "2026-11-08T11:14:14.244Z",
     "command": [
       "/opt/homebrew/bin/node",
       "server.mjs"
@@ -29,13 +29,13 @@
     "message": "Сервис готов",
     "health": {
       "kind": "http",
-      "checkedAt": "2026-11-08T10:53:57.140Z",
+      "checkedAt": "2026-11-08T11:14:52.277Z",
       "ok": true,
       "status": 200,
       "consecutiveFailures": 0,
       "error": null
     },
-    "readyAt": "2026-11-08T10:51:19.912Z"
+    "readyAt": "2026-11-08T11:14:16.230Z"
   },
   "watch": {
     "projectId": "5bc913d8-ae85-470b-a91e-251a2a589364",
@@ -55,7 +55,7 @@
     "restartCount": 0,
     "lastRestartAt": null,
     "lastChangedAt": null,
-    "revision": 1
+    "revision": 3
   },
   "lifecycle": "active"
 }

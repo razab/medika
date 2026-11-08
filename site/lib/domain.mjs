@@ -50,9 +50,19 @@ export function positive(value, label, optional = false) {
 export function personInput(input) {
   const birthday = input.birthday ? day(input.birthday) : '';
   assert(!birthday || birthday <= new Date().toISOString().slice(0, 10), 'Дата рождения не может быть в будущем');
-  return { name: string(input.name, 'Имя', 100, true), birthday, weight: positive(input.weight, 'Вес', true), allergies: string(input.allergies, 'Аллергии', 1000), notes: string(input.notes, 'Примечания', 3000), color: ['mint','blue','peach','lilac'].includes(input.color) ? input.color : 'mint' };
+  const age={};if(input.ageYears!==''&&input.ageYears!=null){assert(Number.isInteger(Number(input.ageYears))&&Number(input.ageYears)>=0&&Number(input.ageYears)<=130,'Возраст: целое число от 0 до 130');age.ageYears=Number(input.ageYears);age.ageAsOf=day(input.ageAsOf||new Date().toISOString().slice(0,10));}
+  return { name: string(input.name, 'Имя', 100, true), birthday, weight: positive(input.weight, 'Вес', true), allergies: string(input.allergies, 'Аллергии', 1000), notes: string(input.notes, 'Примечания', 3000), color: ['mint','blue','peach','lilac'].includes(input.color) ? input.color : 'mint',...age };
 }
-export const units = ['табл.', 'капс.', 'мл', 'мг', 'мкг', 'г', 'кап.', 'доза', 'пакет', 'свеча', 'нанесение'];
+export const units = ['табл.', 'капс.', 'мл', 'мг', 'мкг', 'г', 'кап.', 'доза', 'впрыскивание', 'пакет', 'свеча', 'нанесение'];
+export function courseEnd(startDate,count,unit){
+  day(startDate);assert(Number.isInteger(Number(count))&&Number(count)>0&&Number(count)<=3660,'Длительность: положительное целое число');count=Number(count);
+  assert(['days','weeks','months'].includes(unit),'Неизвестная единица длительности');
+  if(unit==='days'||unit==='weeks')return nextDay(startDate,count*(unit==='weeks'?7:1)-1);
+  assert(count<=120,'Не более 120 месяцев');
+  const start=new Date(startDate+'T12:00:00Z'),date=start.getUTCDate();start.setUTCDate(1);start.setUTCMonth(start.getUTCMonth()+count);
+  const last=new Date(Date.UTC(start.getUTCFullYear(),start.getUTCMonth()+1,0)).getUTCDate();start.setUTCDate(Math.min(date,last));
+  return nextDay(start.toISOString().slice(0,10),-1);
+}
 export function rxInput(input) {
   assert(input && typeof input === 'object' && !Array.isArray(input), 'Ожидается назначение');
   const startDate = day(input.startDate), endDate = input.endDate ? day(input.endDate) : '';
@@ -72,11 +82,15 @@ export function rxInput(input) {
   assert(input.confirmed === true, 'Сверьте назначение с оригиналом и подтвердите поля');
   const ingredients = string(input.ingredients, 'Действующие вещества', 600).split(/[+;,\n]/).map(x=>x.trim()).filter(Boolean);
   if(input.maxPer24h!==''&&input.maxPer24h!=null)assert(Number.isInteger(Number(input.maxPer24h)), 'Максимум приёмов должен быть целым числом');
-  return { name: string(input.name, 'Название препарата', 200, true), ingredients, form: string(input.form, 'Форма', 150), strength: string(input.strength, 'Концентрация', 150), dose: positive(input.dose, 'Доза на приём'), unit: input.unit, route: string(input.route, 'Способ применения', 150), startDate, endDate, type, times, timeZone, intervalHours, anchorTime, anchor, minHours: positive(input.minHours, 'Минимальный интервал', true), maxPer24h: positive(input.maxPer24h, 'Максимум приёмов за 24 часа', true), conditions: string(input.conditions, 'Условия приёма', 2000), sourceText: string(input.sourceText, 'Текст назначения', 10000), documentId: string(input.documentId, 'Документ', 80), confirmed: true };
+  const extra={};
+  if(input.weekdays!==undefined){assert(Array.isArray(input.weekdays)&&input.weekdays.length>0&&input.weekdays.length<=7&&input.weekdays.every(n=>Number.isInteger(n)&&n>=0&&n<=6),'Выберите дни недели');assert(type==='daily','Дни недели применяются только к выбранным ежедневным часам');extra.weekdays=[...new Set(input.weekdays)].sort();}
+  if(input.doseScope){assert(['each-nostril','total'].includes(input.doseScope),'Неизвестная область дозы');extra.doseScope=input.doseScope;}
+  return { name: string(input.name, 'Название препарата', 200, true), ingredients, form: string(input.form, 'Форма', 150), strength: string(input.strength, 'Концентрация', 150), dose: positive(input.dose, 'Доза на приём'), unit: input.unit, route: string(input.route, 'Способ применения', 150), startDate, endDate, type, times, timeZone, intervalHours, anchorTime, anchor, minHours: positive(input.minHours, 'Минимальный интервал', true), maxPer24h: positive(input.maxPer24h, 'Максимум приёмов за 24 часа', true), conditions: string(input.conditions, 'Условия приёма', 2000), sourceText: string(input.sourceText, 'Текст назначения', 10000), documentId: string(input.documentId, 'Документ', 80), confirmed: true,...extra };
 }
 export function scheduleFor(rx, date) {
   day(date);
   if (rx.archived || rx.type === 'prn' || date < rx.startDate || rx.endDate && date > rx.endDate || rx.type === 'once' && date !== rx.startDate) return [];
+  if(rx.type==='daily'&&rx.weekdays&&!rx.weekdays.includes(new Date(date+'T12:00:00Z').getUTCDay()))return [];
   let instants = [];
   if (rx.type === 'interval') {
     const from = Date.parse(zonedInstant(date, '00:00', rx.timeZone)), to = Date.parse(zonedInstant(nextDay(date), '00:00', rx.timeZone));
@@ -86,21 +100,41 @@ export function scheduleFor(rx, date) {
   } else {
     instants = rx.times.map(time => zonedInstant(date, time, rx.timeZone));
   }
-  return instants.map(scheduledAt => ({ key: `${rx.id}@${scheduledAt}`, rxId: rx.id, personId: rx.personId, scheduledAt, ...localParts(scheduledAt, rx.timeZone), timeZone: rx.timeZone, name: rx.name, dose: rx.dose, unit: rx.unit, conditions: rx.conditions, ingredients: rx.ingredients }));
+  return instants.map(scheduledAt => ({ key: `${rx.id}@${scheduledAt}`, rxId: rx.id, personId: rx.personId, scheduledAt, ...localParts(scheduledAt, rx.timeZone), timeZone: rx.timeZone, name: rx.name, dose: rx.dose, unit: rx.unit, conditions: rx.conditions, ingredients: rx.ingredients,...(rx.doseScope?{doseScope:rx.doseScope}:{}) }));
 }
 
 // OCR suggestions deliberately keep missing dose, course dates and clock times empty.
 export function parseSuggestions(text) {
-  return string(text, 'Текст выписки', 50000).split(/\n+/).map(line=>line.trim()).filter(line=>/\d/.test(line) && /(?:мг|мкг|мл|табл|капс|кап\.|\bmg\b|\bml\b|\btablet)/iu.test(line)).slice(0,40).map(line => {
-    const dose = line.match(/(?:^|\s)по\s+(\d+(?:[.,]\d+)?)\s*(табл\.?|капс\.?|мл|мг|мкг|кап\.?)/iu);
-    const unitMap = {табл:'табл.',капс:'капс.',мл:'мл',мг:'мг',мкг:'мкг',кап:'кап.'};
-    const content=line.replace(/^\s*(?:\d+[.)]\s+|[•–-]\s*)/u,'');
-    const strengthMatch=content.match(/\d+(?:[.,]\d+)?\s*(?:мг|мкг|мл|mg|ml)(?:\s*\/\s*\d+(?:[.,]\d+)?\s*(?:мл|ml))?/iu);
+  const groups=[];let current=null,conditional='',pending='';
+  const doseUnit=/(?:мг|мкг|мл|табл|капс|впрыск|\bmg\b|\bml\b|\btablet)/iu;
+  const flush=()=>{if(current&&/\d/.test(current.text)&&doseUnit.test(current.text))groups.push(current);current=null;};
+  for(const raw of string(text,'Текст выписки',50000).split(/\n+/)){
+    const line=raw.trim();if(!line)continue;
+    if(/название\s+похоже|неразборчив|\[не\s*ясно\]/iu.test(line)){flush();pending='';continue;}
+    if(/^При появлении/iu.test(line)){flush();conditional=line;continue;}
+    if(/^следующая лечебная тактика/iu.test(line))continue;
+    if(/^Через\s+\d+\s*[–-]\s*\d+\s+минут/iu.test(line)){flush();pending=line;continue;}
+    const clean=line.replace(/^\s*(?:\d+[.)]\s+|[•–-]\s*)/u,'').replace(/^(?:Затем\s+)?продолжить лечение препаратом\s+/iu,'');
+    const numbered=/^\d+[.)]\s*\p{L}/u.test(line);
+    const starts=(doseUnit.test(clean)&&/\d/.test(clean)||/^[\p{L}\d-]+,\s*(?:назальный\s+)?спрей/iu.test(clean))&&!/^(?:в |по |для |через |гипертоническ|изотоническ|понедельника|недель|месяц|ежедневн)/iu.test(clean);
+    if(numbered||starts){flush();current={text:(pending?pending+'\n':'')+clean,condition:conditional};pending='';}
+    else if(current)current.text+='\n'+line;
+  }
+  flush();
+  return groups.slice(0,40).map(group=>{
+    const line=group.text;
+    const content=line.split('\n').filter(l=>!/^Через\s+\d/iu.test(l)).join(' ');
+    const dose=content.match(/(?:^|\s)по\s+(\d+(?:[.,]\d+)?)\s*(?:(?:жевательн[а-я]*|цел[а-я]*)\s+)?(табл[а-я.]*|капс[а-я.]*|мл|мг|мкг|кап\.?|впрыскиван[а-я]*)/iu);
+    const rawUnit=dose?.[2].toLowerCase()||'';
+    const unit=rawUnit.startsWith('табл')?'табл.':rawUnit.startsWith('капс')?'капс.':rawUnit.startsWith('впрыск')?'впрыскивание':rawUnit.startsWith('кап')?'кап.':rawUnit||'табл.';
+    const strengthMatch=content.match(/\d+(?:[.,]\d+)?\s*(?:мг|мкг|мл|mg|ml)(?:\s*\+\s*\d+(?:[.,]\d+)?\s*(?:мг|мкг|мл|mg|ml))*(?:\s*\/\s*(?:\d+(?:[.,]\d+)?\s*)?(?:мл|ml|доза))?/iu);
     const doseIndex=content.search(/\s+по\s+\d/iu);
     const split=strengthMatch?.index??(doseIndex>=0?doseIndex:content.length);
-    const name = content.slice(0,split).replace(/[,;:\s-]+$/u,'').trim();
+    const name = content.slice(0,split).split(',')[0].replace(/[,;:\s—–-]+$/u,'').trim();
     const strength = strengthMatch?.[0] || '';
-    return { name, strength, dose: dose ? dose[1].replace(',','.') : '', unit: dose ? unitMap[dose[2].replace('.','').toLowerCase()] : 'табл.', sourceText: line, conditions: '', review: 'Проверьте название, дозу, даты и часы по оригиналу' };
+    const times=[...content.matchAll(/(?:^|\s)([01]?\d|2[0-3]):([0-5]\d)(?=[,\s.]|$)/g)].map(m=>m[1].padStart(2,'0')+':'+m[2]);
+    const conditions=[group.condition?'Условная схема: '+group.condition:'',/Через\s+\d+\s*[–-]\s*\d+\s+минут/iu.test(line)?line.split('\n')[0]:'',/вечером/iu.test(content)?'Вечером':'',/перед сном/iu.test(content)?'Перед сном':''].filter(Boolean).join('. ');
+    return { name, strength, dose:dose?dose[1].replace(',','.'):'',unit,sourceText:line,conditions,requiresReview:true,review:'Сверьте весь фрагмент, дозу, дату начала и последовательность. Условную ветку не активировать без уточнения.',...(times.length?{times:times.join(', ')}:{}),...(/в каждую ноздрю/iu.test(content)?{doseScope:'each-nostril'}:{}),...(/суббот[а-я]* и воскресень[а-я]*/iu.test(content)?{weekdays:[0,6]}:{}) };
   });
 }
 export const newId = () => randomUUID();

@@ -21,7 +21,8 @@ export async function restoreBackup(store,uploads,input,imageType){
     const text=string(d.text,'Текст документа',50000);
     const lines=Array.isArray(d.lines)?d.lines:[];assert(lines.length<=10000,'Слишком много строк OCR');
     for(const l of lines)assert(typeof l.text==='string'&&l.text.length<=5000&&typeof l.confidence==='number'&&l.confidence>=0&&l.confidence<=1&&Array.isArray(l.box)&&l.box.length===4&&l.box.every(n=>typeof n==='number'&&Number.isFinite(n)),'Повреждены строки OCR');
-    return {personId:d.personId,hash:d.hash,name:string(d.name,'Название документа',250,true),mime:d.mime,text,lines,suggestions:parseSuggestions(text),...metadata(d)};
+    const extra={};if(d.sourceKind!==undefined){assert(['doctor','household','other'].includes(d.sourceKind),'Некорректный источник');extra.sourceKind=d.sourceKind;}if(d.ocrText!==undefined)extra.ocrText=string(d.ocrText,'Исходный OCR',50000);if(d.reviewNotes!==undefined)extra.reviewNotes=string(d.reviewNotes,'Заметки сверки',12000);
+    return {personId:d.personId,hash:d.hash,name:string(d.name,'Название документа',250,true),mime:d.mime,text,lines,suggestions:d.sourceKind==='household'?[]:parseSuggestions(text),...extra,...metadata(d)};
   });
   const docs=new Map([...store.state().documents,...data.documents].map(d=>[d.id,d]));
   data.prescriptions=input.prescriptions.map(r=>{
@@ -38,12 +39,13 @@ export async function restoreBackup(store,uploads,input,imageType){
     assert(units.includes(r.unit)&&Array.isArray(r.ingredients)&&r.ingredients.every(x=>typeof x==='string'&&x.length<=600),'Повреждены единицы или состав');
     if(r.scheduledAt)assert(iso(r.scheduledAt)&&r.key===r.rxId+'@'+r.scheduledAt,'Повреждено плановое время');
     if(!r.scheduledAt)assert(idOK(r.key.split('@prn-')[1]),'Повреждён ключ приёма по необходимости');
-    return {...(r.scheduledAt?{scheduledAt:r.scheduledAt}:{}),...(r.time?{time:string(r.time,'Часы',5)}:{}),rxId:r.rxId,personId:r.personId,key:r.key,status:r.status,occurredAt:r.occurredAt,date:day(r.date),timeZone:zone(r.timeZone),name:string(r.name,'Название',200,true),dose:positive(r.dose,'Плановая доза'),unit:r.unit,ingredients:r.ingredients,conditions:string(r.conditions,'Условия',2000),actualDose:positive(r.actualDose,'Фактическая доза'),note:string(r.note,'Примечание',2000),author:string(r.author,'Автор',100),...(r.voidReason?{voidReason:string(r.voidReason,'Причина',1000)}:{}),...metadata(r)};
+    if(r.doseScope)assert(['total','each-nostril'].includes(r.doseScope),'Некорректная область дозы');
+    return {...(r.scheduledAt?{scheduledAt:r.scheduledAt}:{}),...(r.time?{time:string(r.time,'Часы',5)}:{}),...(r.doseScope?{doseScope:r.doseScope}:{}),rxId:r.rxId,personId:r.personId,key:r.key,status:r.status,occurredAt:r.occurredAt,date:day(r.date),timeZone:zone(r.timeZone),name:string(r.name,'Название',200,true),dose:positive(r.dose,'Плановая доза'),unit:r.unit,ingredients:r.ingredients,conditions:string(r.conditions,'Условия',2000),actualDose:positive(r.actualDose,'Фактическая доза'),note:string(r.note,'Примечание',2000),author:string(r.author,'Автор',100),...(r.voidReason?{voidReason:string(r.voidReason,'Причина',1000)}:{}),...metadata(r)};
   });
   const planned=[];
   for(const [table,records]of Object.entries(data)){
     const ids=new Set();
-    for(const record of records){assert(!ids.has(record.id),'Повторный идентификатор в копии');ids.add(record.id);const existing=store.get(table,record.id);assert(!existing||canonical(existing)===canonical(record),'В копии другая версия существующей записи. Ничего не восстановлено.',409);if(!existing)planned.push([table,record]);}
+    for(const record of records){assert(!ids.has(record.id),'Повторный идентификатор в копии');ids.add(record.id);let existing=store.get(table,record.id);if(table==='documents'&&existing)existing={...existing,suggestions:existing.sourceKind==='household'?[]:parseSuggestions(existing.text)};assert(!existing||canonical(existing)===canonical(record),'В копии другая версия существующей записи. Ничего не восстановлено.',409);if(!existing)planned.push([table,record]);}
   }
   const keys=new Set(store.state().events.map(r=>r.key));for(const [table,r]of planned)if(table==='events'){assert(!keys.has(r.key),'Дублируется отметка приёма');keys.add(r.key);}
   assert(!input.audit||Array.isArray(input.audit)&&input.audit.length<=50000,'Повреждён журнал изменений');

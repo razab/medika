@@ -6,7 +6,7 @@ import { randomBytes, createHash } from 'node:crypto';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { openStore } from './lib/store.mjs';
-import { assert, InputError, personInput, rxInput, day, newId, string, positive, scheduleFor, parseSuggestions, localParts } from './lib/domain.mjs';
+import { assert, InputError, personInput, rxInput, day, newId, string, positive, scheduleFor, parseSuggestions, localParts,courseEnd } from './lib/domain.mjs';
 import { catalog, rules, referenceInfo, checkPerson, intakeWarnings } from './lib/reference.mjs';
 import { restoreBackup } from './lib/backup.mjs';
 
@@ -49,6 +49,7 @@ export async function createApp({dataDir=join(root,'data'),port=4382}={}) {
         else assert(req.headers['x-medika-token']===token,'Сессия обновлена. Перезагрузите страницу.',403);
       }
       if(route==='/api/state'&&method==='GET') return send(200,{...store.state(),catalog,rules,reference:referenceInfo,capabilities:{ocr:ocrReady,ocrLanguages:['ru-RU','en-US'],notifications:'open-tab-only'}});
+      if(route==='/api/course-end'&&method==='POST'){const input=await body(req);return send(200,{endDate:courseEnd(input.startDate,input.count,input.unit),convention:'Последний день включительно: день перед календарной годовщиной начала курса. Проверьте границу по назначению.'});}
       if(route==='/api/people'&&method==='POST') return send(201,store.insert('people',personInput(await body(req))));
       const personRoute=route.match(/^\/api\/people\/([a-f\d-]+)$/);
       if(personRoute&&method==='PUT') { const input=await body(req);return send(200,store.update('people',personRoute[1],personInput(input),input.version)); }
@@ -95,7 +96,7 @@ export async function createApp({dataDir=join(root,'data'),port=4382}={}) {
         const old=store.db.prepare('SELECT data FROM events WHERE event_key=?').get(key);
         assert(!old||JSON.parse(old.data).status==='void','Этот приём уже отмечен. Обновите расписание.',409);
         const actualDose=input.status==='taken'?positive(input.dose||rx.dose,'Фактическая доза'):rx.dose;
-        const record={...(event||{rxId:rx.id,personId:rx.personId,name:rx.name,dose:rx.dose,unit:rx.unit,timeZone:rx.timeZone,conditions:rx.conditions,ingredients:rx.ingredients,date,time:localParts(occurredAt,rx.timeZone).time}),key,status:input.status,occurredAt:new Date(occurredAt).toISOString(),actualDose,note:string(input.note,'Примечание',2000),author:string(input.author||'Я','Автор',100)};
+        const record={...(event||{rxId:rx.id,personId:rx.personId,name:rx.name,dose:rx.dose,unit:rx.unit,timeZone:rx.timeZone,conditions:rx.conditions,ingredients:rx.ingredients,date,time:localParts(occurredAt,rx.timeZone).time,...(rx.doseScope?{doseScope:rx.doseScope}:{})}),key,status:input.status,occurredAt:new Date(occurredAt).toISOString(),actualDose,note:string(input.note,'Примечание',2000),author:string(input.author||'Я','Автор',100)};
         if(old) {const previous=JSON.parse(old.data);return send(200,store.update('events',previous.id,record,previous.version));}
         return send(201,store.insert('events',record));
       }
@@ -103,6 +104,7 @@ export async function createApp({dataDir=join(root,'data'),port=4382}={}) {
       if(voidRoute&&method==='POST') { const input=await body(req);assert(string(input.reason,'Причина исправления',1000,true),'Укажите причину');return send(200,store.update('events',voidRoute[1],{status:'void',voidReason:input.reason},input.version)); }
       if(route==='/api/documents'&&method==='POST') {
         const input=await body(req);assert(store.get('people',input.personId),'Выберите человека');
+        const sourceKind=input.sourceKind||'doctor';assert(['doctor','household','other'].includes(sourceKind),'Неизвестный источник');
         let bytes=null,mime='',text='',lines=[],name=string(input.name||'Текст выписки','Название',250);
         if(input.image) {
           assert(typeof input.image==='string'&&/^[A-Za-z0-9+/]+=*$/.test(input.image),'Некорректное изображение');
@@ -123,10 +125,15 @@ export async function createApp({dataDir=join(root,'data'),port=4382}={}) {
           } catch(e) { await unlink(join(uploads,id)).catch(()=>{});throw new InputError('Не удалось распознать изображение. Проверьте файл; можно вставить текст вручную.',422); }
           finally {ocrBusy=false;}
         }
-        return send(201,store.insert('documents',{id,personId:input.personId,hash,name,mime,text,lines,suggestions:parseSuggestions(text)}));
+        return send(201,store.insert('documents',{id,personId:input.personId,hash,name,mime,text,lines,ocrText:text,sourceKind,reviewNotes:'',suggestions:sourceKind==='household'?[]:parseSuggestions(text)}));
       }
       const docRoute=route.match(/^\/api\/documents\/([a-f\d-]+)$/);
-      if(docRoute&&method==='PUT') {const input=await body(req),text=string(input.text,'Текст выписки',50000,true);return send(200,store.update('documents',docRoute[1],{text,suggestions:parseSuggestions(text)},input.version));}
+      if(docRoute&&method==='PUT') {
+        const input=await body(req),old=store.get('documents',docRoute[1]);assert(old,'Документ не найден',404);
+        const text=string(input.text??old.text,'Текст выписки',50000),sourceKind=input.sourceKind||old.sourceKind||'doctor';
+        assert(['doctor','household','other'].includes(sourceKind),'Неизвестный источник');
+        return send(200,store.update('documents',docRoute[1],{text,ocrText:old.ocrText??old.text,sourceKind,reviewNotes:string(input.reviewNotes??old.reviewNotes,'Заметки сверки',12000),suggestions:sourceKind==='household'?[]:parseSuggestions(text)},input.version));
+      }
       if(imageRoute&&method==='GET') {
         const doc=store.get('documents',imageRoute[1]);assert(doc?.mime,'Изображение не найдено',404);
         res.writeHead(200,{'Content-Type':doc.mime,'Content-Disposition':'inline'});return res.end(await readFile(join(uploads,doc.id)));
