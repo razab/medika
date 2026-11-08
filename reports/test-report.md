@@ -1,6 +1,8 @@
 # Проверка Медики 8 ноября 2026
 
-Результат: **PASS**. Приложение доступно по http://medika.localhost:4382; HTTP 200, Apple Vision готов. Диспетчер: lifecycle active, service web running, runtime.health.ok true, readiness HTTP. Состояние зафиксировано в [live-service.json](live-service.json). Проверка health выполнена спустя несколько минут после старта; PID не использовался как единственное доказательство готовности.
+Результат: **PASS**. Приложение доступно по http://medika.localhost без порта; HTTP 200, Apple Vision готов. Диспетчер: lifecycle active, service web running, runtime.health.ok true, readiness HTTP. Состояние зафиксировано в [live-service.json](live-service.json). Проверка health выполнена спустя несколько минут после старта; PID не использовался как единственное доказательство готовности.
+
+Маршрут через существующий системный Caddy проверен отдельно: [local-domain.json](local-domain.json). Proxy-canary с настоящим Caddy подтвердил браузер, относительные ресурсы, сессию/API, отклонение чужого Origin и сохранение при перезапуске: [proxy-canary.json](proxy-canary.json). Оба прежних маршрута Caddy сохранены.
 
 ## Unit и API
 

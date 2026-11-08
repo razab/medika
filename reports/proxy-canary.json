@@ -1,0 +1,13 @@
+{
+  "status": "PASS",
+  "verifiedAt": "2026-11-08T11:38:40.602Z",
+  "checks": [
+    "Caddy reverse proxy with preserved Host",
+    "Browser UI and relative assets",
+    "Session cookie and authenticated API",
+    "Foreign Origin rejected",
+    "SQLite survives backend restart",
+    "Browser reopens through proxy without JS errors"
+  ],
+  "syntheticDataOnly": true
+}

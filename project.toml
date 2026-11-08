@@ -27,5 +27,5 @@ url = "http://127.0.0.1:4382/api/health"
 timeoutSeconds = 15
 
 [network]
-proxyState = "direct-loopback"
+proxyState = "system-caddy-port-80"
 tlsState = "not-configured"

@@ -1,0 +1,14 @@
+{
+  "verifiedAt": "2026-11-08T11:43:21.758Z",
+  "url": "http://medika.localhost",
+  "home": 200,
+  "assets": "PASS",
+  "session": "PASS",
+  "authenticatedApi": "PASS",
+  "foreignOriginRejected": true,
+  "profiles": 4,
+  "documents": 6,
+  "existingCaddyRoutesPreserved": 2,
+  "persistedCaddyfile": true,
+  "verifiedAfterBackendRestart": true
+}

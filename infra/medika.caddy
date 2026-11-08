@@ -1,0 +1,6 @@
+# Add this site block to the existing local Caddy configuration.
+http://medika.localhost {
+    @outside not remote_ip 127.0.0.1 ::1
+    respond @outside "Local access only" 403
+    reverse_proxy 127.0.0.1:4382
+}
