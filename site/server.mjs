@@ -6,7 +6,7 @@ import { randomBytes, createHash } from 'node:crypto';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { openStore } from './lib/store.mjs';
-import { assert, InputError, personInput, rxInput, temperatureInput, activityInput, day, newId, string, positive, scheduleFor, parseSuggestions, localParts,courseEnd } from './lib/domain.mjs';
+import { assert, InputError, validateRoutineBinding, personInput, rxInput, temperatureInput, activityInput, day, newId, string, positive, scheduleFor, parseSuggestions, localParts,courseEnd } from './lib/domain.mjs';
 import { catalog, rules, referenceInfo, checkPerson, intakeWarnings } from './lib/reference.mjs';
 import { parseEntry } from './lib/entry-parser.mjs';
 import { parseWithCodex,codexStatus,codexPeople } from './lib/codex-parser.mjs';
@@ -125,10 +125,11 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       if(route==='/api/course-end'&&method==='POST'){const input=await body(req);return send(200,{endDate:courseEnd(input.startDate,input.count,input.unit),convention:'Последний день включительно: день перед календарной годовщиной начала курса. Проверьте границу по назначению.'});}
       if(route==='/api/people'&&method==='POST') return send(201,store.insert('people',personInput(await body(req))));
       const personRoute=route.match(/^\/api\/people\/([a-f\d-]+)$/);
-      if(personRoute&&method==='PUT') { const input=await body(req);return send(200,store.update('people',personRoute[1],personInput(input),input.version)); }
+      if(personRoute&&method==='PUT') { const input=await body(req),person=personInput(input);for(const rx of store.state().prescriptions.filter(r=>r.personId===personRoute[1]&&!r.archived))validateRoutineBinding(rx,person);return send(200,store.update('people',personRoute[1],person,input.version)); }
       if(route==='/api/prescriptions'&&method==='POST') {
         const input=await body(req),rx=rxInput(input);
         assert(store.get('people',input.personId),'Выберите человека');
+        validateRoutineBinding(rx,store.get('people',input.personId));
         if(rx.documentId) assert(store.get('documents',rx.documentId)?.personId===input.personId,'Документ принадлежит другому человеку');
         return send(201,store.insert('prescriptions',{...rx,personId:input.personId,archived:false}));
       }
@@ -136,6 +137,7 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       if(rxRoute&&method==='PUT') {
         const input=await body(req),old=store.get('prescriptions',rxRoute[1]);assert(old,'Назначение не найдено',404);
         const rx=rxInput(input);
+        validateRoutineBinding(rx,store.get('people',old.personId));
         if(rx.documentId) assert(store.get('documents',rx.documentId)?.personId===old.personId,'Документ принадлежит другому человеку');
         return send(200,store.update('prescriptions',old.id,{...rx,archived:input.archived===true},input.version));
       }
@@ -144,11 +146,11 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       if(route==='/api/schedule'&&method==='GET') {
         const date=day(url.searchParams.get('date')),personId=url.searchParams.get('personId'),state=store.state();
         const prescriptions=state.prescriptions.filter(r=>!personId||r.personId===personId);
-        const planned=prescriptions.flatMap(r=>scheduleFor(r,date));
-        const items=planned.map(e=>({...e,event:state.events.find(x=>x.key===e.key&&x.status!=='void')||null}));
-        const recorded=state.events.filter(e=>e.date===date&&e.status!=='void'&&(!personId||e.personId===personId)&&!planned.some(p=>p.key===e.key)).map(event=>({...event,event,historical:true}));
+        const planned=prescriptions.flatMap(r=>scheduleFor(r,date,state.people.find(p=>p.id===r.personId)));
+        const items=planned.map(e=>({...e,event:state.events.find(x=>(x.key===e.key||x.key===e.legacyKey)&&x.status!=='void')||null}));
+        const recorded=state.events.filter(e=>e.date===date&&e.status!=='void'&&(!personId||e.personId===personId)&&!items.some(p=>p.event?.id===e.id)).map(event=>({...event,event,historical:true}));
         const prn=prescriptions.filter(r=>r.type==='prn'&&!r.archived&&r.startDate<=date&&(!r.endDate||r.endDate>=date));
-        return send(200,{items:[...items,...recorded].sort((a,b)=>(a.scheduledAt||a.occurredAt).localeCompare(b.scheduledAt||b.occurredAt)),prn});
+        return send(200,{items:[...items,...recorded].sort((a,b)=>(a.scheduledAt||a.occurredAt||'').localeCompare(b.scheduledAt||b.occurredAt||'')),prn});
       }
       if(route==='/api/check'&&method==='POST') {
         const input=await body(req),state=store.state();assert(state.people.some(p=>p.id===input.personId),'Выберите человека');
@@ -162,14 +164,16 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
         assert(['taken','skipped','deferred'].includes(input.status),'Неизвестный статус');
         const occurredAt=input.occurredAt||new Date().toISOString();assert(Number.isFinite(Date.parse(occurredAt)),'Некорректное фактическое время');
         assert(Date.parse(occurredAt)<=Date.now()+60000,'Фактический приём не может быть в будущем');
-        const date=rx.type==='prn'?localParts(occurredAt,rx.timeZone).date:day(input.date),event=rx.type==='prn'?null:scheduleFor(rx,date).find(e=>e.key===input.key);
+        const date=rx.type==='prn'?localParts(occurredAt,rx.timeZone).date:day(input.date),event=rx.type==='prn'?null:scheduleFor(rx,date,store.get('people',rx.personId)).find(e=>e.key===input.key);
         assert(event||rx.type==='prn'&&!rx.archived&&date>=rx.startDate&&(!rx.endDate||date<=rx.endDate),'Событие отсутствует в действующем расписании');
         assert(rx.type!=='prn'||input.status==='taken','Для приёма по необходимости записывается факт');
         const key=event?.key||`${rx.id}@prn-${newId()}`;
+        if(event?.legacyKey){const legacy=store.db.prepare('SELECT data FROM events WHERE event_key=?').get(event.legacyKey);assert(!legacy||JSON.parse(legacy.data).status==='void','Этот приём уже отмечен по прежнему расписанию',409);}
         const old=store.db.prepare('SELECT data FROM events WHERE event_key=?').get(key);
         assert(!old||JSON.parse(old.data).status==='void','Этот приём уже отмечен. Обновите расписание.',409);
         const actualDose=input.status==='taken'?positive(input.dose||rx.dose,'Фактическая доза'):rx.dose;
         const record={...(event||{rxId:rx.id,personId:rx.personId,name:rx.name,dose:rx.dose,unit:rx.unit,timeZone:rx.timeZone,conditions:rx.conditions,ingredients:rx.ingredients,date,time:localParts(occurredAt,rx.timeZone).time,...(rx.doseScope?{doseScope:rx.doseScope}:{}),...(rx.purpose?{purpose:rx.purpose}:{}),...(rx.carePhase!==undefined?{carePhase:rx.carePhase}:{})}),key,status:input.status,occurredAt:new Date(occurredAt).toISOString(),actualDose,note:string(input.note,'Примечание',2000),author:string(input.author||'Я','Автор',100)};
+        for(const field of ['legacyKey','anchor','label','displayTime','relation','offsetMinutes','slotIndex'])delete record[field];
         if(old) {const previous=JSON.parse(old.data);return send(200,store.update('events',previous.id,record,previous.version));}
         return send(201,store.insert('events',record));
       }
@@ -222,7 +226,7 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       assert(method==='GET'||method==='HEAD','Метод не разрешён',405);
       if(route==='/medika-ca.cer'&&method==='GET'){res.writeHead(200,{'Content-Type':'application/x-x509-ca-cert','Content-Disposition':'attachment; filename=medika-ca.cer'});return res.end(await readFile(join(root,'data/medika-ca.cer')));}
       const packageImage=route.match(/^\/medicine-images\/([a-z0-9-]+\.jpg)$/);if(packageImage){let bytes;try{bytes=await readFile(join(root,'public/medicine-images',packageImage[1]));}catch{throw new InputError('Фото не найдено',404);}res.writeHead(200,{'Content-Type':'image/jpeg','Cache-Control':'public, max-age=86400'});return res.end(method==='HEAD'?undefined:bytes);}
-      const assets={'/':['index.html','text/html'],'/voice-lab':['voice-lab.html','text/html'],'/voice-lab/':['voice-lab.html','text/html'],'/voice-lab.js':['voice-lab.js','text/javascript'],'/voice-lab.css':['voice-lab.css','text/css'],'/prescription-summary.js':['prescription-summary.js','text/javascript'],'/medicine-images.js':['medicine-images.js','text/javascript'],'/app.js':['app.js','text/javascript'],'/style.css':['style.css','text/css'],'/icon.svg':['icon.svg','image/svg+xml'],'/voice-recorder.js':['voice-recorder.js','text/javascript'],'/voice-capture.js':['voice-capture.js','text/javascript']};
+      const assets={'/routine.js':['routine.js','text/javascript'],'/':['index.html','text/html'],'/voice-lab':['voice-lab.html','text/html'],'/voice-lab/':['voice-lab.html','text/html'],'/voice-lab.js':['voice-lab.js','text/javascript'],'/voice-lab.css':['voice-lab.css','text/css'],'/prescription-summary.js':['prescription-summary.js','text/javascript'],'/medicine-images.js':['medicine-images.js','text/javascript'],'/app.js':['app.js','text/javascript'],'/style.css':['style.css','text/css'],'/icon.svg':['icon.svg','image/svg+xml'],'/voice-recorder.js':['voice-recorder.js','text/javascript'],'/voice-capture.js':['voice-capture.js','text/javascript']};
       assert(assets[route],'Страница не найдена',404);
       const [file,mime]=assets[route];res.writeHead(200,{'Content-Type':`${mime}; charset=utf-8`});res.end(method==='HEAD'?undefined:await readFile(join(root,'public',file)));
     } catch(e) {

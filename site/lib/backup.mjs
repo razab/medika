@@ -2,7 +2,7 @@ import {writeFile,unlink,readFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {medicinePhotoInput} from './medicine-photos.mjs';
 import {createHash} from 'node:crypto';
-import {assert,personInput,rxInput,temperatureInput,activityInput,day,string,positive,parseSuggestions,zone,units,phaseInput} from './domain.mjs';
+import {assert,validateRoutineBinding,personInput,rxInput,temperatureInput,activityInput,day,string,positive,parseSuggestions,zone,units,phaseInput} from './domain.mjs';
 
 const idOK=id=>typeof id==='string'&&/^[a-f\d]{8}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{12}$/.test(id);
 const iso=s=>typeof s==='string'&&Number.isFinite(Date.parse(s));
@@ -48,16 +48,19 @@ export async function restoreBackup(store,uploads,input,imageType){
     return {...validated,personId:r.personId,archived:r.archived===true,...metadata(r)};
   });
   const rxs=new Map([...store.state().prescriptions,...data.prescriptions].map(r=>[r.id,r]));
+  const peopleById=new Map([...store.state().people,...data.people].map(p=>[p.id,p]));for(const rx of data.prescriptions)validateRoutineBinding(rx,peopleById.get(rx.personId));
   for(const a of data.activities)if(a.relatedRxId)assert(rxs.get(a.relatedRxId)?.personId===a.personId,'Событие связано с чужим или неизвестным назначением');
   data.events=input.events.map(r=>{
     const rx=rxs.get(r.rxId);assert(rx&&rx.personId===r.personId,'Повреждена связь приёма и назначения');
     assert(typeof r.key==='string'&&r.key.startsWith(r.rxId+'@')&&r.key.length<180,'Повреждён ключ события');
     assert(['taken','skipped','deferred','void'].includes(r.status)&&iso(r.occurredAt),'Повреждены статус или время приёма');
     assert(units.includes(r.unit)&&Array.isArray(r.ingredients)&&r.ingredients.every(x=>typeof x==='string'&&x.length<=600),'Повреждены единицы или состав');
-    if(r.scheduledAt)assert(iso(r.scheduledAt)&&r.key===r.rxId+'@'+r.scheduledAt,'Повреждено плановое время');
-    if(!r.scheduledAt)assert(idOK(r.key.split('@prn-')[1]),'Повреждён ключ приёма по необходимости');
+    const routineKey=r.key.slice(r.rxId.length+1).match(/^routine-(\d{4}-\d{2}-\d{2})-(\d{1,2})$/);
+    if(routineKey)assert(day(routineKey[1])===r.date&&Number(routineKey[2])<12,'Повреждён ключ распорядка');
+    if(r.scheduledAt)assert(iso(r.scheduledAt)&&(routineKey||r.key===r.rxId+'@'+r.scheduledAt),'Повреждено плановое время');
+    if(!r.scheduledAt&&!routineKey)assert(idOK(r.key.split('@prn-')[1]),'Повреждён ключ приёма по необходимости');
     if(r.doseScope)assert(['total','each-nostril'].includes(r.doseScope),'Некорректная область дозы');
-    return {...(r.scheduledAt?{scheduledAt:r.scheduledAt}:{}),...(r.time?{time:string(r.time,'Часы',5)}:{}),...(r.doseScope?{doseScope:r.doseScope}:{}),...(r.purpose!==undefined?{purpose:string(r.purpose,'Зачем назначено',1000)}:{}),...(r.carePhase!==undefined?{carePhase:phaseInput(r.carePhase)}:{}),rxId:r.rxId,personId:r.personId,key:r.key,status:r.status,occurredAt:r.occurredAt,date:day(r.date),timeZone:zone(r.timeZone),name:string(r.name,'Название',200,true),dose:positive(r.dose,'Плановая доза'),unit:r.unit,ingredients:r.ingredients,conditions:string(r.conditions,'Условия',2000),actualDose:positive(r.actualDose,'Фактическая доза'),note:string(r.note,'Примечание',2000),author:string(r.author,'Автор',100),...(r.voidReason?{voidReason:string(r.voidReason,'Причина',1000)}:{}),...metadata(r)};
+    return {...(r.scheduledAt?{scheduledAt:r.scheduledAt}:{}),...(r.time!==undefined?{time:string(r.time,'Часы',5)}:{}),...(r.doseScope?{doseScope:r.doseScope}:{}),...(r.purpose!==undefined?{purpose:string(r.purpose,'Зачем назначено',1000)}:{}),...(r.carePhase!==undefined?{carePhase:phaseInput(r.carePhase)}:{}),rxId:r.rxId,personId:r.personId,key:r.key,status:r.status,occurredAt:r.occurredAt,date:day(r.date),timeZone:zone(r.timeZone),name:string(r.name,'Название',200,true),dose:positive(r.dose,'Плановая доза'),unit:r.unit,ingredients:r.ingredients,conditions:string(r.conditions,'Условия',2000),actualDose:positive(r.actualDose,'Фактическая доза'),note:string(r.note,'Примечание',2000),author:string(r.author,'Автор',100),...(r.voidReason?{voidReason:string(r.voidReason,'Причина',1000)}:{}),...metadata(r)};
   });
   const planned=[];
   for(const [table,records]of Object.entries(data)){

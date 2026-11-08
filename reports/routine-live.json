@@ -1,0 +1,11 @@
+{
+  "status": "PASS",
+  "updatedPeople": 2,
+  "migratedCourses": 2,
+  "weekdayAndWeekend": true,
+  "preservedClinicalHistory": true,
+  "preservedDoseSourceDates": true,
+  "preservedExistingThirdClockTimes": true,
+  "physicalDeviceTested": false,
+  "checkedAt": "2026-11-08T21:57:22.322Z"
+}

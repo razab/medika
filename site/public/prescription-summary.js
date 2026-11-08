@@ -3,7 +3,7 @@ const plural=(n,forms)=>forms[Number.isInteger(Number(n))?(Number(n)%100>=11&&Nu
 export function prescriptionSummary(r){
   const times=timesOf(r),source=String(r.sourceText||'').replace(/\s+/g,' ');
   const stated=source.match(/(?:не\s+более\s+|не\s+чаще\s+|до\s+)?\d+(?:\s*[–-]\s*\d+)?\s*раз(?:а)?\s*в\s*(?:день|сутки|неделю)/iu)?.[0]||'';
-  const frequency=r.type==='prn'?'По необходимости':r.type==='once'?'Однократно':r.type==='interval'&&r.intervalHours?`Каждые ${r.intervalHours} ч`:r.type==='daily'&&times.length?`${times.length} ${plural(times.length,['раз','раза','раз'])} в день`:stated||'Частота не указана';
+  const frequency=r.type==='prn'?'По необходимости':r.type==='once'?'Однократно':r.type==='interval'&&r.intervalHours?`Каждые ${r.intervalHours} ч`:r.type==='routine'&&r.routineSlots?.length?`${r.routineSlots.length} ${plural(r.routineSlots.length,['раз','раза','раз'])} в день`:r.type==='daily'&&times.length?`${times.length} ${plural(times.length,['раз','раза','раз'])} в день`:stated||'Частота не указана';
   const unit=r.unit==='впрыскивание'?plural(r.dose,['впрыскивание','впрыскивания','впрыскиваний']):r.unit||'';
   const dose=r.dose?[String(r.dose).replace('.',','),unit,r.doseScope==='each-nostril'?'в каждую ноздрю':''].filter(Boolean).join(' '):'Доза не указана';
   const sequence=source.match(/Через\s+\d+(?:\s*[–-]\s*\d+)?\s+минут\s+после\s+применения\s+[^\s,.;]+/iu)?.[0]?.replace(/\s+минут\s+/iu,' мин ')?.replace(/после применения/iu,'после')||'';

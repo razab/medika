@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import {anchors,dayType,emptyRoutine,slotDetails} from '../public/routine.js';
 
 export class InputError extends Error { constructor(message, status = 400) { super(message); this.status = status; } }
 export const assert = (condition, message, status = 400) => { if (!condition) throw new InputError(message, status); };
@@ -59,7 +60,40 @@ export function personInput(input) {
   const birthday = input.birthday ? day(input.birthday) : '';
   assert(!birthday || birthday <= new Date().toISOString().slice(0, 10), 'Дата рождения не может быть в будущем');
   const age={};if(input.ageYears!==''&&input.ageYears!=null){assert(Number.isInteger(Number(input.ageYears))&&Number(input.ageYears)>=0&&Number(input.ageYears)<=130,'Возраст: целое число от 0 до 130');age.ageYears=Number(input.ageYears);age.ageAsOf=day(input.ageAsOf||new Date().toISOString().slice(0,10));}
-  return { name: string(input.name, 'Имя', 100, true), birthday, weight: positive(input.weight, 'Вес', true), allergies: string(input.allergies, 'Аллергии', 1000), notes: string(input.notes, 'Примечания', 3000), color: ['mint','blue','peach','lilac'].includes(input.color) ? input.color : 'mint',...age,...(input.carePhase!==undefined?{carePhase:phaseInput(input.carePhase)}:{}),...(input.displayName!==undefined?{displayName:string(input.displayName,'Имя на семейной доске',100)}:{}) };
+  return { name: string(input.name, 'Имя', 100, true), birthday, weight: positive(input.weight, 'Вес', true), allergies: string(input.allergies, 'Аллергии', 1000), notes: string(input.notes, 'Примечания', 3000), color: ['mint','blue','peach','lilac'].includes(input.color) ? input.color : 'mint',...age,...(input.carePhase!==undefined?{carePhase:phaseInput(input.carePhase)}:{}),...(input.displayName!==undefined?{displayName:string(input.displayName,'Имя на семейной доске',100)}:{}),...(input.routine!==undefined?{routine:routineInput(input.routine)}:{}) };
+}
+function clock(value){return typeof value==='string'&&/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value);}
+export function routineInput(input){
+  assert(input&&typeof input==='object','Укажите распорядок');
+  return Object.fromEntries(['weekday','weekend'].map(d=>{
+    const p=input[d];assert(p&&typeof p==='object'&&p.times&&typeof p.times==='object','Укажите будни и выходные');
+    const times={};for(const a of Object.keys(anchors)){
+      const value=string(p.times[a],'Время '+anchors[a],11).replace(/-/g,'–');
+      const parts=value.split('–');assert(!value||parts.length<=2&&parts.every(clock)&&(parts.length===1||parts[0]<parts[1]),'Время: ЧЧ:ММ или ЧЧ:ММ–ЧЧ:ММ');
+      if(value)times[a]=value;
+    }
+    assert(Array.isArray(p.intakes)&&p.intakes.length===3&&p.intakes.every(a=>typeof a==='string'&&(a===''||Object.hasOwn(anchors,a))),'Выберите три привязки приёмов');
+    return [d,{times,intakes:[...p.intakes]}];
+  }));
+}
+function slotsInput(input){
+  assert(Array.isArray(input)&&input.length>=1&&input.length<=12,'Укажите от 1 до 12 приёмов');
+  return input.map(s=>{
+    assert(s&&['','first','second','third','clock',...Object.keys(anchors)].includes(s.anchor),'Выберите точку дня');
+    assert(['','before','with','after'].includes(s.relation||''),'Укажите связь с едой');
+    assert(!s.relation||!['bedtime','clock',''].includes(s.anchor),'Связь с едой доступна для приёмов пищи');
+    assert(s.anchor!=='clock'||clock(s.time),'Укажите точное время');
+    const offsetMinutes=Number(s.offsetMinutes||0);assert(Number.isInteger(offsetMinutes)&&offsetMinutes>=0&&offsetMinutes<=120,'Сдвиг: от 0 до 120 минут');
+    return {anchor:s.anchor,relation:s.relation||'',...(s.anchor==='clock'?{time:s.time}:{}),...(offsetMinutes?{offsetMinutes}:{})};
+  });
+}
+export function validateRoutineBinding(rx,person){
+  if(rx.type!=='routine')return;
+  for(const profile of Object.values(person?.routine||emptyRoutine()))for(const slot of rx.routineSlots){
+    const details=slotDetails(slot,profile);
+    assert(!details.displayTime||details.displayTime.split('–').every(clock),'Сдвиг выходит за пределы дня: измените привязку');
+    assert(!slot.relation||details.anchor!=='bedtime','Перед сном — отдельная точка, без привязки к еде');
+  }
 }
 export const units = ['табл.', 'капс.', 'мл', 'мг', 'мкг', 'г', 'кап.', 'доза', 'впрыскивание', 'пакет', 'свеча', 'нанесение'];
 export function occurrenceInput(input){
@@ -98,7 +132,7 @@ export function rxInput(input) {
   const startDate = day(input.startDate), endDate = input.endDate ? day(input.endDate) : '';
   assert(!endDate || endDate >= startDate, 'Окончание курса раньше начала');
   const type = input.type;
-  assert(['daily','interval','prn','once'].includes(type), 'Выберите тип расписания');
+  assert(['daily','routine','interval','prn','once'].includes(type), 'Выберите тип расписания');
   const timeZone = zone(string(input.timeZone || 'Europe/Chisinau', 'Часовой пояс', 100));
   const times = type === 'daily' || type === 'once' ? [...new Set(string(input.times, 'Часы приёма', 150, true).split(/[,;\s]+/).filter(Boolean))].sort() : [];
   assert(times.length <= 12, 'Не более 12 приёмов в сутки');
@@ -113,16 +147,28 @@ export function rxInput(input) {
   const ingredients = string(input.ingredients, 'Действующие вещества', 600).split(/[+;,\n]/).map(x=>x.trim()).filter(Boolean);
   if(input.maxPer24h!==''&&input.maxPer24h!=null)assert(Number.isInteger(Number(input.maxPer24h)), 'Максимум приёмов должен быть целым числом');
   const extra={};
+  if(type==='routine')extra.routineSlots=slotsInput(input.routineSlots);
+  if(input.legacyTimes!==undefined){assert(Array.isArray(input.legacyTimes)&&input.legacyTimes.length<=12&&input.legacyTimes.every(clock),'Некорректные прежние часы');extra.legacyTimes=[...input.legacyTimes];}
   if(input.carePhase!==undefined)extra.carePhase=phaseInput(input.carePhase);
-  if(input.weekdays!==undefined){assert(Array.isArray(input.weekdays)&&input.weekdays.length>0&&input.weekdays.length<=7&&input.weekdays.every(n=>Number.isInteger(n)&&n>=0&&n<=6),'Выберите дни недели');assert(type==='daily','Дни недели применяются только к выбранным ежедневным часам');extra.weekdays=[...new Set(input.weekdays)].sort();}
+  if(input.weekdays!==undefined){assert(Array.isArray(input.weekdays)&&input.weekdays.length>0&&input.weekdays.length<=7&&input.weekdays.every(n=>Number.isInteger(n)&&n>=0&&n<=6),'Выберите дни недели');assert(['daily','routine'].includes(type),'Дни недели применяются только к ежедневному расписанию');extra.weekdays=[...new Set(input.weekdays)].sort();}
   if(input.doseScope){assert(['each-nostril','total'].includes(input.doseScope),'Неизвестная область дозы');extra.doseScope=input.doseScope;}
   if(input.purpose!==undefined)extra.purpose=string(input.purpose,'Зачем назначено',1000);
   return { name: string(input.name, 'Название препарата', 200, true), ingredients, form: string(input.form, 'Форма', 150), strength: string(input.strength, 'Концентрация', 150), dose: positive(input.dose, 'Доза на приём'), unit: input.unit, route: string(input.route, 'Способ применения', 150), startDate, endDate, type, times, timeZone, intervalHours, anchorTime, anchor, minHours: positive(input.minHours, 'Минимальный интервал', true), maxPer24h: positive(input.maxPer24h, 'Максимум приёмов за 24 часа', true), conditions: string(input.conditions, 'Условия приёма', 2000), sourceText: string(input.sourceText, 'Текст назначения', 10000), documentId: string(input.documentId, 'Документ', 80), confirmed: true,...extra };
 }
-export function scheduleFor(rx, date) {
+export function scheduleFor(rx, date, person) {
   day(date);
   if (rx.archived || rx.type === 'prn' || date < rx.startDate || rx.endDate && date > rx.endDate || rx.type === 'once' && date !== rx.startDate) return [];
-  if(rx.type==='daily'&&rx.weekdays&&!rx.weekdays.includes(new Date(date+'T12:00:00Z').getUTCDay()))return [];
+  if(['daily','routine'].includes(rx.type)&&rx.weekdays&&!rx.weekdays.includes(new Date(date+'T12:00:00Z').getUTCDay()))return [];
+  if(rx.type==='routine'){
+    const profile=(person?.routine||emptyRoutine())[dayType(date)];
+    return rx.routineSlots.map((slot,i)=>{
+      const details=slotDetails(slot,profile);
+      assert(!details.displayTime||details.displayTime.split('–').every(clock),'Сдвиг выходит за пределы дня: измените привязку');
+      // Before/after food and ranges do not imply an exact administration time.
+      const scheduledAt=clock(details.displayTime)&&!slot.relation?zonedInstant(date,details.displayTime,rx.timeZone):null;
+      return {key:`${rx.id}@routine-${date}-${i}`,rxId:rx.id,personId:rx.personId,date,time:scheduledAt?details.displayTime:'',...(scheduledAt?{scheduledAt}:{}),timeZone:rx.timeZone,name:rx.name,dose:rx.dose,unit:rx.unit,ingredients:rx.ingredients,conditions:rx.conditions,doseScope:rx.doseScope,purpose:rx.purpose,carePhase:rx.carePhase,...details,slotIndex:i,...(rx.legacyTimes?.[i]?{legacyKey:`${rx.id}@${zonedInstant(date,rx.legacyTimes[i],rx.timeZone)}`}:{})};
+    });
+  }
   let instants = [];
   if (rx.type === 'interval') {
     const from = Date.parse(zonedInstant(date, '00:00', rx.timeZone)), to = Date.parse(zonedInstant(nextDay(date), '00:00', rx.timeZone));
