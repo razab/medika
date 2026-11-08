@@ -11,3 +11,15 @@ http://192.168.0.38, http://macbook-air-5.local {
     respond @outside "Home network access only" 403
     reverse_proxy 127.0.0.1:4382
 }
+
+# Requires global auto_https disable_redirects, skip_install_trust and pki ca medika.
+https://macbook-air-5.local, https://192.168.0.38, https://medika.localhost {
+    tls {
+        issuer internal {
+            ca medika
+        }
+    }
+    @outside not remote_ip 127.0.0.1 ::1 192.168.0.0/24 fe80::/10
+    respond @outside "Home network access only" 403
+    reverse_proxy 127.0.0.1:4382
+}

@@ -1,0 +1,10 @@
+{
+  "status": "PASS",
+  "checks": [
+    "isolated Caddy TLS root trusted by test client",
+    "HTTPS proxy session and API",
+    "foreign Origin rejected"
+  ],
+  "syntheticDataOnly": true,
+  "completedAt": "2026-11-08T14:55:54.597Z"
+}

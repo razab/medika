@@ -32,7 +32,7 @@ test('События: повтор запроса, разные эпизоды, 
     await call('/activities/'+first.id+'/void',{reason:'Исправление',version:0},409);
     await call('/activities/'+first.id+'/void',{reason:'Исправление',version:first.version});await call('/activities',base,409);
     const state=await call('/state');assert.equal(state.activities.length,5);assert.equal(state.events.length,0);assert.equal(state.prescriptions.length,0);
-    const backup=await call('/backup');assert.equal(backup.version,3);assert.equal((await call('/restore',backup)).inserted,0);
+    const backup=await call('/backup');assert.equal(backup.version,4);assert.equal((await call('/restore',backup)).inserted,0);
     await call('/restore',{...backup,activities:undefined},400);
     await call('/restore',{...backup,activities:[{...backup.activities[0],kind:'unknown'}]},400);
     await call('/restore',{...backup,activities:[{...backup.activities[0],note:'Конфликт'}]},409);

@@ -1,0 +1,26 @@
+{
+  "status": "PASS",
+  "origin": "https://macbook-air-5.local",
+  "ipOrigin": "https://192.168.0.38",
+  "rootFingerprint256": "8C:0F:80:94:AD:9A:C9:2B:80:DA:69:F4:B3:DB:F9:37:F6:E5:89:9A:DB:42:F1:A0:01:9F:86:E4:A6:D1:7C:43",
+  "rootSubject": "CN=Medika Local Root",
+  "oldRoutesPreserved": true,
+  "systemTrustInstalled": false,
+  "physicalDeviceTested": false,
+  "checkedAt": "2026-11-08T15:00:07.488Z",
+  "origins": [
+    "http://medika.localhost",
+    "http://192.168.0.38",
+    "http://macbook-air-5.local",
+    "https://192.168.0.38",
+    "https://macbook-air-5.local"
+  ],
+  "checks": [
+    "TLS chain and hostname trusted by explicit root",
+    "pages and both voice modules",
+    "session API and local voice readiness",
+    "foreign Origin denied",
+    "downloaded public certificate matches TLS root",
+    "existing clinical sections unchanged after restart"
+  ]
+}

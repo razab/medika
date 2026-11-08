@@ -11,7 +11,7 @@ test('API: источник, изоляция, история, версии, PRN
   const directory=await mkdtemp(join(tmpdir(),'medika-api-')),port=14383,app=await createApp({dataDir:directory,port,additionalHosts:['192.0.2.38','family-test.local']});
   await new Promise(resolve=>app.server.listen(port,'127.0.0.1',resolve));const origin=`http://127.0.0.1:${port}`;
   const token=(await(await fetch(origin+'/api/session')).json()).token;
-  const forwarded=(host,publicOrigin,path='/api/state')=>new Promise((resolve,reject)=>{const req=httpRequest(origin+path,{headers:{Host:host,Origin:publicOrigin,'X-Medika-Token':token}},res=>{res.resume();res.on('end',()=>resolve(res.statusCode));});req.on('error',reject);req.end();});
+  const forwarded=(host,publicOrigin,path='/api/state',proto='http')=>new Promise((resolve,reject)=>{const req=httpRequest(origin+path,{headers:{Host:host,Origin:publicOrigin,'X-Medika-Token':token,'X-Forwarded-Proto':proto}},res=>{res.resume();res.on('end',()=>resolve(res.statusCode));});req.on('error',reject);req.end();});
   const call=async(path,body,status=200,method=body?'POST':'GET')=>{const r=await fetch(origin+'/api'+path,{method,headers:{'X-Medika-Token':token,...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});const data=await r.json();assert.equal(r.status,status,JSON.stringify(data));return data;};
   try{
     assert.equal(await forwarded('medika.localhost','http://medika.localhost','/api/session'),200);
@@ -23,6 +23,13 @@ test('API: источник, изоляция, история, версии, PRN
     assert.equal(await forwarded('Family-Test.local:80','http://family-test.local'),200);
     assert.equal(await forwarded('192.0.2.38','http://medika.localhost'),403);
     assert.equal(await forwarded('192.0.2.39','http://192.0.2.39','/api/session'),403);
+    assert.equal(await forwarded('family-test.local','https://family-test.local','/api/state','https'),200);
+    assert.equal(await forwarded('family-test.local:443','https://family-test.local','/api/state','https'),200);
+    assert.equal(await forwarded('family-test.local','http://family-test.local','/api/state','https'),403);
+    const beforeParse=(await call('/state')).activities.length;
+    await call('/parse-entry',{text:'температура 38,2 сейчас',timeZone:'Europe/Chisinau'});
+    assert.equal((await call('/state')).activities.length,beforeParse);
+    await call('/transcribe',{audio:'AAAA',language:'fr'},400);
     const anna=await call('/people',{name:'Анна'},201),boris=await call('/people',{name:'Борис'},201);
     const knownAge=await call('/people/'+anna.id,{name:anna.name,displayName:'Имя на доске · тест',ageYears:4,ageAsOf:'2026-11-08',version:anna.version},200,'PUT');assert.equal(knownAge.ageYears,4);assert.equal(knownAge.birthday,'');assert.equal(knownAge.displayName,'Имя на доске · тест');
     const home=await call('/documents',{personId:anna.id,name:'Синтетическая доска',text:'12:00 тестовый препарат 5 мл. План или факт не указан.',sourceKind:'household'},201);assert.deepEqual(home.suggestions,[]);
@@ -46,6 +53,12 @@ test('API: источник, изоляция, история, версии, PRN
     await call('/events/'+event.id+'/void',{version:event.version,reason:'Проверка исправления'});
     const state=await call('/state');assert.equal(state.events.find(e=>e.id===event.id).status,'void');
     assert.ok((await call('/audit')).some(a=>a.action==='update:events'));
+    await call('/activities',{personId:boris.id,kind:'medication',name:rx.name,occurredAt:new Date(Date.now()-60000).toISOString(),relatedRxId:rx.id,clientKey:'foreign-phase-test'},400);
+    const related=await call('/entries',{personId:anna.id,kind:'medication',name:rx.name,amount:'2.5',unit:'мл',occurredAt:new Date(Date.now()-60000).toISOString(),relatedRxId:rx.id,carePhase:'prevention',sourceText:'Тестовая фраза',clientKey:'related-phase-test'},201);
+    assert.equal(related.relatedRxId,rx.id);assert.equal(related.carePhase,'prevention');
+    const existingRx=(await call('/state')).prescriptions.find(r=>r.id===rx.id);
+    await call('/prescriptions/'+rx.id,{...existingRx,times:existingRx.times.join(', '),ingredients:existingRx.ingredients.join(' + '),carePhase:'acute'},200,'PUT');
+    assert.equal((await call('/state')).activities.find(a=>a.id===related.id).carePhase,'prevention');
     const backup=await call('/backup');assert.equal((await call('/restore',backup)).inserted,0);
     await call('/restore',{...backup,prescriptions:[{...backup.prescriptions[0],personId:'bad'}]},400);
     assert.equal((await call('/state')).prescriptions.length,2);

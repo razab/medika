@@ -8,6 +8,8 @@ import { promisify } from 'node:util';
 import { openStore } from './lib/store.mjs';
 import { assert, InputError, personInput, rxInput, temperatureInput, activityInput, day, newId, string, positive, scheduleFor, parseSuggestions, localParts,courseEnd } from './lib/domain.mjs';
 import { catalog, rules, referenceInfo, checkPerson, intakeWarnings } from './lib/reference.mjs';
+import { parseEntry } from './lib/entry-parser.mjs';
+import { voiceStatus,transcribeAudio } from './lib/voice.mjs';
 import { restoreBackup } from './lib/backup.mjs';
 
 const exec=promisify(execFile), root=dirname(fileURLToPath(import.meta.url));
@@ -23,7 +25,7 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
   const token=randomBytes(32).toString('hex'), ocrBinary=join(root,'scripts/medika-ocr');
   let ocrReady=false,ocrBusy=false;
   try { await access(ocrBinary);ocrReady=true; } catch {}
-  const allowedHosts=new Set([publicHost,...additionalHosts,`medika.localhost:${port}`,`127.0.0.1:${port}`,`localhost:${port}`].flatMap(host=>host.includes(':')?[host.toLowerCase()]:[host.toLowerCase(),`${host.toLowerCase()}:80`]));
+  const allowedHosts=new Set([publicHost,...additionalHosts,`medika.localhost:${port}`,`127.0.0.1:${port}`,`localhost:${port}`].flatMap(host=>host.includes(':')?[host.toLowerCase()]:[host.toLowerCase(),`${host.toLowerCase()}:80`,`${host.toLowerCase()}:443`]));
   async function body(req,limit=18*1024*1024) {
     assert(req.headers['content-type']?.startsWith('application/json'),'Ожидается JSON',415);
     const chunks=[];let length=0;
@@ -38,7 +40,8 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
     res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
     try {
       assert(allowedHosts.has(req.headers.host?.toLowerCase()),'Этот адрес не разрешён',403);
-      const url=new URL(req.url,`http://${req.headers.host}`), route=url.pathname, method=req.method;
+      const scheme=req.headers['x-forwarded-proto']==='https'&&['127.0.0.1','::1'].includes(req.socket.remoteAddress)?'https':'http';
+      const url=new URL(req.url,`${scheme}://${req.headers.host}`), route=url.pathname, method=req.method;
       assert(!req.headers.origin||req.headers.origin===url.origin,'Запрос с другого сайта отклонён',403);
       assert(req.headers['sec-fetch-site']!=='cross-site','Запрос с другого сайта отклонён',403);
       if(route==='/api/health'&&method==='GET') return send(200,{ok:true,app:'medika',version:'0.1.0',ocr:ocrReady});
@@ -48,9 +51,14 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
         if(imageRoute&&method==='GET') assert(req.headers.cookie?.split(';').some(s=>s.trim()===`medika_session=${token}`),'Откройте приложение перед просмотром',403);
         else assert(req.headers['x-medika-token']===token,'Сессия обновлена. Перезагрузите страницу.',403);
       }
-      if(route==='/api/state'&&method==='GET') return send(200,{...store.state(),catalog,rules,reference:referenceInfo,capabilities:{ocr:ocrReady,ocrLanguages:['ru-RU','en-US'],notifications:'open-tab-only'}});
-      if(route==='/api/activities'&&method==='POST'){
+      if(route==='/api/state'&&method==='GET') return send(200,{...store.state(),catalog,rules,reference:referenceInfo,capabilities:{ocr:ocrReady,ocrLanguages:['ru-RU','en-US'],notifications:'open-tab-only',voice:await voiceStatus()}});
+      if(route==='/api/parse-entry'&&method==='POST')return send(200,parseEntry(store.state(),await body(req)));
+      if(route==='/api/transcribe'&&method==='POST'){
+        const input=await body(req,12*1024*1024);return send(200,await transcribeAudio(input,dataDir));
+      }
+      if(['/api/activities','/api/entries'].includes(route)&&method==='POST'){
         const raw=await body(req),input=activityInput({...raw,clientKey:raw.clientKey===undefined?newId():raw.clientKey});assert(store.get('people',input.personId),'Выберите человека');
+        if(input.relatedRxId)assert(store.get('prescriptions',input.relatedRxId)?.personId===input.personId,'Назначение принадлежит другому человеку');
         const found=store.db.prepare('SELECT data FROM activities WHERE client_key=?').get(input.clientKey);
         if(found){const old=JSON.parse(found.data);assert(old.status!=='void'&&Object.entries(input).every(([k,v])=>old[k]===v),'Ключ относится к другой или отменённой записи. Проверьте журнал.',409);return send(200,old);}
         return send(201,store.insert('activities',{...input,status:'recorded'}));
@@ -116,7 +124,7 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
         const old=store.db.prepare('SELECT data FROM events WHERE event_key=?').get(key);
         assert(!old||JSON.parse(old.data).status==='void','Этот приём уже отмечен. Обновите расписание.',409);
         const actualDose=input.status==='taken'?positive(input.dose||rx.dose,'Фактическая доза'):rx.dose;
-        const record={...(event||{rxId:rx.id,personId:rx.personId,name:rx.name,dose:rx.dose,unit:rx.unit,timeZone:rx.timeZone,conditions:rx.conditions,ingredients:rx.ingredients,date,time:localParts(occurredAt,rx.timeZone).time,...(rx.doseScope?{doseScope:rx.doseScope}:{}),...(rx.purpose?{purpose:rx.purpose}:{})}),key,status:input.status,occurredAt:new Date(occurredAt).toISOString(),actualDose,note:string(input.note,'Примечание',2000),author:string(input.author||'Я','Автор',100)};
+        const record={...(event||{rxId:rx.id,personId:rx.personId,name:rx.name,dose:rx.dose,unit:rx.unit,timeZone:rx.timeZone,conditions:rx.conditions,ingredients:rx.ingredients,date,time:localParts(occurredAt,rx.timeZone).time,...(rx.doseScope?{doseScope:rx.doseScope}:{}),...(rx.purpose?{purpose:rx.purpose}:{}),...(rx.carePhase!==undefined?{carePhase:rx.carePhase}:{})}),key,status:input.status,occurredAt:new Date(occurredAt).toISOString(),actualDose,note:string(input.note,'Примечание',2000),author:string(input.author||'Я','Автор',100)};
         if(old) {const previous=JSON.parse(old.data);return send(200,store.update('events',previous.id,record,previous.version));}
         return send(201,store.insert('events',record));
       }
@@ -161,13 +169,14 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       if(route==='/api/backup'&&method==='GET') {
         const state=store.state();
         const images={};for(const doc of state.documents) if(doc.mime) images[doc.id]=(await readFile(join(uploads,doc.id))).toString('base64');
-        return send(200,{...state,format:'medika-backup',version:3,exportedAt:new Date().toISOString(),images,audit:store.history()},{'Content-Disposition':`attachment; filename="medika-backup-${new Date().toISOString().slice(0,10)}.json"`});
+        return send(200,{...state,format:'medika-backup',version:4,exportedAt:new Date().toISOString(),images,audit:store.history()},{'Content-Disposition':`attachment; filename="medika-backup-${new Date().toISOString().slice(0,10)}.json"`});
       }
       if(route==='/api/restore'&&method==='POST') return send(200,await restoreBackup(store,uploads,await body(req,64*1024*1024),imageType));
       if(route==='/api/audit'&&method==='GET') return send(200,store.history().slice(-200).reverse());
       assert(!route.startsWith('/api/'),'Метод или маршрут не найден',404);
       assert(method==='GET'||method==='HEAD','Метод не разрешён',405);
-      const assets={'/':['index.html','text/html'],'/app.js':['app.js','text/javascript'],'/style.css':['style.css','text/css'],'/icon.svg':['icon.svg','image/svg+xml']};
+      if(route==='/medika-ca.cer'&&method==='GET'){res.writeHead(200,{'Content-Type':'application/x-x509-ca-cert','Content-Disposition':'attachment; filename=medika-ca.cer'});return res.end(await readFile(join(root,'data/medika-ca.cer')));}
+      const assets={'/':['index.html','text/html'],'/app.js':['app.js','text/javascript'],'/style.css':['style.css','text/css'],'/icon.svg':['icon.svg','image/svg+xml'],'/voice-recorder.js':['voice-recorder.js','text/javascript'],'/voice-capture.js':['voice-capture.js','text/javascript']};
       assert(assets[route],'Страница не найдена',404);
       const [file,mime]=assets[route];res.writeHead(200,{'Content-Type':`${mime}; charset=utf-8`});res.end(method==='HEAD'?undefined:await readFile(join(root,'public',file)));
     } catch(e) {

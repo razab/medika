@@ -47,11 +47,19 @@ export function positive(value, label, optional = false) {
   assert(/^\d+(\.\d{1,6})?$/.test(s) && Number(s) > 0 && Number(s) <= 1000000, `${label}: требуется положительное число`);
   return s;
 }
+export function phaseInput(value){assert(['','prevention','acute'].includes(value),'Выберите контекст предписания');return value;}
+export function entryContext(input){
+  const result={};
+  if(input.carePhase!==undefined)result.carePhase=phaseInput(input.carePhase);
+  if(input.sourceText!==undefined)result.sourceText=string(input.sourceText,'Исходная фраза',4000);
+  if(input.relatedRxId!==undefined)result.relatedRxId=string(input.relatedRxId,'Связь с назначением',80);
+  return result;
+}
 export function personInput(input) {
   const birthday = input.birthday ? day(input.birthday) : '';
   assert(!birthday || birthday <= new Date().toISOString().slice(0, 10), 'Дата рождения не может быть в будущем');
   const age={};if(input.ageYears!==''&&input.ageYears!=null){assert(Number.isInteger(Number(input.ageYears))&&Number(input.ageYears)>=0&&Number(input.ageYears)<=130,'Возраст: целое число от 0 до 130');age.ageYears=Number(input.ageYears);age.ageAsOf=day(input.ageAsOf||new Date().toISOString().slice(0,10));}
-  return { name: string(input.name, 'Имя', 100, true), birthday, weight: positive(input.weight, 'Вес', true), allergies: string(input.allergies, 'Аллергии', 1000), notes: string(input.notes, 'Примечания', 3000), color: ['mint','blue','peach','lilac'].includes(input.color) ? input.color : 'mint',...age,...(input.displayName!==undefined?{displayName:string(input.displayName,'Имя на семейной доске',100)}:{}) };
+  return { name: string(input.name, 'Имя', 100, true), birthday, weight: positive(input.weight, 'Вес', true), allergies: string(input.allergies, 'Аллергии', 1000), notes: string(input.notes, 'Примечания', 3000), color: ['mint','blue','peach','lilac'].includes(input.color) ? input.color : 'mint',...age,...(input.carePhase!==undefined?{carePhase:phaseInput(input.carePhase)}:{}),...(input.displayName!==undefined?{displayName:string(input.displayName,'Имя на семейной доске',100)}:{}) };
 }
 export const units = ['табл.', 'капс.', 'мл', 'мг', 'мкг', 'г', 'кап.', 'доза', 'впрыскивание', 'пакет', 'свеча', 'нанесение'];
 export function occurrenceInput(input){
@@ -64,16 +72,17 @@ export function occurrenceInput(input){
 export function temperatureInput(input){
   const occurrence=occurrenceInput(input),raw=String(input.celsius??'').trim().replace(',','.');
   assert(/^\d{2}(?:\.\d{1,2})?$/.test(raw)&&Number(raw)>=20&&Number(raw)<=50,'Температура: укажите число от 20 до 50 °C');
-  return {...occurrence,celsius:Number(raw)};
+  return {...occurrence,celsius:Number(raw),...entryContext(input)};
 }
-export const activityKinds={diarrhea:'Диарея',vomiting:'Рвота',inhalation:'Ингаляция',medication:'Лекарство',other:'Другое'};
+export const activityKinds={temperature:'Температура',diarrhea:'Диарея',vomiting:'Рвота',inhalation:'Ингаляция',medication:'Лекарство',other:'Другое'};
 export function activityInput(input){
   const occurrence=occurrenceInput(input);assert(Object.hasOwn(activityKinds,input.kind),'Выберите тип события');
-  const quick=['diarrhea','vomiting'].includes(input.kind),amount=positive(input.amount,'Количество',true)||'',unit=string(input.unit,'Единица',30);
+  const quick=['diarrhea','vomiting','temperature'].includes(input.kind),amount=positive(input.amount,'Количество',true)||'',unit=string(input.unit,'Единица',30);
   assert((!amount&&!unit)||(amount&&units.includes(unit)),'Укажите количество и его единицу вместе');
   assert(!quick||!amount,'Для этого симптома количество препарата не требуется');
   const clientKey=string(input.clientKey,'Ключ записи',120,true);assert(/^[a-zA-Z0-9_-]{8,120}$/.test(clientKey),'Некорректный ключ записи');
-  return {...occurrence,kind:input.kind,name:quick?activityKinds[input.kind]:string(input.name,'Что сделали / препарат',200,true),amount,unit,strength:string(input.strength,'Концентрация',150),note:string(input.note,'Примечание',2000),author:string(input.author||'Я','Автор',100),clientKey};
+  assert(!input.relatedRxId||['medication','inhalation'].includes(input.kind),'Назначение можно связать только с лекарством или ингаляцией');
+  return {...occurrence,...(input.kind==='temperature'?{celsius:temperatureInput(input).celsius}:{}),...entryContext(input),kind:input.kind,name:quick?activityKinds[input.kind]:string(input.name,'Что сделали / препарат',200,true),amount,unit,strength:string(input.strength,'Концентрация',150),note:string(input.note,'Примечание',2000),author:string(input.author||'Я','Автор',100),clientKey};
 }
 export function courseEnd(startDate,count,unit){
   day(startDate);assert(Number.isInteger(Number(count))&&Number(count)>0&&Number(count)<=3660,'Длительность: положительное целое число');count=Number(count);
@@ -104,6 +113,7 @@ export function rxInput(input) {
   const ingredients = string(input.ingredients, 'Действующие вещества', 600).split(/[+;,\n]/).map(x=>x.trim()).filter(Boolean);
   if(input.maxPer24h!==''&&input.maxPer24h!=null)assert(Number.isInteger(Number(input.maxPer24h)), 'Максимум приёмов должен быть целым числом');
   const extra={};
+  if(input.carePhase!==undefined)extra.carePhase=phaseInput(input.carePhase);
   if(input.weekdays!==undefined){assert(Array.isArray(input.weekdays)&&input.weekdays.length>0&&input.weekdays.length<=7&&input.weekdays.every(n=>Number.isInteger(n)&&n>=0&&n<=6),'Выберите дни недели');assert(type==='daily','Дни недели применяются только к выбранным ежедневным часам');extra.weekdays=[...new Set(input.weekdays)].sort();}
   if(input.doseScope){assert(['each-nostril','total'].includes(input.doseScope),'Неизвестная область дозы');extra.doseScope=input.doseScope;}
   if(input.purpose!==undefined)extra.purpose=string(input.purpose,'Зачем назначено',1000);
@@ -122,7 +132,7 @@ export function scheduleFor(rx, date) {
   } else {
     instants = rx.times.map(time => zonedInstant(date, time, rx.timeZone));
   }
-  return instants.map(scheduledAt => ({ key: `${rx.id}@${scheduledAt}`, rxId: rx.id, personId: rx.personId, scheduledAt, ...localParts(scheduledAt, rx.timeZone), timeZone: rx.timeZone, name: rx.name, dose: rx.dose, unit: rx.unit, conditions: rx.conditions, ingredients: rx.ingredients,...(rx.doseScope?{doseScope:rx.doseScope}:{}),...(rx.purpose?{purpose:rx.purpose}:{}) }));
+  return instants.map(scheduledAt => ({ key: `${rx.id}@${scheduledAt}`, rxId: rx.id, personId: rx.personId, scheduledAt, ...localParts(scheduledAt, rx.timeZone), timeZone: rx.timeZone, name: rx.name, dose: rx.dose, unit: rx.unit, conditions: rx.conditions, ingredients: rx.ingredients,...(rx.doseScope?{doseScope:rx.doseScope}:{}),...(rx.purpose?{purpose:rx.purpose}:{}),...(rx.carePhase!==undefined?{carePhase:rx.carePhase}:{}) }));
 }
 
 // OCR suggestions deliberately keep missing dose, course dates and clock times empty.

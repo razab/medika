@@ -28,5 +28,5 @@ url = "http://127.0.0.1:4382/api/health"
 timeoutSeconds = 15
 
 [network]
-proxyState = "system-caddy-port-80"
-tlsState = "not-configured"
+proxyState = "system-caddy-ports-80-443"
+tlsState = "local-ca-medika-device-trust-required"

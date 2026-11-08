@@ -1,7 +1,7 @@
 import {writeFile,unlink,readFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {createHash} from 'node:crypto';
-import {assert,personInput,rxInput,temperatureInput,activityInput,day,string,positive,parseSuggestions,zone,units} from './domain.mjs';
+import {assert,personInput,rxInput,temperatureInput,activityInput,day,string,positive,parseSuggestions,zone,units,phaseInput} from './domain.mjs';
 
 const idOK=id=>typeof id==='string'&&/^[a-f\d]{8}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{12}$/.test(id);
 const iso=s=>typeof s==='string'&&Number.isFinite(Date.parse(s));
@@ -9,7 +9,7 @@ const canonical=value=>JSON.stringify(value,(_,v)=>v&&typeof v==='object'&&!Arra
 function metadata(record){assert(idOK(record.id)&&Number.isInteger(record.version)&&record.version>=1&&iso(record.createdAt),'Повреждены идентификатор, версия или дата записи');if(record.updatedAt)assert(iso(record.updatedAt),'Повреждена дата изменения');return {id:record.id,version:record.version,createdAt:record.createdAt,...(record.updatedAt?{updatedAt:record.updatedAt}:{})};}
 
 export async function restoreBackup(store,uploads,input,imageType){
-  assert(input.format==='medika-backup'&&[1,2,3].includes(input.version),'Версия резервной копии Медики не поддерживается');
+  assert(input.format==='medika-backup'&&[1,2,3,4].includes(input.version),'Версия резервной копии Медики не поддерживается');
   for(const key of ['people','documents','prescriptions','events'])assert(Array.isArray(input[key])&&input[key].length<=10000,'Некорректный раздел копии: '+key);
   if(input.version>=2||input.temperatures!==undefined)assert(Array.isArray(input.temperatures)&&input.temperatures.length<=10000,'Некорректный раздел копии: temperatures');
   if(input.version>=3||input.activities!==undefined)assert(Array.isArray(input.activities)&&input.activities.length<=10000,'Некорректный раздел копии: activities');
@@ -44,6 +44,7 @@ export async function restoreBackup(store,uploads,input,imageType){
     return {...validated,personId:r.personId,archived:r.archived===true,...metadata(r)};
   });
   const rxs=new Map([...store.state().prescriptions,...data.prescriptions].map(r=>[r.id,r]));
+  for(const a of data.activities)if(a.relatedRxId)assert(rxs.get(a.relatedRxId)?.personId===a.personId,'Событие связано с чужим или неизвестным назначением');
   data.events=input.events.map(r=>{
     const rx=rxs.get(r.rxId);assert(rx&&rx.personId===r.personId,'Повреждена связь приёма и назначения');
     assert(typeof r.key==='string'&&r.key.startsWith(r.rxId+'@')&&r.key.length<180,'Повреждён ключ события');
@@ -52,7 +53,7 @@ export async function restoreBackup(store,uploads,input,imageType){
     if(r.scheduledAt)assert(iso(r.scheduledAt)&&r.key===r.rxId+'@'+r.scheduledAt,'Повреждено плановое время');
     if(!r.scheduledAt)assert(idOK(r.key.split('@prn-')[1]),'Повреждён ключ приёма по необходимости');
     if(r.doseScope)assert(['total','each-nostril'].includes(r.doseScope),'Некорректная область дозы');
-    return {...(r.scheduledAt?{scheduledAt:r.scheduledAt}:{}),...(r.time?{time:string(r.time,'Часы',5)}:{}),...(r.doseScope?{doseScope:r.doseScope}:{}),...(r.purpose!==undefined?{purpose:string(r.purpose,'Зачем назначено',1000)}:{}),rxId:r.rxId,personId:r.personId,key:r.key,status:r.status,occurredAt:r.occurredAt,date:day(r.date),timeZone:zone(r.timeZone),name:string(r.name,'Название',200,true),dose:positive(r.dose,'Плановая доза'),unit:r.unit,ingredients:r.ingredients,conditions:string(r.conditions,'Условия',2000),actualDose:positive(r.actualDose,'Фактическая доза'),note:string(r.note,'Примечание',2000),author:string(r.author,'Автор',100),...(r.voidReason?{voidReason:string(r.voidReason,'Причина',1000)}:{}),...metadata(r)};
+    return {...(r.scheduledAt?{scheduledAt:r.scheduledAt}:{}),...(r.time?{time:string(r.time,'Часы',5)}:{}),...(r.doseScope?{doseScope:r.doseScope}:{}),...(r.purpose!==undefined?{purpose:string(r.purpose,'Зачем назначено',1000)}:{}),...(r.carePhase!==undefined?{carePhase:phaseInput(r.carePhase)}:{}),rxId:r.rxId,personId:r.personId,key:r.key,status:r.status,occurredAt:r.occurredAt,date:day(r.date),timeZone:zone(r.timeZone),name:string(r.name,'Название',200,true),dose:positive(r.dose,'Плановая доза'),unit:r.unit,ingredients:r.ingredients,conditions:string(r.conditions,'Условия',2000),actualDose:positive(r.actualDose,'Фактическая доза'),note:string(r.note,'Примечание',2000),author:string(r.author,'Автор',100),...(r.voidReason?{voidReason:string(r.voidReason,'Причина',1000)}:{}),...metadata(r)};
   });
   const planned=[];
   for(const [table,records]of Object.entries(data)){
