@@ -1,0 +1,17 @@
+{
+  "status": "PASS",
+  "verifiedAt": "2026-11-08T12:15:41.054Z",
+  "syntheticDataOnly": true,
+  "assetsOrigin": "http://192.168.0.38",
+  "apiOrigin": "http://medika.localhost:14385",
+  "checks": [
+    "Four profiles, zero active prescriptions, two shared doctor documents and household notes",
+    "Four regular rows and three conditional rows, shared instructions grouped without mixing personal prescriptions",
+    "First medication visible without scrolling at 1470/1024/768/390",
+    "No sidebar, closed menu, no fabricated active schedule",
+    "Person-specific confirmation, preserved dose/time and blank start date",
+    "Confirmed plan and intake on the same page; other child remains a draft",
+    "Restart and complete backup/restore preserve records",
+    "No horizontal overflow or browser errors"
+  ]
+}

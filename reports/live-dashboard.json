@@ -1,0 +1,16 @@
+{
+  "status": "PASS",
+  "verifiedAt": "2026-11-08T12:18:00.430Z",
+  "origin": "http://192.168.0.38",
+  "health": true,
+  "newHomeAssetsPublished": true,
+  "people": 4,
+  "documents": 6,
+  "prescriptions": 0,
+  "events": 0,
+  "distinctSourceRows": 7,
+  "ordinarySourceRows": 4,
+  "sourceDataReadOnly": true,
+  "physicalIPadTested": false,
+  "syntheticBrowserCheck": "dashboard-canary.json"
+}
