@@ -1,6 +1,6 @@
 {
   "status": "PASS",
-  "completedAt": "2026-11-08T15:31:28.875Z",
+  "completedAt": "2026-11-08T16:12:44.046Z",
   "checks": [
     "Переход по ссылке с другого сайта открывает приложение и его сессию",
     "Пациент и личная лента без меню событий",
@@ -17,7 +17,6 @@
   "syntheticDataOnly": true,
   "assetsOrigin": "https://macbook-air-5.local",
   "voiceEngine": "local whisper.cpp base",
-  "physicalDeviceTested": false,
   "eventParser": "gpt-6.1-terra",
-  "auth": "ChatGPT subscription"
+  "physicalDeviceTested": false
 }

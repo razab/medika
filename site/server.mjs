@@ -12,6 +12,7 @@ import { parseEntry } from './lib/entry-parser.mjs';
 import { parseWithCodex,codexStatus } from './lib/codex-parser.mjs';
 import { voiceStatus,transcribeAudio } from './lib/voice.mjs';
 import { restoreBackup } from './lib/backup.mjs';
+import { createVoiceLab } from './lib/voice-lab.mjs';
 
 const exec=promisify(execFile), root=dirname(fileURLToPath(import.meta.url));
 export function imageType(bytes) {
@@ -20,9 +21,10 @@ export function imageType(bytes) {
   if(bytes.toString('ascii',0,4)==='RIFF'&&bytes.toString('ascii',8,12)==='WEBP') return 'image/webp';
   return null;
 }
-export async function createApp({dataDir=join(root,'data'),port=4382,publicHost='medika.localhost',additionalHosts=[],entryParser=parseEntry}={}) {
+export async function createApp({dataDir=join(root,'data'),port=4382,publicHost='medika.localhost',additionalHosts=[],entryParser=parseEntry,voiceLabOptions={}}={}) {
   const store=openStore(dataDir), uploads=join(dataDir,'uploads');
   await mkdir(uploads,{recursive:true,mode:0o700});
+  const voiceLab=await createVoiceLab(dataDir,voiceLabOptions);
   const token=randomBytes(32).toString('hex'), ocrBinary=join(root,'scripts/medika-ocr');
   let ocrReady=false,ocrBusy=false;
   try { await access(ocrBinary);ocrReady=true; } catch {}
@@ -51,7 +53,7 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       const scheme=req.headers['x-forwarded-proto']==='https'&&['127.0.0.1','::1'].includes(req.socket.remoteAddress)?'https':'http';
       const url=new URL(req.url,`${scheme}://${req.headers.host}`), route=url.pathname, method=req.method;
       // Links from chats may be cross-site; the shell and public CA contain no medical data.
-      const publicRead=['GET','HEAD'].includes(method)&&['/','/medika-ca.cer'].includes(route);
+      const publicRead=['GET','HEAD'].includes(method)&&['/','/voice-lab','/voice-lab/','/medika-ca.cer'].includes(route);
       if(!publicRead){
         assert(!req.headers.origin||req.headers.origin===url.origin,'Запрос с другого сайта отклонён',403);
         assert(req.headers['sec-fetch-site']!=='cross-site','Запрос с другого сайта отклонён',403);
@@ -59,10 +61,24 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       if(route==='/api/health'&&method==='GET') return send(200,{ok:true,app:'medika',version:'0.1.0',ocr:ocrReady});
       if(route==='/api/session'&&method==='GET') return send(200,{token},{'Set-Cookie':`medika_session=${token}; HttpOnly; SameSite=Strict; Path=/`});
       const imageRoute=route.match(/^\/api\/documents\/([a-f\d-]+)\/image$/);
+      const labAudioRoute=route.match(/^\/api\/voice-lab\/recordings\/([a-f\d-]+)\/audio$/);
       if(route.startsWith('/api/')) {
-        if(imageRoute&&method==='GET') assert(req.headers.cookie?.split(';').some(s=>s.trim()===`medika_session=${token}`),'Откройте приложение перед просмотром',403);
+        if(imageRoute&&method==='GET'||labAudioRoute&&['GET','HEAD'].includes(method)) assert(req.headers.cookie?.split(';').some(s=>s.trim()===`medika_session=${token}`),'Откройте приложение перед просмотром',403);
         else assert(req.headers['x-medika-token']===token,'Сессия обновлена. Перезагрузите страницу.',403);
       }
+      if(labAudioRoute&&['GET','HEAD'].includes(method)){
+        const bytes=await voiceLab.audio(labAudioRoute[1]),range=req.headers.range;let start=0,end=bytes.length-1;
+        if(range){const match=range.match(/^bytes=(\d*)-(\d*)$/);if(!match||!match[1]&&!match[2]){res.writeHead(416,{'Content-Range':`bytes */${bytes.length}`});return res.end();}
+          if(!match[1])start=Math.max(0,bytes.length-Number(match[2]));else{start=Number(match[1]);if(match[2])end=Math.min(end,Number(match[2]));}
+          if(!Number.isSafeInteger(start)||!Number.isSafeInteger(end)||start>end||start>=bytes.length){res.writeHead(416,{'Content-Range':`bytes */${bytes.length}`});return res.end();}
+        }
+        res.writeHead(range?206:200,{'Content-Type':'audio/wav','Accept-Ranges':'bytes','Content-Length':end-start+1,'Content-Disposition':`inline; filename=voice-${labAudioRoute[1]}.wav`,...(range?{'Content-Range':`bytes ${start}-${end}/${bytes.length}`}:{})});return res.end(method==='HEAD'?undefined:bytes.subarray(start,end+1));
+      }
+      if(route==='/api/voice-lab'&&method==='GET')return send(200,await voiceLab.state());
+      if(route==='/api/voice-lab/recordings'&&method==='POST')return send(201,await voiceLab.add(await body(req,12*1024*1024)));
+      const labRecordRoute=route.match(/^\/api\/voice-lab\/recordings\/([a-f\d-]+)$/),labRunRoute=route.match(/^\/api\/voice-lab\/recordings\/([a-f\d-]+)\/(run|verdict)$/);
+      if(labRecordRoute&&method==='DELETE')return send(200,await voiceLab.remove(labRecordRoute[1]));
+      if(labRunRoute&&method==='POST'){const input=await body(req);return send(200,labRunRoute[2]==='run'?await voiceLab.run(labRunRoute[1],input.variantId):await voiceLab.verdict(labRunRoute[1],input.variantId,input.verdict));}
       if(route==='/api/state'&&method==='GET') return send(200,{...store.state(),catalog,rules,reference:referenceInfo,capabilities:{ocr:ocrReady,ocrLanguages:['ru-RU','en-US'],notifications:'open-tab-only',voice:await voiceStatus(),entryParser:entryParser===parseWithCodex?await codexStatus():{model:'local-rules',cloud:false}}});
       if(route==='/api/parse-entry'&&method==='POST')return send(200,await entryParser(store.state(),await body(req)));
       if(route==='/api/record-entry'&&method==='POST'){
@@ -195,7 +211,7 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       assert(!route.startsWith('/api/'),'Метод или маршрут не найден',404);
       assert(method==='GET'||method==='HEAD','Метод не разрешён',405);
       if(route==='/medika-ca.cer'&&method==='GET'){res.writeHead(200,{'Content-Type':'application/x-x509-ca-cert','Content-Disposition':'attachment; filename=medika-ca.cer'});return res.end(await readFile(join(root,'data/medika-ca.cer')));}
-      const assets={'/':['index.html','text/html'],'/app.js':['app.js','text/javascript'],'/style.css':['style.css','text/css'],'/icon.svg':['icon.svg','image/svg+xml'],'/voice-recorder.js':['voice-recorder.js','text/javascript'],'/voice-capture.js':['voice-capture.js','text/javascript']};
+      const assets={'/':['index.html','text/html'],'/voice-lab':['voice-lab.html','text/html'],'/voice-lab/':['voice-lab.html','text/html'],'/voice-lab.js':['voice-lab.js','text/javascript'],'/voice-lab.css':['voice-lab.css','text/css'],'/app.js':['app.js','text/javascript'],'/style.css':['style.css','text/css'],'/icon.svg':['icon.svg','image/svg+xml'],'/voice-recorder.js':['voice-recorder.js','text/javascript'],'/voice-capture.js':['voice-capture.js','text/javascript']};
       assert(assets[route],'Страница не найдена',404);
       const [file,mime]=assets[route];res.writeHead(200,{'Content-Type':`${mime}; charset=utf-8`});res.end(method==='HEAD'?undefined:await readFile(join(root,'public',file)));
     } catch(e) {

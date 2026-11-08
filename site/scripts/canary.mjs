@@ -49,7 +49,7 @@ try{
   }
   await page.locator(`[data-patient="${danya.id}"][aria-pressed="true"]`).waitFor({timeout:100000});
   assert.equal(await page.locator('dialog[open]').count(),0);assert.equal(await page.locator('#phrase').count(),0);assert.match(await page.locator('.last-temperature').innerText(),/39,0/);
-  const spoken=(await api('/state')).activities.find(a=>a.personId===danya.id&&a.kind==='temperature');assert.equal(spoken.celsius,39);assert.ok(Math.abs(Date.parse(spoken.occurredAt)-(voiceStarted-120000))<3000);assert.ok(!(await readdir(data)).some(f=>f.startsWith('voice-')));
+  const spoken=(await api('/state')).activities.find(a=>a.personId===danya.id&&a.kind==='temperature');assert.equal(spoken.celsius,39);assert.ok(Math.abs(Date.parse(spoken.occurredAt)-(voiceStarted-120000))<3000);assert.ok(!(await readdir(data)).some(f=>f!=='voice-lab'&&f.startsWith('voice-')));
   await page.locator('#toast').getByRole('button',{name:'Отменить',exact:true}).click();await page.waitForFunction(()=>document.querySelector('#toast').textContent==='Запись отменена');assert.equal((await api('/state')).activities.find(a=>a.id===spoken.id).status,'void');
   check('Общий микрофон одним нажатием → пауза → Whisper → Даня и время из фразы → запись без формы/клавиатуры; отмена одним нажатием');
   await page.locator(`[data-patient="${alice.id}"]`).click();

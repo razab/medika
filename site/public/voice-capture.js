@@ -7,7 +7,7 @@ export function encodeWav(chunks,sampleRate){
   for(let i=0;i<frames;i++){const start=Math.floor(i*sampleRate/16000),end=Math.min(count,Math.max(start+1,Math.floor((i+1)*sampleRate/16000)));let sum=0;for(let j=start;j<end;j++)sum+=pcm[j];const value=Math.max(-1,Math.min(1,sum/(end-start)));view.setInt16(44+i*2,value<0?value*32768:value*32767,true);}
   return new Blob([buffer],{type:'audio/wav'});
 }
-export async function captureVoice(onLimit){
+export async function captureVoice(onLimit,{autoStop=true}={}){
   const context=new AudioContext();await context.resume();let stream;
   try{
     stream=await navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:true,noiseSuppression:true},video:false});
@@ -21,7 +21,7 @@ export async function captureVoice(onLimit){
       }
       if(event.data.done)finish();
     };
-    const pause=setInterval(()=>{if(!stopped&&!ending&&((spokenMs>=250&&performance.now()-lastSpeech>=1800)||(!lastSpeech&&performance.now()-started>=10000))){ending=true;onLimit();}},100);
+    const pause=setInterval(()=>{if(autoStop&&!stopped&&!ending&&((spokenMs>=250&&performance.now()-lastSpeech>=1800)||(!lastSpeech&&performance.now()-started>=10000))){ending=true;onLimit();}},100);
     const limit=setTimeout(onLimit,45000);
     const close=()=>{clearTimeout(limit);clearInterval(pause);stream.getTracks().forEach(track=>track.stop());if(context.state!=='closed')context.close().catch(()=>{});};
     return {cancel(){stopped=true;close();},async stop(){if(stopped)throw Error('Запись уже остановлена');stopped=true;clearTimeout(limit);try{recorder.port.postMessage('stop');await Promise.race([finalChunk,new Promise(resolve=>setTimeout(resolve,1000))]);return encodeWav(chunks,context.sampleRate);}finally{close();}}};

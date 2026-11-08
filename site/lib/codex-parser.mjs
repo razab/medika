@@ -8,6 +8,7 @@ import {namedPeople} from './entry-parser.mjs';
 
 const root=dirname(fileURLToPath(import.meta.url)),binary=join(root,'../tools/codex/node_modules/.bin/codex'),schema=join(root,'codex-entry-schema.json');
 export const codexModel='gpt-6.1-terra';
+export const comparisonModels=['gpt-6.1-terra','gpt-6.1-sol','gpt-6-luna'];
 let busy=false,statusCache;
 export async function codexStatus(){
   if(statusCache&&Date.now()-statusCache.at<30000)return statusCache.value;
@@ -24,11 +25,11 @@ celsius — точное число строкой с точкой; "38-2" в р
 Без неоднозначности needsReview=false и notes=[]. При неясности напиши короткое русское пояснение в notes. Нормализуй только то, что действительно сказано, без догадок.`;
 
 export function validateCodexDraft(state,input,output){
-  assert(output&&typeof output==='object'&&!Array.isArray(output),'Terra вернула некорректную запись',502);
+  assert(output&&typeof output==='object'&&!Array.isArray(output),'Модель вернула некорректную запись',502);
   const sourceText=string(input.text,'Фраза',4000,true),timeZone=zone(input.timeZone||'Europe/Chisinau');
   const reference=occurrenceInput({personId:'reference',occurredAt:input.recordedAt||new Date().toISOString(),timeZone}).occurredAt;
-  assert(typeof output.needsReview==='boolean'&&Array.isArray(output.notes)&&output.notes.length<=10,'Terra вернула некорректную проверку',502);
-  assert(Object.hasOwn(activityKinds,output.kind)&&units.concat('').includes(output.unit),'Terra вернула неизвестный вид события или единицу',502);
+  assert(typeof output.needsReview==='boolean'&&Array.isArray(output.notes)&&output.notes.length<=10,'Модель вернула некорректную проверку',502);
+  assert(Object.hasOwn(activityKinds,output.kind)&&units.concat('').includes(output.unit),'Модель вернула неизвестный вид события или единицу',502);
   const notes=output.notes.map(n=>string(n,'Уточнение',500,true)),missing=[];
   const named=namedPeople(state,sourceText),person=named.length===1&&named[0].id===output.personId?named[0]:null;if(!person)missing.push('personId');
   let occurredAt=reference;
@@ -52,9 +53,10 @@ export function validateCodexDraft(state,input,output){
   return draft;
 }
 
-export async function parseWithCodex(state,input){
+export async function parseWithCodex(state,input,{model=codexModel}={}){
+  assert(comparisonModels.includes(model),'Неизвестная модель разбора');
   const text=string(input.text,'Фраза',4000,true),timeZone=zone(input.timeZone||'Europe/Chisinau'),recordedAt=occurrenceInput({personId:'reference',occurredAt:input.recordedAt||new Date().toISOString(),timeZone}).occurredAt;
-  assert(!busy,'Terra уже разбирает запись. Дождитесь результата.',429);
+  assert(!busy,'Codex уже разбирает запись. Дождитесь результата.',429);
   busy=true;
   let directory;
   try{
@@ -63,21 +65,21 @@ export async function parseWithCodex(state,input){
     const people=state.people.map(p=>({id:p.id,name:p.name,displayName:p.displayName||p.name,medicines:state.prescriptions.filter(r=>r.personId===p.id&&!r.archived).map(r=>r.name)}));
     const prompt=instructions+'\nINPUT\n'+JSON.stringify({text,people,referenceLocalDate:localParts(recordedAt,timeZone).date,timeZone});
     const output=join(directory,'result.json');
-    const args=['exec','--ignore-user-config','--ephemeral','--skip-git-repo-check','--sandbox','read-only','--model',codexModel,'--config','forced_login_method="chatgpt"','--config','model_reasoning_effort="low"','--config','web_search="disabled"','--disable','shell_tool','--disable','multi_agent','--disable','apps','--json','--output-schema',schema,'--output-last-message',output,'-'];
+    const args=['exec','--ignore-user-config','--ephemeral','--skip-git-repo-check','--sandbox','read-only','--model',model,'--config','forced_login_method="chatgpt"','--config','model_reasoning_effort="low"','--config','web_search="disabled"','--disable','shell_tool','--disable','multi_agent','--disable','apps','--json','--output-schema',schema,'--output-last-message',output,'-'];
     await new Promise((resolve,reject)=>{
       const env={...process.env};for(const key of ['OPENAI_API_KEY','CODEX_API_KEY','CODEX_ACCESS_TOKEN'])delete env[key];
       const child=spawn(binary,args,{cwd:directory,env,stdio:['pipe','pipe','pipe']});let diagnostic='',events='';
-      const timer=setTimeout(()=>{child.kill('SIGKILL');reject(new InputError('Terra не ответила вовремя. Запись не сохранена.',504));},45000);
-      child.stdout.on('data',b=>{events+=b;if(events.length>1024*1024){child.kill('SIGKILL');reject(new InputError('Ответ Terra слишком большой',502));}});
+      const timer=setTimeout(()=>{child.kill('SIGKILL');reject(new InputError('Модель не ответила вовремя. Запись не сохранена.',504));},45000);
+      child.stdout.on('data',b=>{events+=b;if(events.length>1024*1024){child.kill('SIGKILL');reject(new InputError('Ответ модели слишком большой',502));}});
       child.stderr.on('data',b=>{diagnostic=(diagnostic+b).slice(-20000);});
       child.on('error',()=>{clearTimeout(timer);reject(new InputError('Не удалось запустить Codex',503));});
       child.on('close',code=>{
-        clearTimeout(timer);if(code!==0){reject(new InputError(/limit|quota|429|usage/i.test(diagnostic+events)?'Лимит подписки Codex исчерпан. Запись не сохранена.':'Terra недоступна. Проверьте вход Codex через ChatGPT.',503));return;}
-        try{for(const line of events.trim().split('\n')){const event=JSON.parse(line);assert(!event.item||['agent_message','reasoning'].includes(event.item.type),'Terra запросила инструмент. Запись отклонена.',502);}resolve();}catch(e){reject(e);}
+        clearTimeout(timer);if(code!==0){reject(new InputError(/limit|quota|429|usage/i.test(diagnostic+events)?'Лимит подписки Codex исчерпан. Запись не сохранена.':'Codex недоступен. Проверьте вход Codex через ChatGPT.',503));return;}
+        try{for(const line of events.trim().split('\n')){const event=JSON.parse(line);assert(!event.item||['agent_message','reasoning'].includes(event.item.type),'Модель запросила инструмент. Запись отклонена.',502);}resolve();}catch(e){reject(e);}
       });
       child.stdin.on('error',()=>{});child.stdin.end(prompt);
     });
     const result=JSON.parse(await readFile(output,'utf8'));return validateCodexDraft(state,{...input,recordedAt},result);
-  }catch(error){if(error instanceof InputError)throw error;throw new InputError('Не удалось разобрать ответ Terra. Запись не сохранена.',502);}
+  }catch(error){if(error instanceof InputError)throw error;throw new InputError('Не удалось разобрать ответ модели. Запись не сохранена.',502);}
   finally{busy=false;if(directory)await rm(directory,{recursive:true,force:true});}
 }
