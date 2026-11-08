@@ -1,6 +1,6 @@
 {
   "status": "PASS",
-  "completedAt": "2026-11-08T16:07:51.133Z",
+  "completedAt": "2026-11-08T17:00:48.883Z",
   "checks": [
     "Внешняя ссылка открывает тестовую страницу с шестью фразами и пятью вариантами",
     "Микрофон без автообрыва по паузе → сохранённый WAV и прослушивание",
@@ -13,7 +13,7 @@
   "errors": [],
   "syntheticDataOnly": true,
   "realWhisperAndCodex": true,
-  "assetsOrigin": "http://127.0.0.1:14395",
+  "assetsOrigin": "https://macbook-air-5.local",
   "physicalDeviceTested": false,
   "parseAttempts": 6,
   "modelCalls": 5

@@ -14,9 +14,9 @@ export const labPhrases=[
   {id:'negative',text:'Даня не получил парацетамол.',expected:{noEvent:true}}
 ];
 export const labVariants=[
-  {id:'base-terra',label:'Whisper Base → Terra',asr:'base',model:'gpt-6.1-terra'},
+  {id:'medium-terra',label:'Whisper Medium → Terra',asr:'medium',model:'gpt-6.1-terra'},
   {id:'small-terra',label:'Whisper Small → Terra',asr:'small',model:'gpt-6.1-terra'},
-  {id:'base-sol',label:'Whisper Base → Sol',asr:'base',model:'gpt-6.1-sol'},
+  {id:'medium-sol',label:'Whisper Medium → Sol',asr:'medium',model:'gpt-6.1-sol'},
   {id:'small-sol',label:'Whisper Small → Sol',asr:'small',model:'gpt-6.1-sol'},
   {id:'small-luna',label:'Whisper Small → Luna',asr:'small',model:'gpt-6-luna'}
 ];
@@ -42,7 +42,7 @@ export async function createVoiceLab(dataDir,{prepare=prepareAudio,transcribe=tr
   async function locked(label,fn){assert(!busy,'Проверка уже идёт. Дождитесь её окончания.',409);busy=label;try{return await fn();}finally{busy=null;}}
   return {
     async state(){
-      const ready=availability?await availability():await Promise.all([voiceStatus('base'),voiceStatus('small'),codexStatus()]).then(([base,small,codex])=>({base:base.ready,small:small.ready,codex:codex.ready}));
+      const ready=availability?await availability():await Promise.all([voiceStatus('medium'),voiceStatus('small'),codexStatus()]).then(([medium,small,codex])=>({medium:medium.ready,small:small.ready,codex:codex.ready}));
       return {phrases:labPhrases.map(({expected,...p})=>p),variants:labVariants.map(v=>({...v,reasoning:'low',ready:!!ready[v.asr]&&!!ready.codex})),recordings:(await records()).map(view),busy:!!busy};
     },
     async add(input){return locked('saving',async()=>{

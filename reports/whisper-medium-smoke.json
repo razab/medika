@@ -1,0 +1,29 @@
+{
+  "status": "PASS",
+  "checkedAt": "2026-11-08T16:57:22.903Z",
+  "engine": {
+    "ready": true,
+    "engine": "Whisper Medium · локально на Mac",
+    "model": "medium",
+    "languages": [
+      "ru",
+      "en"
+    ],
+    "maxSeconds": 45,
+    "secureOrigin": "https://macbook-air-5.local"
+  },
+  "syntheticDataOnly": true,
+  "ramBytes": 34359738368,
+  "results": [
+    {
+      "caseId": "temperature",
+      "transcript": "Даня, две минуты назад температура 38,2.",
+      "elapsedMs": 2093
+    },
+    {
+      "caseId": "suppository",
+      "transcript": "Дани поставили одну свечку порцетамыло 125 мг 10 минут  назад.",
+      "elapsedMs": 1516
+    }
+  ]
+}

@@ -7,7 +7,7 @@ import {fileURLToPath} from 'node:url';
 import assert from 'node:assert/strict';
 import {encodeWav} from '../public/voice-capture.js';
 import {parseWithCodex,codexModel} from '../lib/codex-parser.mjs';
-const exec=promisify(execFile),site=join(dirname(fileURLToPath(import.meta.url)),'..'),data=join(site,'data/voice-comparison'),reportPath=join(site,'../reports/voice-comparison.json'),whisper=join(site,'tools/whisper.cpp/build/bin/whisper-cli');
+const exec=promisify(execFile),site=join(dirname(fileURLToPath(import.meta.url)),'..'),data=join(site,'data/voice-comparison'),reportPath=join(site,'../reports/voice-comparison-small-medium.json'),whisper=join(site,'tools/whisper.cpp/build/bin/whisper-cli');
 const cases=[
   {id:'temperature',text:'Даня, две минуты назад температура тридцать восемь и два.',expected:{kind:'temperature',celsius:'38.2',secondsAgo:120}},
   {id:'tablet',text:'Даня получил половину таблетки парацетамола двести пятьдесят миллиграмм пять минут назад.',expected:{kind:'medication',amount:'0.5',unit:'табл.',strengthNumber:'250',secondsAgo:300}},
@@ -16,8 +16,8 @@ const cases=[
   {id:'temperature-noisy',base:'temperature',snr:8,gain:0.18},
   {id:'tablet-noisy',base:'tablet',snr:12,gain:0.12}
 ];
-const state={people:[{id:'synthetic-danya',name:'Даня'}],prescriptions:[]},modelNames=['base','small'];
-const models={base:{path:join(site,'data/models/ggml-base.bin'),sha:'60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe'},small:{path:join(site,'data/models/ggml-small.bin'),sha:'1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b'}};
+const state={people:[{id:'synthetic-danya',name:'Даня'}],prescriptions:[]},modelNames=['small','medium'];
+const pin=JSON.parse(await readFile(join(site,'voice-engine.json'),'utf8')),models=Object.fromEntries(modelNames.map(name=>[name,{path:join(site,'data/models',pin.models[name].file),sha:pin.models[name].sha256}]));
 const hash=b=>createHash('sha256').update(b).digest('hex');
 await mkdir(data,{recursive:true,mode:0o700});
 for(const model of Object.values(models))assert.equal(hash(await readFile(model.path)),model.sha,'Model SHA256');
@@ -49,9 +49,9 @@ for(const c of chosen){
     for(const key of ['celsius','amount','unit'])if(expected[key]!==undefined)fields[key]=draft[key]===expected[key];
     if(expected.strengthNumber)fields.strength=draft.strength.replace(',','.').includes(expected.strengthNumber)&&/мг|mg/iu.test(draft.strength);
     if(expected.kind==='medication')fields.medicine=/парацетамол|paracetamol/iu.test(draft.name);
-    const result={caseId:c.id,sourceText:c.text||cases.find(x=>x.id===c.base).text,condition:c.base?`synthetic noise ${c.snr} dB, gain ${c.gain}`:'clean TTS',asr:name,asrModelSha256:models[name].sha,audioSha256:audio.sha,transcript:text,asrMs,semanticMs,totalMs:asrMs+semanticMs,secondsAgo,draft,fields,passed:Object.values(fields).every(Boolean)};
+    const result={caseId:c.id,sourceText:c.text||cases.find(x=>x.id===c.base).text,condition:c.base?`synthetic noise ${c.snr} dB, gain ${c.gain}`:'clean TTS',asr:name,asrName:pin.models[name].name,asrModelSha256:models[name].sha,audioSha256:audio.sha,transcript:text,asrMs,semanticMs,totalMs:asrMs+semanticMs,secondsAgo,draft,fields,passed:Object.values(fields).every(Boolean)};
     report.results.push(result);await checkpoint();console.log(JSON.stringify({caseId:c.id,asr:name,transcript:text,passed:result.passed,failed:Object.keys(fields).filter(k=>!fields[k]),asrMs,semanticMs}));
   }
 }
-report.summary=modelNames.map(name=>{const rows=report.results.filter(r=>r.asr===name);return {asr:name,passed:rows.filter(r=>r.passed).length,total:rows.length,clarifications:rows.filter(r=>!r.draft.canAutoRecord).length,wrongAutomaticRecords:rows.filter(r=>r.draft.canAutoRecord&&!r.passed).length,meanAsrMs:Math.round(rows.reduce((n,r)=>n+r.asrMs,0)/rows.length),meanTotalMs:Math.round(rows.reduce((n,r)=>n+r.totalMs,0)/rows.length)};});
+report.summary=modelNames.map(name=>{const rows=report.results.filter(r=>r.asr===name);return {asr:name,asrName:pin.models[name].name,passed:rows.filter(r=>r.passed).length,total:rows.length,clarifications:rows.filter(r=>!r.draft.canAutoRecord).length,wrongAutomaticRecords:rows.filter(r=>r.draft.canAutoRecord&&!r.passed).length,meanAsrMs:Math.round(rows.reduce((n,r)=>n+r.asrMs,0)/rows.length),meanTotalMs:Math.round(rows.reduce((n,r)=>n+r.totalMs,0)/rows.length)};});
 report.status=process.argv.includes('--canary')?'CANARY_COMPLETE':'COMPLETE';await checkpoint();const durable=JSON.parse(await readFile(reportPath,'utf8'));assert.equal(durable.results.length,report.results.length);console.log(JSON.stringify({status:report.status,summary:report.summary}));

@@ -6,12 +6,12 @@ import {promisify} from 'node:util';
 import {assert,InputError,string} from './domain.mjs';
 const exec=promisify(execFile),site=join(dirname(fileURLToPath(import.meta.url)),'..');
 const binary=join(site,'tools/whisper.cpp/build/bin/whisper-cli');
-const models={base:join(site,'data/models/ggml-base.bin'),small:join(site,'data/models/ggml-small.bin')};
+const models={small:join(site,'data/models/ggml-small.bin'),medium:join(site,'data/models/ggml-medium.bin')};
 let busy=false;
-export async function voiceStatus(modelId='base'){
+export async function voiceStatus(modelId='small'){
   assert(Object.hasOwn(models,modelId),'Неизвестная модель речи');
   let ready=true;try{await Promise.all([access(binary),access(models[modelId])]);}catch{ready=false;}
-  return {ready,engine:'Whisper · локально на Mac',languages:['ru','en'],maxSeconds:45,secureOrigin:'https://macbook-air-5.local'};
+  return {ready,engine:'Whisper '+(modelId==='small'?'Small':'Medium')+' · локально на Mac',model:modelId,languages:['ru','en'],maxSeconds:45,secureOrigin:'https://macbook-air-5.local'};
 }
 export async function prepareAudio(input,dataDir){
   assert(['ru','en'].includes(input.language),'Выберите русский или английский язык');
@@ -38,7 +38,7 @@ export async function prepareAudio(input,dataDir){
   }catch(error){if(error instanceof InputError)throw error;throw new InputError('Не удалось прочитать аудиозапись',422);}
   finally{if(directory)await rm(directory,{recursive:true,force:true});}
 }
-export async function transcribePrepared(bytes,language,dataDir,modelId='base'){
+export async function transcribePrepared(bytes,language,dataDir,modelId='small'){
   assert(['ru','en'].includes(language),'Выберите русский или английский язык');
   assert(Buffer.isBuffer(bytes)&&bytes.length>44&&bytes.length<=1505536&&bytes.toString('ascii',0,4)==='RIFF'&&bytes.toString('ascii',8,12)==='WAVE','Некорректный подготовленный WAV');
   assert(!busy,'Распознавание уже идёт. Дождитесь результата.',429);busy=true;let directory;

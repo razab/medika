@@ -1,36 +1,37 @@
 {
   "status": "PASS",
-  "checkedAt": "2026-11-08T16:12:02.288Z",
+  "checkedAt": "2026-11-08T17:05:35.776Z",
   "url": "https://macbook-air-5.local/voice-lab",
   "httpLanUrl": "http://192.168.0.38/voice-lab",
+  "defaultEngine": "Whisper Small · локально на Mac",
   "variants": [
     {
-      "id": "base-terra",
-      "label": "Base → Terra",
-      "asr": "base",
+      "id": "medium-terra",
+      "label": "Whisper Medium → Terra",
+      "asr": "medium",
       "model": "gpt-6.1-terra",
       "reasoning": "low",
       "ready": true
     },
     {
       "id": "small-terra",
-      "label": "Small → Terra",
+      "label": "Whisper Small → Terra",
       "asr": "small",
       "model": "gpt-6.1-terra",
       "reasoning": "low",
       "ready": true
     },
     {
-      "id": "base-sol",
-      "label": "Base → Sol",
-      "asr": "base",
+      "id": "medium-sol",
+      "label": "Whisper Medium → Sol",
+      "asr": "medium",
       "model": "gpt-6.1-sol",
       "reasoning": "low",
       "ready": true
     },
     {
       "id": "small-sol",
-      "label": "Small → Sol",
+      "label": "Whisper Small → Sol",
       "asr": "small",
       "model": "gpt-6.1-sol",
       "reasoning": "low",
@@ -38,24 +39,22 @@
     },
     {
       "id": "small-luna",
-      "label": "Small → Luna",
+      "label": "Whisper Small → Luna",
       "asr": "small",
       "model": "gpt-6-luna",
       "reasoning": "low",
       "ready": true
     }
   ],
-  "actualRecordingsBeforeUser": 0,
   "clinicalSectionsUnchanged": true,
-  "foreignOriginDenied": true,
-  "audioRequiresSession": true,
+  "userLabFilesUnchanged": true,
   "physicalDeviceTested": false,
   "runtime": {
     "projectId": "5bc913d8-ae85-470b-a91e-251a2a589364",
     "serviceId": "web",
     "state": "running",
-    "pid": 83593,
-    "startedAt": "2026-11-08T16:09:23.681Z",
+    "pid": 53453,
+    "startedAt": "2026-11-08T16:57:20.986Z",
     "command": [
       "/opt/homebrew/bin/node",
       "server.mjs"
@@ -65,13 +64,13 @@
     "message": "Сервис готов",
     "health": {
       "kind": "http",
-      "checkedAt": "2026-11-08T16:17:21.496Z",
+      "checkedAt": "2026-11-08T17:05:35.655Z",
       "ok": true,
       "status": 200,
       "consecutiveFailures": 0,
       "error": null
     },
-    "readyAt": "2026-11-08T16:09:25.523Z"
+    "readyAt": "2026-11-08T16:57:22.943Z"
   },
   "watch": {
     "projectId": "5bc913d8-ae85-470b-a91e-251a2a589364",
@@ -91,6 +90,6 @@
     "restartCount": 4,
     "lastRestartAt": "2026-11-08T15:28:07.687Z",
     "lastChangedAt": null,
-    "revision": 25
+    "revision": 29
   }
 }
