@@ -49,8 +49,12 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       assert(allowedHosts.has(req.headers.host?.toLowerCase()),'Этот адрес не разрешён',403);
       const scheme=req.headers['x-forwarded-proto']==='https'&&['127.0.0.1','::1'].includes(req.socket.remoteAddress)?'https':'http';
       const url=new URL(req.url,`${scheme}://${req.headers.host}`), route=url.pathname, method=req.method;
-      assert(!req.headers.origin||req.headers.origin===url.origin,'Запрос с другого сайта отклонён',403);
-      assert(req.headers['sec-fetch-site']!=='cross-site','Запрос с другого сайта отклонён',403);
+      // Links from chats may be cross-site; the shell and public CA contain no medical data.
+      const publicRead=['GET','HEAD'].includes(method)&&['/','/medika-ca.cer'].includes(route);
+      if(!publicRead){
+        assert(!req.headers.origin||req.headers.origin===url.origin,'Запрос с другого сайта отклонён',403);
+        assert(req.headers['sec-fetch-site']!=='cross-site','Запрос с другого сайта отклонён',403);
+      }
       if(route==='/api/health'&&method==='GET') return send(200,{ok:true,app:'medika',version:'0.1.0',ocr:ocrReady});
       if(route==='/api/session'&&method==='GET') return send(200,{token},{'Set-Cookie':`medika_session=${token}; HttpOnly; SameSite=Strict; Path=/`});
       const imageRoute=route.match(/^\/api\/documents\/([a-f\d-]+)\/image$/);
