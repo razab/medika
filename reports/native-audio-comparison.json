@@ -1,0 +1,45 @@
+{
+  "syntheticDataOnly": true,
+  "model": "gpt-6.1-sol",
+  "reasoning": "low",
+  "results": [
+    {
+      "status": "COMPLETED",
+      "model": "gpt-6.1-sol",
+      "reasoning": "low",
+      "input": "localAudio WAV; no transcription supplied",
+      "output": "{\"person\":null,\"temperature\":null,\"minutesAgo\":null}",
+      "elapsedMs": 6269,
+      "syntheticDataOnly": true,
+      "caseId": "temperature",
+      "audioSha256": "23abbffd4ed281ed5870479422329be46f7b173ff55c4af998fd1595f662595e",
+      "parsedOutput": {
+        "person": null,
+        "temperature": null,
+        "minutesAgo": null
+      },
+      "allFieldsNull": true
+    },
+    {
+      "status": "completed",
+      "output": "{\"person\":null,\"medication\":null,\"amount\":null,\"unit\":null,\"strengthMg\":null,\"minutesAgo\":null}",
+      "elapsedMs": 3933,
+      "caseId": "tablet",
+      "model": "gpt-6.1-sol",
+      "reasoning": "low",
+      "input": "localAudio; exact same WAV as base/small comparison; no transcript",
+      "audioSha256": "27f92d66c1581fe1049779e5cf6eedb6a27d1607f08e1bd35d046ea84dc92936",
+      "syntheticDataOnly": true,
+      "parsedOutput": {
+        "person": null,
+        "medication": null,
+        "amount": null,
+        "unit": null,
+        "strengthMg": null,
+        "minutesAgo": null
+      },
+      "allFieldsNull": true
+    }
+  ],
+  "conclusion": "Обе попытки вернули null во всех полях; полезного разбора аудио через этот путь Codex не получено. Это не оценка всех аудиомоделей."
+}

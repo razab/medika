@@ -1,0 +1,537 @@
+{
+  "version": 1,
+  "status": "COMPLETE",
+  "syntheticDataOnly": true,
+  "tts": "macOS Milena ru-RU",
+  "semanticModel": "gpt-6.1-terra",
+  "reasoning": "low",
+  "results": [
+    {
+      "caseId": "temperature",
+      "sourceText": "Даня, две минуты назад температура тридцать восемь и два.",
+      "condition": "clean TTS",
+      "asr": "base",
+      "asrModelSha256": "60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe",
+      "audioSha256": "23abbffd4ed281ed5870479422329be46f7b173ff55c4af998fd1595f662595e",
+      "transcript": "Даня, две минуты назад температура 382.",
+      "asrMs": 363,
+      "semanticMs": 6594,
+      "totalMs": 6957,
+      "secondsAgo": 120,
+      "draft": {
+        "personId": "synthetic-danya",
+        "kind": "temperature",
+        "name": "",
+        "amount": "",
+        "unit": "",
+        "strength": "",
+        "celsius": "",
+        "occurredAt": "2026-11-08T15:38:04.778Z",
+        "timeZone": "Europe/Chisinau",
+        "carePhase": "",
+        "relatedRxId": "",
+        "sourceText": "Даня, две минуты назад температура 382.",
+        "missing": [
+          "celsius"
+        ],
+        "notes": [
+          "Значение «382» неоднозначно: десятичный разделитель не указан."
+        ],
+        "canAutoRecord": false
+      },
+      "fields": {
+        "person": true,
+        "kind": true,
+        "time": true,
+        "autoRecord": false,
+        "celsius": false
+      },
+      "passed": false
+    },
+    {
+      "caseId": "temperature",
+      "sourceText": "Даня, две минуты назад температура тридцать восемь и два.",
+      "condition": "clean TTS",
+      "asr": "small",
+      "asrModelSha256": "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b",
+      "audioSha256": "23abbffd4ed281ed5870479422329be46f7b173ff55c4af998fd1595f662595e",
+      "transcript": "Даня, две минуты назад температура 38,2.",
+      "asrMs": 827,
+      "semanticMs": 4452,
+      "totalMs": 5279,
+      "secondsAgo": 120,
+      "draft": {
+        "personId": "synthetic-danya",
+        "kind": "temperature",
+        "name": "",
+        "amount": "",
+        "unit": "",
+        "strength": "",
+        "celsius": "38.2",
+        "occurredAt": "2026-11-08T15:38:12.201Z",
+        "timeZone": "Europe/Chisinau",
+        "carePhase": "",
+        "relatedRxId": "",
+        "sourceText": "Даня, две минуты назад температура 38,2.",
+        "missing": [],
+        "notes": [],
+        "canAutoRecord": true
+      },
+      "fields": {
+        "person": true,
+        "kind": true,
+        "time": true,
+        "autoRecord": true,
+        "celsius": true
+      },
+      "passed": true
+    },
+    {
+      "caseId": "tablet",
+      "sourceText": "Даня получил половину таблетки парацетамола двести пятьдесят миллиграмм пять минут назад.",
+      "condition": "clean TTS",
+      "asr": "base",
+      "asrModelSha256": "60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe",
+      "audioSha256": "27f92d66c1581fe1049779e5cf6eedb6a27d1607f08e1bd35d046ea84dc92936",
+      "transcript": "Даня получил половину таблетки процедамого 250 мг. 5 минут назад.",
+      "asrMs": 326,
+      "semanticMs": 6294,
+      "totalMs": 6620,
+      "secondsAgo": 300,
+      "draft": {
+        "personId": "synthetic-danya",
+        "kind": "medication",
+        "name": "процедамого",
+        "amount": "0.5",
+        "unit": "табл.",
+        "strength": "250 мг",
+        "celsius": "",
+        "occurredAt": "2026-11-08T15:36:05.003Z",
+        "timeZone": "Europe/Chisinau",
+        "carePhase": "",
+        "relatedRxId": "",
+        "sourceText": "Даня получил половину таблетки процедамого 250 мг. 5 минут назад.",
+        "missing": [],
+        "notes": [
+          "Название лекарства распознано неясно."
+        ],
+        "canAutoRecord": false
+      },
+      "fields": {
+        "person": true,
+        "kind": true,
+        "time": true,
+        "autoRecord": false,
+        "amount": true,
+        "unit": true,
+        "strength": true,
+        "medicine": false
+      },
+      "passed": false
+    },
+    {
+      "caseId": "tablet",
+      "sourceText": "Даня получил половину таблетки парацетамола двести пятьдесят миллиграмм пять минут назад.",
+      "condition": "clean TTS",
+      "asr": "small",
+      "asrModelSha256": "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b",
+      "audioSha256": "27f92d66c1581fe1049779e5cf6eedb6a27d1607f08e1bd35d046ea84dc92936",
+      "transcript": "Даня получил половину таблетки пароцитамола 250 мг 5 минут  назад.",
+      "asrMs": 745,
+      "semanticMs": 5087,
+      "totalMs": 5832,
+      "secondsAgo": 300,
+      "draft": {
+        "personId": "synthetic-danya",
+        "kind": "medication",
+        "name": "пароцитамол",
+        "amount": "0.5",
+        "unit": "табл.",
+        "strength": "250 мг",
+        "celsius": "",
+        "occurredAt": "2026-11-08T15:36:12.044Z",
+        "timeZone": "Europe/Chisinau",
+        "carePhase": "",
+        "relatedRxId": "",
+        "sourceText": "Даня получил половину таблетки пароцитамола 250 мг 5 минут  назад.",
+        "missing": [],
+        "notes": [
+          "Название лекарства может содержать ошибку распознавания."
+        ],
+        "canAutoRecord": false
+      },
+      "fields": {
+        "person": true,
+        "kind": true,
+        "time": true,
+        "autoRecord": false,
+        "amount": true,
+        "unit": true,
+        "strength": true,
+        "medicine": false
+      },
+      "passed": false
+    },
+    {
+      "caseId": "suppository",
+      "sourceText": "Дане поставили одну свечку парацетамола сто двадцать пять миллиграмм десять минут назад.",
+      "condition": "clean TTS",
+      "asr": "base",
+      "asrModelSha256": "60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe",
+      "audioSha256": "e669447ff13102536495a760ce0a35a262d0e3136030fdf59bfad438c36a40c8",
+      "transcript": "Да не поставили одну свечку процентам эло 125 мг 10 минут назад.",
+      "asrMs": 296,
+      "semanticMs": 6812,
+      "totalMs": 7108,
+      "secondsAgo": 600,
+      "draft": {
+        "personId": "",
+        "kind": "medication",
+        "name": "",
+        "amount": "1",
+        "unit": "свеча",
+        "strength": "125 мг",
+        "celsius": "",
+        "occurredAt": "2026-11-08T15:31:17.811Z",
+        "timeZone": "Europe/Chisinau",
+        "carePhase": "",
+        "relatedRxId": "",
+        "sourceText": "Да не поставили одну свечку процентам эло 125 мг 10 минут назад.",
+        "missing": [
+          "personId",
+          "name"
+        ],
+        "notes": [
+          "Имя человека не названо; название лекарства неясно. Фраза содержит отрицание приёма."
+        ],
+        "canAutoRecord": false
+      },
+      "fields": {
+        "person": false,
+        "kind": true,
+        "time": true,
+        "autoRecord": false,
+        "amount": true,
+        "unit": true,
+        "strength": true,
+        "medicine": false
+      },
+      "passed": false
+    },
+    {
+      "caseId": "suppository",
+      "sourceText": "Дане поставили одну свечку парацетамола сто двадцать пять миллиграмм десять минут назад.",
+      "condition": "clean TTS",
+      "asr": "small",
+      "asrModelSha256": "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b",
+      "audioSha256": "e669447ff13102536495a760ce0a35a262d0e3136030fdf59bfad438c36a40c8",
+      "transcript": "Да, не поставили одну свечку процедамила 125 мг 10 минут назад.",
+      "asrMs": 658,
+      "semanticMs": 5760,
+      "totalMs": 6418,
+      "secondsAgo": 600,
+      "draft": {
+        "personId": "",
+        "kind": "medication",
+        "name": "процедамила",
+        "amount": "1",
+        "unit": "свеча",
+        "strength": "125 мг",
+        "celsius": "",
+        "occurredAt": "2026-11-08T15:31:25.282Z",
+        "timeZone": "Europe/Chisinau",
+        "carePhase": "",
+        "relatedRxId": "",
+        "sourceText": "Да, не поставили одну свечку процедамила 125 мг 10 минут назад.",
+        "missing": [
+          "personId"
+        ],
+        "notes": [
+          "Имя человека не названо; применение отрицается. Название лекарства неясно."
+        ],
+        "canAutoRecord": false
+      },
+      "fields": {
+        "person": false,
+        "kind": true,
+        "time": true,
+        "autoRecord": false,
+        "amount": true,
+        "unit": true,
+        "strength": true,
+        "medicine": false
+      },
+      "passed": false
+    },
+    {
+      "caseId": "retching",
+      "sourceText": "Даня, позывы к рвоте три минуты назад.",
+      "condition": "clean TTS",
+      "asr": "base",
+      "asrModelSha256": "60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe",
+      "audioSha256": "5049d7e053a4b99addb2eea194d76b837b6ed8f086bcf069b61ec8a5ea6569aa",
+      "transcript": "Даня, позывы кровоти 3 минуты назад.",
+      "asrMs": 279,
+      "semanticMs": 7045,
+      "totalMs": 7324,
+      "secondsAgo": 180,
+      "draft": {
+        "personId": "synthetic-danya",
+        "kind": "retching",
+        "name": "",
+        "amount": "",
+        "unit": "",
+        "strength": "",
+        "celsius": "",
+        "occurredAt": "2026-11-08T15:38:31.703Z",
+        "timeZone": "Europe/Chisinau",
+        "carePhase": "",
+        "relatedRxId": "",
+        "sourceText": "Даня, позывы кровоти 3 минуты назад.",
+        "missing": [],
+        "notes": [],
+        "canAutoRecord": true
+      },
+      "fields": {
+        "person": true,
+        "kind": true,
+        "time": true,
+        "autoRecord": true
+      },
+      "passed": true
+    },
+    {
+      "caseId": "retching",
+      "sourceText": "Даня, позывы к рвоте три минуты назад.",
+      "condition": "clean TTS",
+      "asr": "small",
+      "asrModelSha256": "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b",
+      "audioSha256": "5049d7e053a4b99addb2eea194d76b837b6ed8f086bcf069b61ec8a5ea6569aa",
+      "transcript": "Даня, позывы в кровоте три минуты назад.",
+      "asrMs": 592,
+      "semanticMs": 5311,
+      "totalMs": 5903,
+      "secondsAgo": 180,
+      "draft": {
+        "personId": "synthetic-danya",
+        "kind": "retching",
+        "name": "",
+        "amount": "",
+        "unit": "",
+        "strength": "",
+        "celsius": "",
+        "occurredAt": "2026-11-08T15:38:39.340Z",
+        "timeZone": "Europe/Chisinau",
+        "carePhase": "",
+        "relatedRxId": "",
+        "sourceText": "Даня, позывы в кровоте три минуты назад.",
+        "missing": [],
+        "notes": [],
+        "canAutoRecord": true
+      },
+      "fields": {
+        "person": true,
+        "kind": true,
+        "time": true,
+        "autoRecord": true
+      },
+      "passed": true
+    },
+    {
+      "caseId": "temperature-noisy",
+      "sourceText": "Даня, две минуты назад температура тридцать восемь и два.",
+      "condition": "synthetic noise 8 dB, gain 0.18",
+      "asr": "base",
+      "asrModelSha256": "60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe",
+      "audioSha256": "f915d928251e62ba800ae791f89ec679af128e24013b8878280d42459d79580e",
+      "transcript": "Дай-ня, две минуты назад температура 30-82.",
+      "asrMs": 285,
+      "semanticMs": 6018,
+      "totalMs": 6303,
+      "secondsAgo": 120,
+      "draft": {
+        "personId": "",
+        "kind": "temperature",
+        "name": "",
+        "amount": "",
+        "unit": "",
+        "strength": "",
+        "celsius": "",
+        "occurredAt": "2026-11-08T15:39:44.950Z",
+        "timeZone": "Europe/Chisinau",
+        "carePhase": "",
+        "relatedRxId": "",
+        "sourceText": "Дай-ня, две минуты назад температура 30-82.",
+        "missing": [
+          "personId",
+          "celsius"
+        ],
+        "notes": [
+          "Имя и значение температуры распознаны неоднозначно."
+        ],
+        "canAutoRecord": false
+      },
+      "fields": {
+        "person": false,
+        "kind": true,
+        "time": true,
+        "autoRecord": false,
+        "celsius": false
+      },
+      "passed": false
+    },
+    {
+      "caseId": "temperature-noisy",
+      "sourceText": "Даня, две минуты назад температура тридцать восемь и два.",
+      "condition": "synthetic noise 8 dB, gain 0.18",
+      "asr": "small",
+      "asrModelSha256": "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b",
+      "audioSha256": "f915d928251e62ba800ae791f89ec679af128e24013b8878280d42459d79580e",
+      "transcript": "Дай на, две минуты назад температура 382.",
+      "asrMs": 522,
+      "semanticMs": 5284,
+      "totalMs": 5806,
+      "secondsAgo": 120,
+      "draft": {
+        "personId": "",
+        "kind": "temperature",
+        "name": "",
+        "amount": "",
+        "unit": "",
+        "strength": "",
+        "celsius": "",
+        "occurredAt": "2026-11-08T15:39:51.491Z",
+        "timeZone": "Europe/Chisinau",
+        "carePhase": "",
+        "relatedRxId": "",
+        "sourceText": "Дай на, две минуты назад температура 382.",
+        "missing": [
+          "personId",
+          "celsius"
+        ],
+        "notes": [
+          "Имя не названо однозначно; значение «382» неоднозначно."
+        ],
+        "canAutoRecord": false
+      },
+      "fields": {
+        "person": false,
+        "kind": true,
+        "time": true,
+        "autoRecord": false,
+        "celsius": false
+      },
+      "passed": false
+    },
+    {
+      "caseId": "tablet-noisy",
+      "sourceText": "Даня получил половину таблетки парацетамола двести пятьдесят миллиграмм пять минут назад.",
+      "condition": "synthetic noise 12 dB, gain 0.12",
+      "asr": "base",
+      "asrModelSha256": "60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe",
+      "audioSha256": "f6992d93e5e348de687b432ab27d92109c30376b99087ff88e2bd852112e19f3",
+      "transcript": "Дай я получил половину каблетки парадетамого 250 миллиграмм 5 минут назад.",
+      "asrMs": 310,
+      "semanticMs": 7336,
+      "totalMs": 7646,
+      "secondsAgo": 300,
+      "draft": {
+        "personId": "",
+        "kind": "medication",
+        "name": "",
+        "amount": "0.5",
+        "unit": "табл.",
+        "strength": "250 мг",
+        "celsius": "",
+        "occurredAt": "2026-11-08T15:36:57.098Z",
+        "timeZone": "Europe/Chisinau",
+        "carePhase": "",
+        "relatedRxId": "",
+        "sourceText": "Дай я получил половину каблетки парадетамого 250 миллиграмм 5 минут назад.",
+        "missing": [
+          "personId",
+          "name"
+        ],
+        "notes": [
+          "Имя человека и название лекарства распознаны неоднозначно."
+        ],
+        "canAutoRecord": false
+      },
+      "fields": {
+        "person": false,
+        "kind": true,
+        "time": true,
+        "autoRecord": false,
+        "amount": true,
+        "unit": true,
+        "strength": true,
+        "medicine": false
+      },
+      "passed": false
+    },
+    {
+      "caseId": "tablet-noisy",
+      "sourceText": "Даня получил половину таблетки парацетамола двести пятьдесят миллиграмм пять минут назад.",
+      "condition": "synthetic noise 12 dB, gain 0.12",
+      "asr": "small",
+      "asrModelSha256": "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b",
+      "audioSha256": "f6992d93e5e348de687b432ab27d92109c30376b99087ff88e2bd852112e19f3",
+      "transcript": "Даня получил половине таблетки портитамала 250 мг 5 минут  назад.",
+      "asrMs": 616,
+      "semanticMs": 4854,
+      "totalMs": 5470,
+      "secondsAgo": 300,
+      "draft": {
+        "personId": "synthetic-danya",
+        "kind": "medication",
+        "name": "портитамала",
+        "amount": "0.5",
+        "unit": "табл.",
+        "strength": "250 мг",
+        "celsius": "",
+        "occurredAt": "2026-11-08T15:37:05.050Z",
+        "timeZone": "Europe/Chisinau",
+        "carePhase": "",
+        "relatedRxId": "",
+        "sourceText": "Даня получил половине таблетки портитамала 250 мг 5 минут  назад.",
+        "missing": [],
+        "notes": [
+          "Название лекарства распознано неуверенно."
+        ],
+        "canAutoRecord": false
+      },
+      "fields": {
+        "person": true,
+        "kind": true,
+        "time": true,
+        "autoRecord": false,
+        "amount": true,
+        "unit": true,
+        "strength": true,
+        "medicine": false
+      },
+      "passed": false
+    }
+  ],
+  "updatedAt": "2026-11-08T15:46:07.914Z",
+  "summary": [
+    {
+      "asr": "base",
+      "passed": 1,
+      "total": 6,
+      "clarifications": 5,
+      "wrongAutomaticRecords": 0,
+      "meanAsrMs": 310,
+      "meanTotalMs": 6993
+    },
+    {
+      "asr": "small",
+      "passed": 2,
+      "total": 6,
+      "clarifications": 4,
+      "wrongAutomaticRecords": 0,
+      "meanAsrMs": 660,
+      "meanTotalMs": 5785
+    }
+  ]
+}
