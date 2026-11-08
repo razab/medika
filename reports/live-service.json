@@ -1,5 +1,5 @@
 {
-  "verifiedAt": "2026-11-08T12:18:00.431Z",
+  "verifiedAt": "2026-11-08T12:29:30.074Z",
   "origin": "http://medika.localhost",
   "lanOrigin": "http://192.168.0.38",
   "bonjourOrigin": "http://macbook-air-5.local",
@@ -20,7 +20,7 @@
     "message": "Сервис готов",
     "health": {
       "kind": "http",
-      "checkedAt": "2026-11-08T12:17:59.278Z",
+      "checkedAt": "2026-11-08T12:29:29.806Z",
       "ok": true,
       "status": 200,
       "consecutiveFailures": 0,
@@ -46,6 +46,6 @@
     "restartCount": 2,
     "lastRestartAt": "2026-11-08T11:37:39.352Z",
     "lastChangedAt": null,
-    "revision": 11
+    "revision": 13
   }
 }

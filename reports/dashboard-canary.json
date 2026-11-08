@@ -1,13 +1,13 @@
 {
   "status": "PASS",
-  "verifiedAt": "2026-11-08T12:15:41.054Z",
+  "verifiedAt": "2026-11-08T12:27:45.044Z",
   "syntheticDataOnly": true,
   "assetsOrigin": "http://192.168.0.38",
   "apiOrigin": "http://medika.localhost:14385",
   "checks": [
     "Four profiles, zero active prescriptions, two shared doctor documents and household notes",
     "Four regular rows and three conditional rows, shared instructions grouped without mixing personal prescriptions",
-    "First medication visible without scrolling at 1470/1024/768/390",
+    "Phone 320/360/390: header <=56px, first medication starts <=95px, row <=100px, fourth row starts <500px; tablet and desktop checked",
     "No sidebar, closed menu, no fabricated active schedule",
     "Person-specific confirmation, preserved dose/time and blank start date",
     "Confirmed plan and intake on the same page; other child remains a draft",

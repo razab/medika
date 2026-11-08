@@ -23,11 +23,11 @@ try{
   assert.ok(snippet.includes(lanOrigin),'Update the LAN address in infra/medika.caddy before testing');
   const config=join(temporary,'Caddyfile'),prefix='{\n auto_https off\n admin off\n}\n';await writeFile(config,prefix+snippet);await launch(config);
   browser=await chromium.launch({headless:true});const page=await browser.newPage({viewport:{width:1024,height:768},hasTouch:true});page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(lanOrigin);await page.getByRole('button',{name:'Добавить первого человека',exact:true}).click();await page.locator('dialog input[name="name"]').fill('Прокси · тест');await page.getByRole('button',{name:'Сохранить',exact:true}).click();await page.locator('dialog').waitFor({state:'hidden'});await page.locator('.family-board').waitFor();assert.match(await page.locator('.family-board').innerText(),/Прокси · тест/);
+  await page.goto(lanOrigin);await page.getByRole('button',{name:'Добавить первого человека',exact:true}).click();await page.locator('dialog input[name="name"]').fill('Прокси · тест');await page.getByRole('button',{name:'Сохранить',exact:true}).click();await page.locator('dialog').waitFor({state:'hidden'});await page.locator('.family-board').waitFor({state:'attached'});assert.match(await page.locator('.family-board').textContent(),/Прокси · тест/);
   assert.ok((await page.context().cookies()).some(cookie=>cookie.name==='medika_session'&&cookie.httpOnly));
   const token=(await(await fetch(lanOrigin+'/api/session')).json()).token;const state=await(await fetch(lanOrigin+'/api/state',{headers:{'X-Medika-Token':token,Origin:lanOrigin}})).json();assert.equal(state.people.length,1);
   const forbidden=await fetch(lanOrigin+'/api/state',{headers:{'X-Medika-Token':token,Origin:'https://example.com'}});assert.equal(forbidden.status,403);
-  await app.close();await start();await ready();await page.reload();await page.locator('.family-board').waitFor();assert.match(await page.locator('.family-board').innerText(),/Прокси · тест/);assert.deepEqual(errors,[]);
+  await app.close();await start();await ready();await page.reload();await page.locator('.family-board').waitFor({state:'attached'});assert.match(await page.locator('.family-board').textContent(),/Прокси · тест/);assert.deepEqual(errors,[]);
   await stopProxy();await writeFile(config,prefix+snippet.replace('192.168.0.0/24','192.0.2.0/24'));await launch(config);
   assert.equal((await fetch(lanOrigin+'/api/session',{headers:{'X-Forwarded-For':'127.0.0.1'}})).status,403);
   assert.equal((await fetch(origin+'/api/health')).status,200);

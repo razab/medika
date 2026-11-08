@@ -1,16 +1,14 @@
 {
   "status": "PASS",
-  "verifiedAt": "2026-11-08T12:18:00.430Z",
+  "verifiedAt": "2026-11-08T12:29:30.073Z",
   "origin": "http://192.168.0.38",
   "health": true,
-  "newHomeAssetsPublished": true,
+  "compactHomePublished": true,
+  "correctName": "Алиса",
   "people": 4,
   "documents": 6,
   "prescriptions": 0,
   "events": 0,
-  "distinctSourceRows": 7,
-  "ordinarySourceRows": 4,
-  "sourceDataReadOnly": true,
-  "physicalIPadTested": false,
-  "syntheticBrowserCheck": "dashboard-canary.json"
+  "syntheticBrowserCheck": "dashboard-canary.json",
+  "physicalPhoneTested": false
 }
