@@ -1,4 +1,5 @@
 import {captureVoice} from '/voice-capture.js';
+import {prescriptionSummary} from '/prescription-summary.js';
 const $=(s,r=document)=>r.querySelector(s),root=$('#app'),modal=$('#modal');
 let state,token='',patientId=localStorage.getItem('medika-patient')||'',phrase='',busy=false,recording=null,voiceAt='',textEntry=false,language=localStorage.getItem('medika-language')||'ru';
 const kinds={temperature:'Температура',diarrhea:'Диарея',vomiting:'Рвота',retching:'Позывы к рвоте',inhalation:'Ингаляция',medication:'Лекарство',other:'Другое'};
@@ -49,10 +50,9 @@ function historyRows(rows){
 function doctorPlan(){
   const phase=current().carePhase||'',rxs=state.prescriptions.filter(r=>r.personId===patientId&&!r.archived&&(!phase||!r.carePhase||r.carePhase===phase));
   const suggestions=state.documents.filter(d=>d.personId===patientId&&d.sourceKind!=='household').flatMap(d=>d.suggestions.map((s,index)=>({s,d,index}))).filter(({s,d})=>(!phase||(s.conditions?.includes('Условная схема')?'acute':'prevention')===phase)&&!state.prescriptions.some(r=>r.documentId===d.id&&r.sourceText===s.sourceText));
-  const rows=rxs.map(r=>`<div class="order"><div><strong>${e(r.name)}</strong><b>${e(r.dose)} ${e(r.unit)}${r.doseScope==='each-nostril'?' в каждую ноздрю':''}</b><span>${e(r.type==='prn'?'По необходимости':r.times?.join(' · ')||r.conditions||'По назначению')}</span></div><button data-act="rx" data-id="${r.id}">Изменить</button></div>`).join('');
-  const drafts=suggestions.map(({s,d,index})=>`<div class="order draft"><div><strong>${e(s.name)}</strong><b>${s.dose?e(s.dose)+' '+e(s.unit)+(s.doseScope==='each-nostril'?' в каждую ноздрю':''):'Доза не уточнена'}</b><span>${e(s.times||s.conditions||'Время не уточнено')}</span><small>Из выписки · сверить</small></div><button data-act="draft-rx" data-id="${d.id}" data-index="${index}">Сверить</button></div>`).join('');
-  const docs=state.documents.filter(d=>d.personId===patientId);
-  return rows+drafts+(!rows&&!drafts?'<p class="quiet">Назначений пока нет</p>':'')+`<details class="sources"><summary>Оригиналы · ${docs.length}</summary>${docs.map(d=>`<button data-act="document" data-id="${d.id}">${e(d.name)}</button>`).join('')}</details>`;
+  const row=(r,draft=false)=>{const brief=prescriptionSummary(r),details=[brief.details,!phase?r.conditions:''].filter(Boolean).join(' · ');return `<div class="order${draft?' draft':''}"><div><strong>${e(r.name)}</strong><b>${e(brief.dose)} · ${e(brief.frequency)}</b>${details?`<span>${e(details)}</span>`:''}</div></div>`;};
+  const rows=rxs.map(r=>row(r)).join(''),drafts=suggestions.map(({s})=>row(s,true)).join('');
+  return rows+drafts+(!rows&&!drafts?'<p class="quiet">Назначений пока нет</p>':'')+`<details class="sources"><summary>Выписки и настройка</summary>${suggestions.length?'<p class="quiet">Для расписания укажите дату начала курса и часы приёма. Названия и дозы перенесены из выписки.</p>':''}${rxs.map(r=>`<button data-act="rx" data-id="${r.id}">Изменить курс · ${e(r.name)}</button>`).join('')}${suggestions.map(({s,d,index})=>`<button data-act="draft-rx" data-id="${d.id}" data-index="${index}">Настроить курс · ${e(s.name)}</button>`).join('')}${state.documents.filter(d=>d.personId===patientId).map(d=>`<button data-act="document" data-id="${d.id}">Оригинал · ${e(d.name)}</button>`).join('')}</details>`;
 }
 function field(label,name,value='',extra=''){return `<label>${label}<input name="${name}" value="${e(value)}" ${extra}></label>`;}
 function footer(label='Сохранить'){return `<footer class="dialog-footer"><button type="button" data-close>Отмена</button><button type="submit" class="primary">${label}</button></footer>`;}
