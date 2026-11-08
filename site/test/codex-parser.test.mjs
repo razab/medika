@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {validateCodexDraft,codexPeople,knownMedicines} from '../lib/codex-parser.mjs';
-const state={people:[{id:'a',name:'Алиса'},{id:'d',name:'Даня',carePhase:'acute'}],prescriptions:[{id:'r',personId:'d',name:'ТестПрепарат'}]};
+const state={people:[{id:'a',name:'Алиса'},{id:'d',name:'Даня',carePhase:'acute'},{id:'m',name:'Мама'},{id:'p',name:'Папа'}],prescriptions:[{id:'r',personId:'d',name:'ТестПрепарат'}]};
 const recordedAt=new Date(Date.now()-60000).toISOString();
 const output={personId:'d',kind:'temperature',name:'',amount:'',unit:'',strength:'',celsius:'38.2',timeMode:'relative',secondsAgo:120,date:'',clock:'',needsReview:false,notes:[]};
 const parse=(text,change={})=>validateCodexDraft(state,{text,recordedAt,timeZone:'Europe/Chisinau'},{...output,...change});
@@ -22,4 +22,15 @@ test('Контекст восстановления: только имена и 
   const context=codexPeople({people:[{id:'d',name:'Даня',diagnosis:'private',age:6}],prescriptions:[{id:'r',personId:'d',name:'ТестПрепарат',dose:'secret dose'},{personId:'d',name:'ТестПрепарат'},{personId:'d',name:'Архив',archived:true},{personId:'other',name:'Чужое'}]});
   assert.deepEqual(context,[{id:'d',name:'Даня',displayName:'Даня',medicines:['ТестПрепарат']}]);
   assert.ok(knownMedicines.some(m=>m.name==='Парацетамол'));assert.ok(knownMedicines.every(m=>Object.keys(m).sort().join(',')==='aliases,name'));
+});
+
+
+test('Имя после ASR: восстановление из people с исходным фрагментом, без выдуманного пациента',()=>{
+  for(const mention of ['Да нет','Да не','Доня']){const text=mention+', две минуты назад температура 38,2',d=parse(text,{personMention:mention});assert.equal(d.personId,'d');assert.equal(d.canAutoRecord,true);assert.equal(d.sourceText,text);}
+  for(const change of [{personMention:''},{personMention:'Даня'},{personMention:'38,2'},{personMention:'да',personId:'missing'}])assert.equal(parse('Да нет, температура 38,2',change).canAutoRecord,false);
+  assert.equal(parse('температура 38,2').canAutoRecord,false);
+  assert.equal(parse('Да нет, мама, температура 38,2',{personMention:'Да нет'}).canAutoRecord,false);
+  assert.equal(parse('Алиса и Даня, температура 38,2',{personMention:'Даня'}).canAutoRecord,false);
+  assert.equal(parse('Да нет, температура 38,2',{personMention:'Да нет',needsReview:true,notes:['Нужно уточнить человека']}).canAutoRecord,false);
+  assert.equal(parse('Да неточно, температура 38,2',{personMention:'Да нет'}).canAutoRecord,false);
 });

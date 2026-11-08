@@ -1,0 +1,23 @@
+{
+  "syntheticDataOnly": true,
+  "model": "gpt-6.1-sol",
+  "input": "Да нет, две минуты назад температура 38,2",
+  "result": {
+    "personId": "d",
+    "kind": "temperature",
+    "name": "",
+    "amount": "",
+    "unit": "",
+    "strength": "",
+    "celsius": "38.2",
+    "occurredAt": "2026-11-08T20:38:09.611Z",
+    "timeZone": "Europe/Chisinau",
+    "carePhase": "",
+    "relatedRxId": "",
+    "sourceText": "Да нет, две минуты назад температура 38,2",
+    "missing": [],
+    "notes": [],
+    "canAutoRecord": true
+  },
+  "passed": true
+}

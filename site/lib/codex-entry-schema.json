@@ -1,9 +1,10 @@
 {
   "type": "object",
   "additionalProperties": false,
-  "required": ["personId", "kind", "name", "amount", "unit", "strength", "celsius", "timeMode", "secondsAgo", "date", "clock", "needsReview", "notes"],
+  "required": ["personId", "personMention", "kind", "name", "amount", "unit", "strength", "celsius", "timeMode", "secondsAgo", "date", "clock", "needsReview", "notes"],
   "properties": {
     "personId": {"type": "string"},
+    "personMention": {"type": "string", "description": "Дословный фрагмент text с именем или его ASR-искажением; пустая строка, если человека не назвали."},
     "kind": {"type": "string", "enum": ["temperature", "vomiting", "retching", "diarrhea", "medication", "inhalation", "other"]},
     "name": {"type": "string"},
     "amount": {"type": "string"},
