@@ -9,6 +9,7 @@ import { openStore } from './lib/store.mjs';
 import { assert, InputError, personInput, rxInput, temperatureInput, activityInput, day, newId, string, positive, scheduleFor, parseSuggestions, localParts,courseEnd } from './lib/domain.mjs';
 import { catalog, rules, referenceInfo, checkPerson, intakeWarnings } from './lib/reference.mjs';
 import { parseEntry } from './lib/entry-parser.mjs';
+import { parseWithCodex,codexStatus } from './lib/codex-parser.mjs';
 import { voiceStatus,transcribeAudio } from './lib/voice.mjs';
 import { restoreBackup } from './lib/backup.mjs';
 
@@ -19,7 +20,7 @@ export function imageType(bytes) {
   if(bytes.toString('ascii',0,4)==='RIFF'&&bytes.toString('ascii',8,12)==='WEBP') return 'image/webp';
   return null;
 }
-export async function createApp({dataDir=join(root,'data'),port=4382,publicHost='medika.localhost',additionalHosts=[]}={}) {
+export async function createApp({dataDir=join(root,'data'),port=4382,publicHost='medika.localhost',additionalHosts=[],entryParser=parseEntry}={}) {
   const store=openStore(dataDir), uploads=join(dataDir,'uploads');
   await mkdir(uploads,{recursive:true,mode:0o700});
   const token=randomBytes(32).toString('hex'), ocrBinary=join(root,'scripts/medika-ocr');
@@ -62,10 +63,15 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
         if(imageRoute&&method==='GET') assert(req.headers.cookie?.split(';').some(s=>s.trim()===`medika_session=${token}`),'Откройте приложение перед просмотром',403);
         else assert(req.headers['x-medika-token']===token,'Сессия обновлена. Перезагрузите страницу.',403);
       }
-      if(route==='/api/state'&&method==='GET') return send(200,{...store.state(),catalog,rules,reference:referenceInfo,capabilities:{ocr:ocrReady,ocrLanguages:['ru-RU','en-US'],notifications:'open-tab-only',voice:await voiceStatus()}});
-      if(route==='/api/parse-entry'&&method==='POST')return send(200,parseEntry(store.state(),await body(req)));
+      if(route==='/api/state'&&method==='GET') return send(200,{...store.state(),catalog,rules,reference:referenceInfo,capabilities:{ocr:ocrReady,ocrLanguages:['ru-RU','en-US'],notifications:'open-tab-only',voice:await voiceStatus(),entryParser:entryParser===parseWithCodex?await codexStatus():{model:'local-rules',cloud:false}}});
+      if(route==='/api/parse-entry'&&method==='POST')return send(200,await entryParser(store.state(),await body(req)));
       if(route==='/api/record-entry'&&method==='POST'){
-        const input=await body(req),draft=parseEntry(store.state(),{...input,personId:''});
+        const input=await body(req);
+        if(input.clientKey){
+          const found=store.db.prepare('SELECT data FROM activities WHERE client_key=?').get(string(input.clientKey,'Ключ записи',120));
+          if(found){const record=JSON.parse(found.data);assert(record.status!=='void'&&record.sourceText===string(input.text,'Фраза',4000,true)&&record.timeZone===(input.timeZone||'Europe/Chisinau'),'Ключ относится к другой или отменённой записи.',409);return send(200,{record});}
+        }
+        const draft=await entryParser(store.state(),{...input,personId:''});
         if(!draft.canAutoRecord)return send(200,{draft,needsReview:true});
         assert(input.recordedAt&&input.clientKey,'Отсутствует время или ключ записи');
         const result=recordActivity({...draft,clientKey:input.clientKey});return send(result.status,{record:result.record});
@@ -203,7 +209,7 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
 }
 
 if(process.argv[1]&&fileURLToPath(import.meta.url)===process.argv[1]) {
-  const port=Number(process.env.PORT||4382),additionalHosts=(process.env.MEDIKA_LAN_HOSTS||'').split(',').map(host=>host.trim()).filter(Boolean),app=await createApp({port,additionalHosts,dataDir:process.env.MEDIKA_DATA_DIR||join(root,'data')});
+  const port=Number(process.env.PORT||4382),additionalHosts=(process.env.MEDIKA_LAN_HOSTS||'').split(',').map(host=>host.trim()).filter(Boolean),app=await createApp({port,additionalHosts,entryParser:parseWithCodex,dataDir:process.env.MEDIKA_DATA_DIR||join(root,'data')});
   app.server.listen(port,'127.0.0.1',()=>console.log('Медика: http://medika.localhost'+additionalHosts.map(host=>` · http://${host}`).join('')));
   for(const signal of ['SIGINT','SIGTERM']) process.once(signal,async()=>{await app.close();process.exit(0);});
 }

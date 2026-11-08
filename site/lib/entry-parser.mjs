@@ -28,10 +28,11 @@ function nameForms(p){
 const letters={а:'a',б:'b',в:'v',г:'g',д:'d',е:'e',ё:'e',ж:'zh',з:'z',и:'i',й:'i',к:'k',л:'l',м:'m',н:'n',о:'o',п:'p',р:'r',с:'s',т:'t',у:'u',ф:'f',х:'h',ц:'ts',ч:'ch',ш:'sh',щ:'sch',ы:'y',э:'e',ю:'yu',я:'ya',ь:'',ъ:''};
 function phonetic(s){return s.toLowerCase().replace(/c(?=[ei])/g,'ts').replace(/c/g,'k').replace(/x/g,'ks').replace(/[а-яё]/gu,c=>letters[c]).replace(/[^a-z0-9]/g,'');}
 const unitPatterns=[['свеча','свеч[а-я]*|suppositor(?:y|ies)'],['табл.','таблет[а-я]*|табл\.?|tablets?'],['капс.','капсул[а-я]*|capsules?'],['мл','мл\.?|миллилитр[а-я]*|ml'],['мкг','мкг|микрограмм[а-я]*|mcg'],['мг','мг\.?|миллиграмм[а-я]*|mg'],['г','грамм[а-я]*|grams?'],['кап.','капл[а-я]*|кап\.?|drops?'],['впрыскивание','впрыск[а-я]*|пшик[а-я]*|sprays?'],['пакет','пакет[а-я]*|sachets?']];
+export function namedPeople(state,text){return state.people.filter(p=>wordPattern(nameForms(p)).test(text.toLowerCase().replace(/ё/gu,'е')));}
 export function parseEntry(state,input,{now=new Date()}={}){
   const sourceText=string(input.text,'Фраза',4000,true),timeZone=zone(input.timeZone||'Europe/Chisinau'),original=sourceText.toLowerCase().replace(/ё/gu,'е');
   assert(!/[;\n]|\b(?:then)\b|(?:потом|затем|после этого)/iu.test(sourceText),'Пока записывайте по одному событию: разделите эту фразу.');
-  const explicit=state.people.filter(p=>wordPattern(nameForms(p)).test(original));
+  const explicit=namedPeople(state,original);
   const selected=state.people.find(p=>p.id===input.personId),p=explicit.length===1?explicit[0]:explicit.length>1?null:selected;
   const missing=[],notes=[];if(!p)missing.push('personId');
   if(input.recordedAt!==undefined){

@@ -7,6 +7,7 @@
   "scripts": {
     "start": "node server.mjs",
     "test": "node --test test/*.test.mjs",
+    "codex:setup": "node scripts/setup-codex.mjs",
     "voice:setup": "node scripts/setup-voice.mjs",
     "ocr:build": "swiftc scripts/ocr.swift -o scripts/medika-ocr -O"
   },

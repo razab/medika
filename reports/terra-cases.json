@@ -1,0 +1,46 @@
+{
+  "status": "PASS",
+  "model": "gpt-6.1-terra",
+  "auth": "ChatGPT subscription",
+  "sequential": true,
+  "syntheticDataOnly": true,
+  "checkedAt": "2026-11-08T15:33:17.624Z",
+  "checks": [
+    {
+      "text": "Даня получил таблетку парацетамола 250 мг пять минут назад",
+      "kind": "medication",
+      "amount": "1",
+      "unit": "табл.",
+      "strength": "250 мг",
+      "canAutoRecord": true,
+      "elapsedMs": 5143
+    },
+    {
+      "text": "Даня получил свечку парацетамола 125 мг минуту назад",
+      "kind": "medication",
+      "amount": "1",
+      "unit": "свеча",
+      "strength": "125 мг",
+      "canAutoRecord": true,
+      "elapsedMs": 4327
+    },
+    {
+      "text": "Даня, позывы к рвоте три минуты назад",
+      "kind": "retching",
+      "amount": "",
+      "unit": "",
+      "strength": "",
+      "canAutoRecord": true,
+      "elapsedMs": 5684
+    },
+    {
+      "text": "Даня не получил таблетку парацетамола",
+      "kind": "medication",
+      "amount": "1",
+      "unit": "табл.",
+      "strength": "",
+      "canAutoRecord": false,
+      "elapsedMs": 4388
+    }
+  ]
+}

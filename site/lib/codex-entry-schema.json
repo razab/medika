@@ -1,0 +1,20 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["personId", "kind", "name", "amount", "unit", "strength", "celsius", "timeMode", "secondsAgo", "date", "clock", "needsReview", "notes"],
+  "properties": {
+    "personId": {"type": "string"},
+    "kind": {"type": "string", "enum": ["temperature", "vomiting", "retching", "diarrhea", "medication", "inhalation", "other"]},
+    "name": {"type": "string"},
+    "amount": {"type": "string"},
+    "unit": {"type": "string", "enum": ["", "табл.", "капс.", "мл", "мг", "мкг", "г", "кап.", "доза", "впрыскивание", "пакет", "свеча", "нанесение"]},
+    "strength": {"type": "string"},
+    "celsius": {"type": "string"},
+    "timeMode": {"type": "string", "enum": ["now", "relative", "absolute", "unknown"]},
+    "secondsAgo": {"type": ["number", "null"]},
+    "date": {"type": "string"},
+    "clock": {"type": "string"},
+    "needsReview": {"type": "boolean"},
+    "notes": {"type": "array", "items": {"type": "string"}}
+  }
+}
