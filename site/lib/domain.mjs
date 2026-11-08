@@ -83,15 +83,13 @@ function slotsInput(input){
     assert(['','before','with','after'].includes(s.relation||''),'Укажите связь с едой');
     assert(!s.relation||!['bedtime','clock',''].includes(s.anchor),'Связь с едой доступна для приёмов пищи');
     assert(s.anchor!=='clock'||clock(s.time),'Укажите точное время');
-    const offsetMinutes=Number(s.offsetMinutes||0);assert(Number.isInteger(offsetMinutes)&&offsetMinutes>=0&&offsetMinutes<=120,'Сдвиг: от 0 до 120 минут');
-    return {anchor:s.anchor,relation:s.relation||'',...(s.anchor==='clock'?{time:s.time}:{}),...(offsetMinutes?{offsetMinutes}:{})};
+    return {anchor:s.anchor,relation:s.relation||'',...(s.anchor==='clock'?{time:s.time}:{})};
   });
 }
 export function validateRoutineBinding(rx,person){
   if(rx.type!=='routine')return;
   for(const profile of Object.values(person?.routine||emptyRoutine()))for(const slot of rx.routineSlots){
     const details=slotDetails(slot,profile);
-    assert(!details.displayTime||details.displayTime.split('–').every(clock),'Сдвиг выходит за пределы дня: измените привязку');
     assert(!slot.relation||details.anchor!=='bedtime','Перед сном — отдельная точка, без привязки к еде');
   }
 }
@@ -163,7 +161,6 @@ export function scheduleFor(rx, date, person) {
     const profile=(person?.routine||emptyRoutine())[dayType(date)];
     return rx.routineSlots.map((slot,i)=>{
       const details=slotDetails(slot,profile);
-      assert(!details.displayTime||details.displayTime.split('–').every(clock),'Сдвиг выходит за пределы дня: измените привязку');
       // Before/after food and ranges do not imply an exact administration time.
       const scheduledAt=clock(details.displayTime)&&!slot.relation?zonedInstant(date,details.displayTime,rx.timeZone):null;
       return {key:`${rx.id}@routine-${date}-${i}`,rxId:rx.id,personId:rx.personId,date,time:scheduledAt?details.displayTime:'',...(scheduledAt?{scheduledAt}:{}),timeZone:rx.timeZone,name:rx.name,dose:rx.dose,unit:rx.unit,ingredients:rx.ingredients,conditions:rx.conditions,doseScope:rx.doseScope,purpose:rx.purpose,carePhase:rx.carePhase,...details,slotIndex:i,...(rx.legacyTimes?.[i]?{legacyKey:`${rx.id}@${zonedInstant(date,rx.legacyTimes[i],rx.timeZone)}`}:{})};

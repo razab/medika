@@ -23,7 +23,8 @@ test('Ключ факта стабилен при изменении часов;
   const after=scheduleFor(rx,'2026-11-09',changed);assert.equal(before[0].key,after[0].key);assert.notEqual(before[0].scheduledAt,after[0].scheduledAt);
   const daily={...rx,type:'daily',times:['17:00']};assert.equal(scheduleFor(daily,'2026-11-09',changed)[0].time,'17:00');
   const relation={...rx,routineSlots:[{anchor:'breakfast',relation:'before'}]};assert.equal(scheduleFor(relation,'2026-11-09',person)[0].scheduledAt,undefined);
-  const sequence={...rx,routineSlots:[{anchor:'first',offsetMinutes:15}]};assert.equal(scheduleFor(sequence,'2026-11-09',person)[0].time,'08:15');
+  const sequence={...rx,routineSlots:[{anchor:'first',offsetMinutes:15}]};assert.equal(scheduleFor(sequence,'2026-11-09',person)[0].time,'08:00');
+  assert.deepEqual(rxInput({...rx,ingredients:'',routineSlots:[{anchor:'first',offsetMinutes:15}]}).routineSlots,[{anchor:'first',relation:''}]);
   assert.equal(scheduleFor({...rx,routineSlots:[{anchor:'secondDinner'}]},'2026-11-09',person)[0].label,'Второй ужин');
 });
 test('Распорядок и слоты проверяются на границе ввода',()=>{
@@ -31,5 +32,5 @@ test('Распорядок и слоты проверяются на грани�
   for(const value of ['25:00','19:00–18:00','8:00','08:00–09:00–10:00']){
     const bad=structuredClone(routine);bad.weekday.times.breakfast=value;assert.throws(()=>personInput({name:'Тест',routine:bad}));
   }
-  for(const s of [{anchor:'bad'},{anchor:'clock',time:'25:00'},{anchor:'first',offsetMinutes:-1},{anchor:'bedtime',relation:'after'}])assert.throws(()=>rxInput({...rx,ingredients:'',routineSlots:[s]}));
+  for(const s of [{anchor:'bad'},{anchor:'clock',time:'25:00'},{anchor:'bedtime',relation:'after'}])assert.throws(()=>rxInput({...rx,ingredients:'',routineSlots:[s]}));
 });
