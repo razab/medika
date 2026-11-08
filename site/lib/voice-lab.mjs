@@ -14,11 +14,11 @@ export const labPhrases=[
   {id:'negative',text:'Даня не получил парацетамол.',expected:{noEvent:true}}
 ];
 export const labVariants=[
-  {id:'base-terra',label:'Base → Terra',asr:'base',model:'gpt-6.1-terra'},
-  {id:'small-terra',label:'Small → Terra',asr:'small',model:'gpt-6.1-terra'},
-  {id:'base-sol',label:'Base → Sol',asr:'base',model:'gpt-6.1-sol'},
-  {id:'small-sol',label:'Small → Sol',asr:'small',model:'gpt-6.1-sol'},
-  {id:'small-luna',label:'Small → Luna',asr:'small',model:'gpt-6-luna'}
+  {id:'base-terra',label:'Whisper Base → Terra',asr:'base',model:'gpt-6.1-terra'},
+  {id:'small-terra',label:'Whisper Small → Terra',asr:'small',model:'gpt-6.1-terra'},
+  {id:'base-sol',label:'Whisper Base → Sol',asr:'base',model:'gpt-6.1-sol'},
+  {id:'small-sol',label:'Whisper Small → Sol',asr:'small',model:'gpt-6.1-sol'},
+  {id:'small-luna',label:'Whisper Small → Luna',asr:'small',model:'gpt-6-luna'}
 ];
 const labState={people:[{id:'lab-danya',name:'Даня'},{id:'lab-alice',name:'Алиса'},{id:'lab-mom',name:'Мама'},{id:'lab-dad',name:'Папа'}],prescriptions:[],documents:[],activities:[]};
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
