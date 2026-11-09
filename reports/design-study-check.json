@@ -1,6 +1,6 @@
 {
   "status": "PASS",
-  "completedAt": "2026-11-09T20:29:38.681Z",
+  "completedAt": "2026-11-09T20:41:23.067Z",
   "a1Revision": 2,
   "activeDesigns": 8,
   "syntheticOnly": true,
@@ -12,7 +12,7 @@
       "width": 320,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 201.953125,
+      "firstDrug": 217.953125,
       "clipped": []
     },
     {
@@ -20,7 +20,7 @@
       "width": 390,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 201.953125,
+      "firstDrug": 217.953125,
       "clipped": []
     },
     {
@@ -28,7 +28,7 @@
       "width": 768,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 224.6875,
+      "firstDrug": 234.6875,
       "clipped": []
     },
     {
@@ -36,7 +36,7 @@
       "width": 1024,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 224.6875,
+      "firstDrug": 234.6875,
       "clipped": []
     },
     {
@@ -44,7 +44,7 @@
       "width": 320,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 267.328125,
+      "firstDrug": 271.328125,
       "clipped": []
     },
     {
@@ -52,7 +52,7 @@
       "width": 390,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 245.9375,
+      "firstDrug": 249.9375,
       "clipped": []
     },
     {
@@ -60,7 +60,7 @@
       "width": 768,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 245.9375,
+      "firstDrug": 249.9375,
       "clipped": []
     },
     {
@@ -68,7 +68,7 @@
       "width": 1024,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 245.9375,
+      "firstDrug": 249.9375,
       "clipped": []
     },
     {
@@ -76,7 +76,7 @@
       "width": 320,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 290.34375,
+      "firstDrug": 294.34375,
       "clipped": []
     },
     {
@@ -84,7 +84,7 @@
       "width": 390,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 290.34375,
+      "firstDrug": 294.34375,
       "clipped": []
     },
     {
@@ -92,7 +92,7 @@
       "width": 768,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 290.34375,
+      "firstDrug": 294.34375,
       "clipped": []
     },
     {
@@ -100,7 +100,7 @@
       "width": 1024,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 290.34375,
+      "firstDrug": 294.34375,
       "clipped": []
     },
     {
@@ -108,7 +108,7 @@
       "width": 320,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 282.09375,
+      "firstDrug": 286.09375,
       "clipped": []
     },
     {
@@ -116,7 +116,7 @@
       "width": 390,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 282.09375,
+      "firstDrug": 286.09375,
       "clipped": []
     },
     {
@@ -124,7 +124,7 @@
       "width": 768,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 282.09375,
+      "firstDrug": 286.09375,
       "clipped": []
     },
     {
@@ -132,7 +132,7 @@
       "width": 1024,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 282.09375,
+      "firstDrug": 286.09375,
       "clipped": []
     },
     {
@@ -140,7 +140,7 @@
       "width": 320,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 287.140625,
+      "firstDrug": 291.140625,
       "clipped": []
     },
     {
@@ -148,7 +148,7 @@
       "width": 390,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 287.140625,
+      "firstDrug": 291.140625,
       "clipped": []
     },
     {
@@ -156,7 +156,7 @@
       "width": 768,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 287.140625,
+      "firstDrug": 291.140625,
       "clipped": []
     },
     {
@@ -164,7 +164,7 @@
       "width": 1024,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 287.140625,
+      "firstDrug": 291.140625,
       "clipped": []
     },
     {
@@ -172,7 +172,7 @@
       "width": 320,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 260.5625,
+      "firstDrug": 264.5625,
       "clipped": []
     },
     {
@@ -180,7 +180,7 @@
       "width": 390,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 260.5625,
+      "firstDrug": 264.5625,
       "clipped": []
     },
     {
@@ -188,7 +188,7 @@
       "width": 768,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 260.5625,
+      "firstDrug": 264.5625,
       "clipped": []
     },
     {
@@ -196,7 +196,7 @@
       "width": 1024,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 260.5625,
+      "firstDrug": 264.5625,
       "clipped": []
     },
     {
@@ -204,7 +204,7 @@
       "width": 320,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 196.84375,
+      "firstDrug": 200.84375,
       "clipped": []
     },
     {
@@ -212,7 +212,7 @@
       "width": 390,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 196.84375,
+      "firstDrug": 200.84375,
       "clipped": []
     },
     {
@@ -220,7 +220,7 @@
       "width": 768,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 196.84375,
+      "firstDrug": 200.84375,
       "clipped": []
     },
     {
@@ -228,7 +228,7 @@
       "width": 1024,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 196.84375,
+      "firstDrug": 200.84375,
       "clipped": []
     },
     {
@@ -236,7 +236,7 @@
       "width": 320,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 414.5,
+      "firstDrug": 418.5,
       "clipped": []
     },
     {
@@ -244,7 +244,7 @@
       "width": 390,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 414.5,
+      "firstDrug": 418.5,
       "clipped": []
     },
     {
@@ -252,7 +252,7 @@
       "width": 768,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 414.5,
+      "firstDrug": 418.5,
       "clipped": []
     },
     {
@@ -260,7 +260,7 @@
       "width": 1024,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 414.5,
+      "firstDrug": 418.5,
       "clipped": []
     },
     {
@@ -270,7 +270,16 @@
       "columns": 1,
       "details": true,
       "filters": true,
-      "slotNamesOnly": true
+      "slotNamesOnly": true,
+      "touch": {
+        "count": 21,
+        "minWidth": 48,
+        "minHeight": 48,
+        "minGap": 8,
+        "undersized": [],
+        "crowded": []
+      },
+      "touchCenterAndEdges": true
     },
     {
       "a1Revision": 2,
@@ -279,7 +288,16 @@
       "columns": 1,
       "details": true,
       "filters": true,
-      "slotNamesOnly": true
+      "slotNamesOnly": true,
+      "touch": {
+        "count": 21,
+        "minWidth": 48,
+        "minHeight": 48,
+        "minGap": 8,
+        "undersized": [],
+        "crowded": []
+      },
+      "touchCenterAndEdges": true
     },
     {
       "a1Revision": 2,
@@ -288,7 +306,16 @@
       "columns": 2,
       "details": true,
       "filters": true,
-      "slotNamesOnly": true
+      "slotNamesOnly": true,
+      "touch": {
+        "count": 21,
+        "minWidth": 48,
+        "minHeight": 48,
+        "minGap": 8,
+        "undersized": [],
+        "crowded": []
+      },
+      "touchCenterAndEdges": true
     },
     {
       "a1Revision": 2,
@@ -297,7 +324,16 @@
       "columns": 2,
       "details": true,
       "filters": true,
-      "slotNamesOnly": true
+      "slotNamesOnly": true,
+      "touch": {
+        "count": 21,
+        "minWidth": 48,
+        "minHeight": 48,
+        "minGap": 8,
+        "undersized": [],
+        "crowded": []
+      },
+      "touchCenterAndEdges": true
     },
     {
       "a1Revision": 2,
@@ -306,7 +342,16 @@
       "columns": 2,
       "details": true,
       "filters": true,
-      "slotNamesOnly": true
+      "slotNamesOnly": true,
+      "touch": {
+        "count": 21,
+        "minWidth": 48,
+        "minHeight": 48,
+        "minGap": 8,
+        "undersized": [],
+        "crowded": []
+      },
+      "touchCenterAndEdges": true
     },
     {
       "a1Revision": 2,
@@ -315,14 +360,23 @@
       "columns": 2,
       "details": true,
       "filters": true,
-      "slotNamesOnly": true
+      "slotNamesOnly": true,
+      "touch": {
+        "count": 21,
+        "minWidth": 48,
+        "minHeight": 48,
+        "minGap": 8,
+        "undersized": [],
+        "crowded": []
+      },
+      "touchCenterAndEdges": true
     },
     {
       "gallery": true,
       "width": 320,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 935.609375,
+      "firstDrug": 1003.609375,
       "clipped": []
     },
     {
@@ -330,7 +384,7 @@
       "width": 390,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 837.28125,
+      "firstDrug": 849.28125,
       "clipped": []
     },
     {
@@ -338,7 +392,7 @@
       "width": 768,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 694.46875,
+      "firstDrug": 706.46875,
       "clipped": []
     },
     {
@@ -346,7 +400,7 @@
       "width": 1024,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 706.125,
+      "firstDrug": 718.125,
       "clipped": []
     },
     {
@@ -354,7 +408,7 @@
       "width": 1360,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 711.890625,
+      "firstDrug": 723.890625,
       "clipped": []
     }
   ],
