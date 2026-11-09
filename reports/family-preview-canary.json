@@ -1,0 +1,94 @@
+{
+  "status": "PASS",
+  "syntheticOnly": true,
+  "physicalDeviceTested": false,
+  "checks": [
+    "Synthetic API → shared A1 rows → source details → family filter → reload; no clinical writes",
+    {
+      "width": 320,
+      "height": 844,
+      "overflow": false,
+      "minWidth": 52,
+      "minHeight": 48,
+      "minGap": 8
+    },
+    {
+      "width": 320,
+      "expanded": {
+        "overflow": false,
+        "minWidth": 52,
+        "minHeight": 48,
+        "minGap": 8
+      }
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "overflow": false,
+      "minWidth": 66,
+      "minHeight": 48,
+      "minGap": 8
+    },
+    {
+      "width": 390,
+      "expanded": {
+        "overflow": false,
+        "minWidth": 66,
+        "minHeight": 48,
+        "minGap": 8
+      }
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "overflow": false,
+      "minWidth": 105.59375,
+      "minHeight": 48,
+      "minGap": 8
+    },
+    {
+      "width": 768,
+      "expanded": {
+        "overflow": false,
+        "minWidth": 105.59375,
+        "minHeight": 48,
+        "minGap": 8
+      }
+    },
+    {
+      "width": 820,
+      "height": 1180,
+      "overflow": false,
+      "minWidth": 105.59375,
+      "minHeight": 48,
+      "minGap": 8
+    },
+    {
+      "width": 820,
+      "expanded": {
+        "overflow": false,
+        "minWidth": 105.59375,
+        "minHeight": 48,
+        "minGap": 8
+      }
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "overflow": false,
+      "minWidth": 105.59375,
+      "minHeight": 48,
+      "minGap": 8
+    },
+    {
+      "width": 1024,
+      "expanded": {
+        "overflow": false,
+        "minWidth": 105.59375,
+        "minHeight": 48,
+        "minGap": 8
+      }
+    }
+  ],
+  "clinicalMutations": 0
+}

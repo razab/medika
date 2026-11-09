@@ -18,7 +18,7 @@ test('Внешняя ссылка открывает оболочку; чужи�
     }
     assert.equal((await call('/',navigation,'HEAD')).status,200);
     // Only the explicit synthetic gallery is public; nearby paths and API stay protected.
-    for(const path of ['/design-study','/design-study/','/design-study/a1','/design-study/a3','/design-study/b3','/design-study/c3','/design-study.css','/design-study/golostext.ttf']){
+    for(const path of ['/family','/family/','/design-study','/design-study/','/design-study/a1','/design-study/a3','/design-study/b3','/design-study/c3','/design-study.css','/design-study/golostext.ttf']){
       assert.equal((await call(path,{...navigation,Origin:'https://chat.example'})).status,200,path);
       assert.equal((await call(path,navigation,'HEAD')).status,200,path+' HEAD');
     }
