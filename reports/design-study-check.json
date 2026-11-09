@@ -1,6 +1,8 @@
 {
   "status": "PASS",
-  "completedAt": "2026-11-09T19:41:13.516Z",
+  "completedAt": "2026-11-09T20:29:38.681Z",
+  "a1Revision": 2,
+  "activeDesigns": 8,
   "syntheticOnly": true,
   "physicalIPadTested": false,
   "clinicalApiRequests": 0,
@@ -10,7 +12,7 @@
       "width": 320,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 289.96875,
+      "firstDrug": 201.953125,
       "clipped": []
     },
     {
@@ -18,7 +20,7 @@
       "width": 390,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 289.96875,
+      "firstDrug": 201.953125,
       "clipped": []
     },
     {
@@ -26,7 +28,7 @@
       "width": 768,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 289.96875,
+      "firstDrug": 224.6875,
       "clipped": []
     },
     {
@@ -34,7 +36,7 @@
       "width": 1024,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 289.96875,
+      "firstDrug": 224.6875,
       "clipped": []
     },
     {
@@ -70,38 +72,6 @@
       "clipped": []
     },
     {
-      "id": "a3",
-      "width": 320,
-      "overflow": false,
-      "fontLoaded": true,
-      "firstDrug": 246.59375,
-      "clipped": []
-    },
-    {
-      "id": "a3",
-      "width": 390,
-      "overflow": false,
-      "fontLoaded": true,
-      "firstDrug": 246.59375,
-      "clipped": []
-    },
-    {
-      "id": "a3",
-      "width": 768,
-      "overflow": false,
-      "fontLoaded": true,
-      "firstDrug": 246.59375,
-      "clipped": []
-    },
-    {
-      "id": "a3",
-      "width": 1024,
-      "overflow": false,
-      "fontLoaded": true,
-      "firstDrug": 246.59375,
-      "clipped": []
-    },
-    {
       "id": "b1",
       "width": 320,
       "overflow": false,
@@ -294,11 +264,65 @@
       "clipped": []
     },
     {
+      "a1Revision": 2,
+      "width": 320,
+      "height": 844,
+      "columns": 1,
+      "details": true,
+      "filters": true,
+      "slotNamesOnly": true
+    },
+    {
+      "a1Revision": 2,
+      "width": 390,
+      "height": 844,
+      "columns": 1,
+      "details": true,
+      "filters": true,
+      "slotNamesOnly": true
+    },
+    {
+      "a1Revision": 2,
+      "width": 768,
+      "height": 1024,
+      "columns": 2,
+      "details": true,
+      "filters": true,
+      "slotNamesOnly": true
+    },
+    {
+      "a1Revision": 2,
+      "width": 820,
+      "height": 1180,
+      "columns": 2,
+      "details": true,
+      "filters": true,
+      "slotNamesOnly": true
+    },
+    {
+      "a1Revision": 2,
+      "width": 1024,
+      "height": 768,
+      "columns": 2,
+      "details": true,
+      "filters": true,
+      "slotNamesOnly": true
+    },
+    {
+      "a1Revision": 2,
+      "width": 1180,
+      "height": 820,
+      "columns": 2,
+      "details": true,
+      "filters": true,
+      "slotNamesOnly": true
+    },
+    {
       "gallery": true,
       "width": 320,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 1004.125,
+      "firstDrug": 935.609375,
       "clipped": []
     },
     {
@@ -306,7 +330,7 @@
       "width": 390,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 960.625,
+      "firstDrug": 837.28125,
       "clipped": []
     },
     {
@@ -314,7 +338,7 @@
       "width": 768,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 782.484375,
+      "firstDrug": 694.46875,
       "clipped": []
     },
     {
@@ -322,7 +346,7 @@
       "width": 1024,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 794.140625,
+      "firstDrug": 706.125,
       "clipped": []
     },
     {
@@ -330,7 +354,7 @@
       "width": 1360,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 799.90625,
+      "firstDrug": 711.890625,
       "clipped": []
     }
   ],
