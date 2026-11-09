@@ -1,3 +1,4 @@
+import {familyView} from './lib/family-view.mjs';
 import {createLocalOCR} from './lib/local-ocr.mjs';
 import {createPrescriptionLab} from './lib/prescription-lab.mjs';
 import {applyPrescriptionPlan} from './lib/prescription-import.mjs';
@@ -8,7 +9,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomBytes, createHash } from 'node:crypto';
 import { openStore } from './lib/store.mjs';
-import { assert, InputError, validateRoutineBinding, personInput, rxInput, temperatureInput, activityInput, procedureNote, day, newId, string, positive, scheduleFor, parseSuggestions, localParts,courseEnd } from './lib/domain.mjs';
+import { assert, InputError, occurrenceInput, validateRoutineBinding, personInput, rxInput, temperatureInput, activityInput, procedureNote, day, newId, string, positive, scheduleFor, parseSuggestions, localParts,courseEnd } from './lib/domain.mjs';
 import { catalog, rules, referenceInfo, checkPerson, intakeWarnings } from './lib/reference.mjs';
 import { parseEntry } from './lib/entry-parser.mjs';
 import { parseWithCodex,codexStatus,codexPeople } from './lib/codex-parser.mjs';
@@ -52,6 +53,14 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
     if(found){const old=JSON.parse(found.data);assert(old.status!=='void'&&Object.entries(input).every(([k,v])=>old[k]===v),'Ключ относится к другой или отменённой записи. Проверьте журнал.',409);return {status:200,record:old};}
     return {status:201,record:store.insert('activities',{...input,status:'recorded'})};
   }
+  function scheduleView(state,date,personId=''){
+        const prescriptions=state.prescriptions.filter(r=>!personId||r.personId===personId);
+        const planned=prescriptions.filter(r=>!r.carePhase||r.carePhase===(state.people.find(p=>p.id===r.personId)?.carePhase||'prevention')).flatMap(r=>scheduleFor(r,date,state.people.find(p=>p.id===r.personId)));
+        const items=planned.map(e=>({...e,event:state.events.find(x=>(x.key===e.key||x.key===e.legacyKey)&&x.status!=='void')||null}));
+        const recorded=state.events.filter(e=>e.date===date&&e.status!=='void'&&(!personId||e.personId===personId)&&!items.some(p=>p.event?.id===e.id)).map(event=>({...event,event,historical:true}));
+        const prn=prescriptions.filter(r=>(!r.carePhase||r.carePhase===(state.people.find(p=>p.id===r.personId)?.carePhase||'prevention'))&&r.type==='prn'&&!r.archived&&r.startDate<=date&&(!r.endDate||r.endDate>=date));
+    return {items:[...items,...recorded].sort((a,b)=>(a.scheduledAt||a.occurredAt||'').localeCompare(b.scheduledAt||b.occurredAt||'')),prn};
+  }
   const allowedHosts=new Set([publicHost,...additionalHosts,`medika.localhost:${port}`,`127.0.0.1:${port}`,`localhost:${port}`].flatMap(host=>host.includes(':')?[host.toLowerCase()]:[host.toLowerCase(),`${host.toLowerCase()}:80`,`${host.toLowerCase()}:443`]));
   async function body(req,limit=18*1024*1024) {
     assert(req.headers['content-type']?.startsWith('application/json'),'Ожидается JSON',415);
@@ -71,7 +80,7 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       const url=new URL(req.url,`${scheme}://${req.headers.host}`), route=url.pathname, method=req.method;
       if(route==='/design-study/a1')res.setHeader('Content-Security-Policy',`default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src ${url.origin}/api/session ${url.origin}/api/design-study/a1-snapshot; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'`);
       // Links from chats may be cross-site; the shell and public CA contain no medical data.
-      const publicRead=['GET','HEAD'].includes(method)&&(['/','/family','/family/','/voice-lab','/voice-lab/','/ocr-lab','/ocr-lab/','/playground','/medika-ca.cer'].includes(route)||Object.hasOwn(designStudyAssets,route));
+      const publicRead=['GET','HEAD'].includes(method)&&(['/','/manage','/family','/family/','/voice-lab','/voice-lab/','/ocr-lab','/ocr-lab/','/playground','/medika-ca.cer'].includes(route)||Object.hasOwn(designStudyAssets,route));
       if(!publicRead){
         assert(!req.headers.origin||req.headers.origin===url.origin,'Запрос с другого сайта отклонён',403);
         assert(req.headers['sec-fetch-site']!=='cross-site','Запрос с другого сайта отклонён',403);
@@ -180,15 +189,8 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       }
       const archiveRoute=route.match(/^\/api\/prescriptions\/([a-f\d-]+)\/archive$/);
       if(archiveRoute&&method==='POST') { const input=await body(req);return send(200,store.update('prescriptions',archiveRoute[1],{archived:input.archived!==false},input.version)); }
-      if(route==='/api/schedule'&&method==='GET') {
-        const date=day(url.searchParams.get('date')),personId=url.searchParams.get('personId'),state=store.state();
-        const prescriptions=state.prescriptions.filter(r=>!personId||r.personId===personId);
-        const planned=prescriptions.filter(r=>!r.carePhase||r.carePhase===(state.people.find(p=>p.id===r.personId)?.carePhase||'prevention')).flatMap(r=>scheduleFor(r,date,state.people.find(p=>p.id===r.personId)));
-        const items=planned.map(e=>({...e,event:state.events.find(x=>(x.key===e.key||x.key===e.legacyKey)&&x.status!=='void')||null}));
-        const recorded=state.events.filter(e=>e.date===date&&e.status!=='void'&&(!personId||e.personId===personId)&&!items.some(p=>p.event?.id===e.id)).map(event=>({...event,event,historical:true}));
-        const prn=prescriptions.filter(r=>(!r.carePhase||r.carePhase===(state.people.find(p=>p.id===r.personId)?.carePhase||'prevention'))&&r.type==='prn'&&!r.archived&&r.startDate<=date&&(!r.endDate||r.endDate>=date));
-        return send(200,{items:[...items,...recorded].sort((a,b)=>(a.scheduledAt||a.occurredAt||'').localeCompare(b.scheduledAt||b.occurredAt||'')),prn});
-      }
+      if(route==='/api/schedule'&&method==='GET'){const date=day(url.searchParams.get('date'));return send(200,scheduleView(store.state(),date,url.searchParams.get('personId')));}
+      if(route==='/api/family'&&method==='GET'){const now=new Date(),timeZone='Europe/Chisinau',date=localParts(now,timeZone).date,state=store.state();return send(200,{...familyView(state,scheduleView(state,date),{date,now,timeZone},{maskIds:false}),medicinePhotos:state.medicinePhotos,capabilities:{voice:await voiceStatus()}});}
       if(route==='/api/check'&&method==='POST') {
         const input=await body(req),state=store.state();assert(state.people.some(p=>p.id===input.personId),'Выберите человека');
         const candidate=input.candidate?{name:string(input.candidate.name,'Препарат',200,true),ingredients:string(input.candidate.ingredients,'Состав',600).split(/[+;,\n]/).map(s=>s.trim()).filter(Boolean)}:null;
@@ -201,22 +203,31 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
         assert(input.rxVersion===undefined||input.rxVersion===rx.version,'Назначение изменилось. Обновите расписание перед отметкой.',409);
         assert(!rx.carePhase||rx.carePhase===(store.get('people',rx.personId)?.carePhase||'prevention'),'Назначение относится к другой фазе лечения');
         assert(['taken','skipped','deferred'].includes(input.status),'Неизвестный статус');
-        const occurredAt=input.occurredAt||new Date().toISOString();assert(Number.isFinite(Date.parse(occurredAt)),'Некорректное фактическое время');
-        assert(Date.parse(occurredAt)<=Date.now()+60000,'Фактический приём не может быть в будущем');
-        const date=rx.type==='prn'?localParts(occurredAt,rx.timeZone).date:day(input.date),event=rx.type==='prn'?null:scheduleFor(rx,date,store.get('people',rx.personId)).find(e=>e.key===input.key);
+        const occurrence=occurrenceInput({personId:rx.personId,timeZone:rx.timeZone,occurredAt:input.timeUnknown===true?(input.occurredAt??null):input.occurredAt||new Date().toISOString(),...(input.timeUnknown===true?{timeUnknown:true,knownDate:input.knownDate}:{timeUnknown:false})}),occurredAt=occurrence.occurredAt;
+        const date=rx.type==='prn'?(occurrence.timeUnknown?occurrence.knownDate:localParts(occurredAt,rx.timeZone).date):day(input.date),event=rx.type==='prn'?null:scheduleFor(rx,date,store.get('people',rx.personId)).find(e=>e.key===input.key);
         assert(event||rx.type==='prn'&&!rx.archived&&date>=rx.startDate&&(!rx.endDate||date<=rx.endDate),'Событие отсутствует в действующем расписании');
         assert(rx.type!=='prn'||input.status==='taken','Для приёма по необходимости записывается факт');
         const manualClientKey=rx.type==='prn'&&input.clientKey?string(input.clientKey,'Ключ ручной отметки',120,true):'';
-        if(manualClientKey){assert(/^[a-zA-Z0-9_-]{8,120}$/.test(manualClientKey),'Некорректный ключ отметки');const previous=store.state().events.find(e=>e.rxId===rx.id&&e.manualClientKey===manualClientKey);if(previous){assert(previous.status==='taken'&&previous.actualDose===positive(input.dose||rx.dose,'Фактическая доза'),'Ключ относится к другой отметке',409);return send(200,previous);}}
+        if(manualClientKey){assert(/^[a-zA-Z0-9_-]{8,120}$/.test(manualClientKey),'Некорректный ключ отметки');const previous=store.state().events.find(e=>e.rxId===rx.id&&e.manualClientKey===manualClientKey);if(previous){assert(previous.status==='taken'&&previous.actualDose===positive(input.dose??rx.dose,'Фактическая доза'),'Ключ относится к другой отметке',409);return send(200,previous);}}
         const key=event?.key||`${rx.id}@prn-${newId()}`;
         if(event?.legacyKey){const legacy=store.db.prepare('SELECT data FROM events WHERE event_key=?').get(event.legacyKey);assert(!legacy||JSON.parse(legacy.data).status==='void','Этот приём уже отмечен по прежнему расписанию',409);}
         const old=store.db.prepare('SELECT data FROM events WHERE event_key=?').get(key);
         assert(!old||JSON.parse(old.data).status==='void','Этот приём уже отмечен. Обновите расписание.',409);
-        const actualDose=input.status==='taken'?positive(input.dose||rx.dose,'Фактическая доза'):rx.dose;
-        const record={...(event||{rxId:rx.id,personId:rx.personId,name:rx.name,dose:rx.dose,unit:rx.unit,timeZone:rx.timeZone,conditions:rx.conditions,ingredients:rx.ingredients,date,time:localParts(occurredAt,rx.timeZone).time,...(rx.doseScope?{doseScope:rx.doseScope}:{}),...(rx.purpose?{purpose:rx.purpose}:{}),...(rx.carePhase!==undefined?{carePhase:rx.carePhase}:{})}),key,...(manualClientKey?{manualClientKey}:{}),status:input.status,occurredAt:new Date(occurredAt).toISOString(),actualDose,note:string(input.note||procedureNote(rx),'Примечание',2000),author:string(input.author||'Я','Автор',100)};
+        const actualDose=input.status==='taken'?positive(input.dose??rx.dose,'Фактическая доза'):rx.dose;if(input.status==='taken'&&['впрыскивание','кап.'].includes(rx.unit))assert(Number.isInteger(Number(actualDose)),'Капли и впрыскивания: целое количество');
+        const record={...(event||{rxId:rx.id,personId:rx.personId,name:rx.name,dose:rx.dose,unit:rx.unit,timeZone:rx.timeZone,conditions:rx.conditions,ingredients:rx.ingredients,date,time:occurrence.timeUnknown?'':localParts(occurredAt,rx.timeZone).time,...(rx.doseScope?{doseScope:rx.doseScope}:{}),...(rx.purpose?{purpose:rx.purpose}:{}),...(rx.carePhase!==undefined?{carePhase:rx.carePhase}:{})}),key,...(manualClientKey?{manualClientKey}:{}),status:input.status,...occurrence,actualDose,note:string(input.note||procedureNote(rx),'Примечание',2000),author:string(input.author||'Я','Автор',100)};
         for(const field of ['legacyKey','anchor','label','displayTime','relation','slotIndex'])delete record[field];
         if(old) {const previous=JSON.parse(old.data);return send(200,store.update('events',previous.id,record,previous.version));}
         return send(201,store.insert('events',record));
+      }
+      const correctRoute=route.match(/^\/api\/(events|activities|temperatures)\/([a-f\d-]+)\/correct$/);
+      if(correctRoute&&method==='POST'){
+        const [,table,id]=correctRoute,input=await body(req),old=store.get(table,id);assert(old,'Запись не найдена',404);assert(old.status!=='void','Запись уже отменена',409);assert(old.version===input.version,'Запись уже изменена. Обновите журнал.',409);
+        const occurrence=occurrenceInput({personId:old.personId,timeZone:old.timeZone,...(input.timeUnknown===true?{timeUnknown:true,knownDate:input.knownDate,occurredAt:input.occurredAt??null}:{timeUnknown:false,occurredAt:input.occurredAt})});
+        let patch;if(table==='events'){assert(old.status==='taken','Исправляется фактический приём');patch={...occurrence,actualDose:positive(input.amount,'Фактическая доза'),note:string(input.note??old.note,'Примечание',2000)};}
+        else if(table==='temperatures')patch=temperatureInput({...old,...occurrence,celsius:input.celsius});
+        else patch=activityInput({...old,...occurrence,...Object.fromEntries(['celsius','amount','unit','name','note'].filter(k=>input[k]!==undefined).map(k=>[k,input[k]]))});
+        if(table==='events'&&['впрыскивание','кап.'].includes(old.unit))assert(Number.isInteger(Number(patch.actualDose)),'Капли и впрыскивания: целое количество');
+        return send(200,store.update(table,id,patch,input.version));
       }
       const voidRoute=route.match(/^\/api\/events\/([a-f\d-]+)\/void$/);
       if(voidRoute&&method==='POST') { const input=await body(req);assert(string(input.reason,'Причина исправления',1000,true),'Укажите причину');return send(200,store.update('events',voidRoute[1],{status:'void',voidReason:input.reason},input.version)); }
@@ -262,7 +273,7 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       if(route==='/medika-ca.cer'&&method==='GET'){res.writeHead(200,{'Content-Type':'application/x-x509-ca-cert','Content-Disposition':'attachment; filename=medika-ca.cer'});return res.end(await readFile(join(root,'data/medika-ca.cer')));}
       if(route==='/ocr-sample.png'){res.writeHead(200,{'Content-Type':'image/png'});return res.end(await readFile(join(root,'public/ocr-sample.png')));}
       const packageImage=route.match(/^\/medicine-images\/([a-z0-9-]+\.jpg)$/);if(packageImage){let bytes;try{bytes=await readFile(join(root,'public/medicine-images',packageImage[1]));}catch{throw new InputError('Фото не найдено',404);}res.writeHead(200,{'Content-Type':'image/jpeg','Cache-Control':'public, max-age=86400'});return res.end(method==='HEAD'?undefined:bytes);}
-      const assets={...designStudyAssets,'/family':['family-preview.html','text/html'],'/family/':['family-preview.html','text/html'],'/family-preview.js':['family-preview.js','text/javascript'],'/family-preview-model.js':['family-preview-model.js','text/javascript'],'/family-card.js':['family-card.js','text/javascript'],'/ocr-lab':['ocr-lab.html','text/html'],'/ocr-lab/':['ocr-lab.html','text/html'],'/playground':['ocr-lab.html','text/html'],'/ocr-lab.js':['ocr-lab.js','text/javascript'],'/prescription-workspace.js':['prescription-workspace.js','text/javascript'],'/prescription-workspace.css':['prescription-workspace.css','text/css'],'/medicine-forms.js':['medicine-forms.js','text/javascript'],'/routine.js':['routine.js','text/javascript'],'/':['index.html','text/html'],'/voice-lab':['voice-lab.html','text/html'],'/voice-lab/':['voice-lab.html','text/html'],'/voice-lab.js':['voice-lab.js','text/javascript'],'/voice-lab.css':['voice-lab.css','text/css'],'/prescription-summary.js':['prescription-summary.js','text/javascript'],'/medicine-images.js':['medicine-images.js','text/javascript'],'/app.js':['app.js','text/javascript'],'/style.css':['style.css','text/css'],'/icon.svg':['icon.svg','image/svg+xml'],'/voice-recorder.js':['voice-recorder.js','text/javascript'],'/voice-capture.js':['voice-capture.js','text/javascript']};
+      const assets={...designStudyAssets,'/family':['family-preview.html','text/html'],'/family/':['family-preview.html','text/html'],'/family-preview-model.js':['family-preview-model.js','text/javascript'],'/family-card.js':['family-card.js','text/javascript'],'/ocr-lab':['ocr-lab.html','text/html'],'/ocr-lab/':['ocr-lab.html','text/html'],'/playground':['ocr-lab.html','text/html'],'/ocr-lab.js':['ocr-lab.js','text/javascript'],'/prescription-workspace.js':['prescription-workspace.js','text/javascript'],'/prescription-workspace.css':['prescription-workspace.css','text/css'],'/medicine-forms.js':['medicine-forms.js','text/javascript'],'/routine.js':['routine.js','text/javascript'],'/':['family-preview.html','text/html'],'/manage':['index.html','text/html'],'/family-workspace.js':['family-workspace.js','text/javascript'],'/family-workspace.css':['family-workspace.css','text/css'],'/voice-lab':['voice-lab.html','text/html'],'/voice-lab/':['voice-lab.html','text/html'],'/voice-lab.js':['voice-lab.js','text/javascript'],'/voice-lab.css':['voice-lab.css','text/css'],'/prescription-summary.js':['prescription-summary.js','text/javascript'],'/medicine-images.js':['medicine-images.js','text/javascript'],'/app.js':['app.js','text/javascript'],'/style.css':['style.css','text/css'],'/icon.svg':['icon.svg','image/svg+xml'],'/voice-recorder.js':['voice-recorder.js','text/javascript'],'/voice-capture.js':['voice-capture.js','text/javascript']};
       assert(assets[route],'Страница не найдена',404);
       const [file,mime]=assets[route];res.writeHead(200,{'Content-Type':`${mime}; charset=utf-8`});res.end(method==='HEAD'?undefined:await readFile(join(root,'public',file)));
     } catch(e) {

@@ -34,7 +34,7 @@ try{
   await page.setViewportSize({width:1365,height:768});await page.setContent('<html lang="ru"><body style="background:white;color:black;font:36px sans-serif;padding:60px"><h1>Синтетическая выписка</h1><p>ТестСироп 100 мг/5 мл по 2,5 мл 2 раза в день</p></body></html>');const image=join(directory,'synthetic-prescription.png');await page.screenshot({path:image});
   const packageFiles=[];for(const [index,side]of ['Коробка','Флакон'].entries()){await page.setContent(`<html lang="ru"><body style="background:white;color:#185b4c;font:32px sans-serif;padding:40px"><div style="border:5px solid #185b4c;padding:20px;width:250px">ТестСпрей<p>${side} сторона</p></div></body></html>`);const path=join(directory,'synthetic-package-'+index+'.png');await page.locator('body>div').screenshot({path});packageFiles.push(path);}
   await page.setViewportSize({width:390,height:844});
-  await page.route('https://navigation-source.invalid/',route=>route.fulfill({contentType:'text/html; charset=utf-8',body:`<a href="${publicOrigin}/">Открыть Медику</a>`}));
+  await page.route('https://navigation-source.invalid/',route=>route.fulfill({contentType:'text/html; charset=utf-8',body:`<a href="${publicOrigin}/manage">Открыть Медику</a>`}));
   await page.goto('https://navigation-source.invalid/');
   await page.getByRole('link',{name:'Открыть Медику',exact:true}).click();
   await page.locator('.patient-app').waitFor();

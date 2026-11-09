@@ -74,6 +74,7 @@ export function routineInput(input){
       if(value)times[a]=value;
     }
     assert(Array.isArray(p.intakes)&&p.intakes.length===3&&p.intakes.every(a=>typeof a==='string'&&(a===''||Object.hasOwn(anchors,a))),'Выберите три привязки приёмов');
+    const assigned=p.intakes.filter(Boolean);assert(new Set(assigned).size===assigned.length,'Для разных приёмов выберите разные точки дня');
     return [d,{times,intakes:[...p.intakes]}];
   }));
 }
@@ -109,10 +110,11 @@ export function procedureNote(rx){const r=rx.regimen;return r?[r.mixing?'Схе�
 export const units = ['табл.', 'капс.', 'мл', 'мг', 'мкг', 'г', 'кап.', 'доза', 'впрыскивание', 'пакет', 'свеча', 'нанесение'];
 export function occurrenceInput(input){
   assert(input&&typeof input==='object'&&!Array.isArray(input),'Ожидается запись события');
+  if(input.timeUnknown===true){const timeZone=zone(input.timeZone||'Europe/Chisinau'),knownDate=day(input.knownDate);assert(input.occurredAt===null||input.occurredAt==='','Не указывайте часы для неизвестного времени');assert(knownDate<=localParts(new Date(),timeZone).date,'Событие не может быть в будущем');return {personId:string(input.personId,'Человек',80,true),occurredAt:null,timeZone,timeUnknown:true,knownDate};}
   assert(typeof input.occurredAt==='string'&&/T.*(?:Z|[+-]\d{2}:\d{2})$/.test(input.occurredAt)&&Number.isFinite(Date.parse(input.occurredAt)),'Укажите дату и время события');
   day(input.occurredAt.slice(0,10));
   assert(Date.parse(input.occurredAt)<=Date.now()+60000,'Событие не может быть в будущем');
-  return {personId:string(input.personId,'Человек',80,true),occurredAt:new Date(input.occurredAt).toISOString(),timeZone:zone(input.timeZone||'Europe/Chisinau')};
+  return {personId:string(input.personId,'Человек',80,true),occurredAt:new Date(input.occurredAt).toISOString(),timeZone:zone(input.timeZone||'Europe/Chisinau'),...(input.timeUnknown===false?{timeUnknown:false,knownDate:''}:{})};
 }
 export function temperatureInput(input){
   const occurrence=occurrenceInput(input),raw=String(input.celsius??'').trim().replace(',','.');

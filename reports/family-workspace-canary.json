@@ -1,0 +1,120 @@
+{
+  "status": "PASS",
+  "syntheticOnly": true,
+  "recognitionStubbed": true,
+  "physicalDeviceTested": false,
+  "checks": [
+    "External root link; prior-day medicine; current intake saved and survives reload",
+    "Prescription editing leaves old facts intact; atomic fact correction; explicit unknown time; dependency does not invent a clock",
+    "Per-person phase and personal slots save through versioned API without overwriting profile or another patient",
+    "Empty-profile temperature two minutes ago, corrected and voided; symptom with unknown time persists",
+    "Unknown-time scheduled fact preserves the date explicitly entered by the user",
+    "Existing voice pipeline retained: stub transcription → actual parser/record endpoint, named person overrides current filter",
+    {
+      "width": 320,
+      "height": 844,
+      "geometry": {
+        "overflow": false,
+        "width": 48,
+        "height": 48,
+        "gap": 8,
+        "columns": false
+      }
+    },
+    {
+      "width": 320,
+      "touchCentersAndEdges": true,
+      "modal": {
+        "width": 83.96875,
+        "height": 48,
+        "gap": 32,
+        "overflow": false
+      }
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "geometry": {
+        "overflow": false,
+        "width": 48,
+        "height": 48,
+        "gap": 8,
+        "columns": false
+      }
+    },
+    {
+      "width": 390,
+      "touchCentersAndEdges": true,
+      "modal": {
+        "width": 83.96875,
+        "height": 48,
+        "gap": 12,
+        "overflow": false
+      }
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "geometry": {
+        "overflow": false,
+        "width": 48,
+        "height": 48,
+        "gap": 8,
+        "columns": true
+      }
+    },
+    {
+      "width": 768,
+      "touchCentersAndEdges": true,
+      "modal": {
+        "width": 83.96875,
+        "height": 48,
+        "gap": 12,
+        "overflow": false
+      }
+    },
+    {
+      "width": 820,
+      "height": 1180,
+      "geometry": {
+        "overflow": false,
+        "width": 48,
+        "height": 48,
+        "gap": 8,
+        "columns": true
+      }
+    },
+    {
+      "width": 820,
+      "touchCentersAndEdges": true,
+      "modal": {
+        "width": 83.96875,
+        "height": 48,
+        "gap": 12,
+        "overflow": false
+      }
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "geometry": {
+        "overflow": false,
+        "width": 48,
+        "height": 48,
+        "gap": 8,
+        "columns": true
+      }
+    },
+    {
+      "width": 1024,
+      "touchCentersAndEdges": true,
+      "modal": {
+        "width": 83.96875,
+        "height": 48,
+        "gap": 12,
+        "overflow": false
+      }
+    },
+    "Service restart preserves facts, corrections, phases and profile settings"
+  ]
+}

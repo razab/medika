@@ -1,0 +1,34 @@
+.family-app .mock.a1{max-width:1280px;min-height:100dvh}
+.family-toolbar{display:flex;align-items:center;gap:8px;padding-right:14px}
+.family-toolbar .care-family{flex:1;min-width:0}
+.family-toolbar>button{border:0;border-radius:8px;background:white;color:#315ac1;min-height:48px;min-width:48px;font-size:24px}
+.family-app .care-board{padding-bottom:160px}
+.family-app .family-preview-footer{position:fixed;bottom:0;left:0;right:0;z-index:5;max-width:1280px;margin:auto;background:#f4f7fc;border-top:1px solid #dce4ee;display:grid;grid-template-columns:minmax(0,1fr) 64px 96px;gap:8px;padding:12px 14px max(12px,env(safe-area-inset-bottom))}
+.family-preview-footer button,.family-preview-footer select{min-height:48px;min-width:48px;padding:8px;border:1px solid #cbd5e3;border-radius:9px;background:white;color:#315ac1;font:14px Golos,system-ui,sans-serif}
+.family-preview-footer .voice{border:0;background:#315ac1;color:white;font-weight:600}
+.family-preview-footer p{grid-column:1/-1;font-size:11px;color:#526176;margin:0}
+.family-app .sandbox-history .care-event:has(button){grid-template-columns:42px 42px minmax(0,1fr) 58px}
+.family-app .sandbox-history .care-event button{font-size:10px}
+.family-tools{display:grid;gap:12px;margin-top:16px}
+.family-tools a,.family-tools button{display:flex;align-items:center;min-height:48px;border:1px solid #cbd5e3;background:white;border-radius:9px;padding:8px 12px;font:14px Golos,system-ui,sans-serif;color:#315ac1;text-decoration:none}
+.family-photos{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.family-photos figure{flex:1;min-width:100px;max-width:180px;margin:0}
+.family-photos img,.family-photos svg{width:100%;height:140px;object-fit:contain}
+.family-photos figcaption{font-size:11px;line-height:1.5;color:#627084;margin-top:8px}
+@container screen (min-width:700px){.family-app .sandbox-history{max-height:calc(100dvh - 160px)}}
+@media(max-width:350px){.family-app .family-preview-footer{grid-template-columns:minmax(0,1fr) 48px 80px}.family-preview-footer button,.family-preview-footer select{font-size:12px}}
+.family-app #family-status{bottom:calc(124px + env(safe-area-inset-bottom));pointer-events:none}
+.family-app #family-status button{pointer-events:auto}
+/* The composer owns its space; scrolling content cannot receive taps underneath it. */
+.family-app{height:100dvh;overflow:hidden}
+.family-app #family{height:100dvh;min-height:0;display:flex;flex-direction:column}
+.family-app .family-toolbar,.family-app .sandbox-jump{flex-shrink:0}
+.family-app #family .care-board{flex:1;min-height:0;overflow:auto;padding-bottom:24px;align-content:start}
+.family-app #family .family-preview-footer{position:static;flex-shrink:0;width:100%;box-sizing:border-box;margin:0}
+@container screen (min-width:700px){.family-app #family .sandbox-history{top:0;max-height:100%}}
+.family-app .care-event>span{min-width:0;overflow-wrap:anywhere}
+.family-app .care-med-name:has(.family-thumb){display:flex;align-items:center;gap:8px}
+.family-thumb{display:inline-flex;flex-shrink:0;width:28px;height:32px}
+.family-thumb img,.family-thumb svg{width:100%;height:100%;object-fit:contain}
+.family-drug-label{min-width:0;overflow-wrap:anywhere}
+.family-photos a{display:flex;align-items:center;min-height:48px;margin-top:8px;font-size:12px;color:#315ac1}

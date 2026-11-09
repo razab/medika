@@ -44,7 +44,8 @@ export function checkPerson(state, {personId, candidate=null, excludeId='', at=n
 
 export function intakeWarnings(state, rx, occurredAt) {
   const recent = state.events.filter(e=>e.rxId===rx.id && e.status==='taken' && Date.parse(e.occurredAt)<=Date.parse(occurredAt));
-  const warnings=[];
+  const warnings=[],lookback=Math.max(Number(rx.minHours)||0,rx.maxPer24h?24:0);
+  if(lookback){const from=localParts(new Date(Date.parse(occurredAt)-lookback*3600000),rx.timeZone).date,to=localParts(occurredAt,rx.timeZone).date;if(state.events.some(e=>e.rxId===rx.id&&e.status==='taken'&&e.timeUnknown&&e.knownDate>=from&&e.knownDate<=to))warnings.push('Есть приём с неизвестным временем. Проверка интервалов и количества приёмов неполна.');}
   if (recent.length && rx.minHours) {
     const previous = recent.reduce((a,b)=>Date.parse(a.occurredAt)>Date.parse(b.occurredAt)?a:b);
     if(Date.parse(occurredAt)-Date.parse(previous.occurredAt)<Number(rx.minHours)*3600000) warnings.push(`С предыдущего приёма прошло меньше указанного интервала ${rx.minHours} ч.`);

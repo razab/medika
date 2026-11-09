@@ -6,7 +6,7 @@ const snapshot={contextAt:'2026-11-09T17:00:00Z',model:{cards:[{id:'p',current:{
 test('Демо: интервал связан с фактом того же человека и повторения, отмена снимает связь',()=>{
   const actions=[{id:'1',kind:'medication',rowKey:'a',personId:'p',occurredAt:'2026-11-09T16:48:00Z',detail:'2 пшика'}];
   assert.match(dependencyStatus(snapshot,[],b),/Нет записи/);assert.match(dependencyStatus(snapshot,actions,b),/12 мин · интервал 10–15/);assert.equal(rowEvent(snapshot,actions,a).id,'1');
-  const cancelled=[...actions,{id:'2',kind:'cancel',targetId:'1'}];assert.equal(rowEvent(snapshot,cancelled,a),null);assert.equal(activeEvents(snapshot,cancelled).length,0);assert.match(dependencyStatus(snapshot,cancelled,b),/Нет записи/);assert.equal(actions.length,1);
+  const cancelled=[...actions,{id:'2',kind:'cancel',targetId:'1'}];assert.equal(rowEvent(snapshot,cancelled,a),null);assert.equal(activeEvents(snapshot,cancelled).length,0);assert.match(dependencyStatus(snapshot,cancelled,b),/Нет записи/);assert.equal(actions.length,1);assert.equal(rowEvent(snapshot,[{...actions[0],status:'skipped'}],a),null);
   const otherSlot={...b,slotIndex:1};assert.match(dependencyStatus(snapshot,actions,otherSlot),/Нет записи/);
   assert.match(dependencyStatus(snapshot,[{...actions[0],occurredAt:null}],b),/неизвестно/);
 });

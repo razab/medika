@@ -30,7 +30,7 @@ try{
   await api('/prescriptions',{...base,name:'ТочныеЧасы',type:'daily',times:'17:00'},201);
   check('Документ → активный курс → перенос в распорядок: прежний факт сохранён и не дублируется');
   browser=await chromium.launch({headless:true});const page=await browser.newPage({viewport:{width:390,height:844},timezoneId:'Europe/Chisinau'});page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(origin);await page.getByLabel('Дата расписания',{exact:true}).fill(date);await page.locator('[data-anchor="dinner"]').waitFor();
+  await page.goto(origin+'/manage');await page.getByLabel('Дата расписания',{exact:true}).fill(date);await page.locator('[data-anchor="dinner"]').waitFor();
   assert.match(await page.locator('[data-anchor="dinner"]').innerText(),/18:00–19:00/);assert.match(await page.locator('[data-anchor="unassigned"]').innerText(),/3-й приём/);
   assert.match(await page.locator('.patient-schedule').innerText(),/17:00/);
   for(const width of [320,390,768,1024,1470]){await page.setViewportSize({width,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);if(width===390)await page.screenshot({path:'reports/routine-schedule-390.png'});}

@@ -1,7 +1,7 @@
 export const allRows=snapshot=>{const rows=snapshot.model.cards.flatMap(p=>[...(p.current?.rows||[]),...p.later.flatMap(g=>g.rows),...p.earlier.flatMap(g=>g.rows),...p.prn].map(row=>({...row,personId:p.id}))),ids=new Set((snapshot.plans||[]).map(r=>r.prescriptionId));return [...(snapshot.plans||[]),...rows.filter(r=>!ids.has(r.prescriptionId))];};
-export function activeEvents(snapshot,actions){const cancelled=new Set(actions.filter(a=>a.kind==='cancel').map(a=>a.targetId));return [...snapshot.model.history,...actions.filter(a=>a.kind!=='cancel')].filter(a=>!cancelled.has(a.id));}
+export function activeEvents(snapshot,actions){const cancelled=new Set(actions.filter(a=>a.kind==='cancel').map(a=>a.targetId));return [...snapshot.model.history,...actions.filter(a=>a.kind!=='cancel')].filter(a=>a.status!=='void'&&!cancelled.has(a.id));}
 export function rowEvent(snapshot,actions,row){
-  const active=activeEvents(snapshot,actions),record=active.findLast(a=>a.rowKey===row.key);if(record)return record;
+  const active=activeEvents(snapshot,actions),record=active.findLast(a=>a.rowKey===row.key&&(!a.status||['taken','recorded'].includes(a.status)));if(record)return record;
   if(row.taken){const original=snapshot.model.history.find(a=>a.prescriptionId===row.prescriptionId&&row.takenAt&&a.occurredAt===row.takenAt),id=original?.id||'base:'+row.key;if(!actions.some(a=>a.kind==='cancel'&&a.targetId===id))return {...original,id,personId:row.personId,kind:'medication',rowKey:row.key,prescriptionId:row.prescriptionId,occurredAt:row.takenAt||null,name:row.name,detail:original?.detail||row.dose};}
   return null;
 }
