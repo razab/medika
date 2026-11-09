@@ -1,0 +1,122 @@
+{
+  "status": "PASS",
+  "syntheticOnly": true,
+  "workingDatabaseUnchanged": true,
+  "snapshotUnchanged": true,
+  "clinicalNetworkRequests": 0,
+  "cspBlocksClinicalWrites": true,
+  "physicalDeviceTested": false,
+  "checks": [
+    "snapshot → local mark → reload → undo → reset → person filter; no clinical IDs or working data reads",
+    {
+      "width": 320,
+      "height": 844,
+      "layout": {
+        "overflow": false,
+        "plan": {
+          "x": 14,
+          "y": 123,
+          "right": 306,
+          "bottom": 790.28125
+        },
+        "history": {
+          "x": 14,
+          "y": 814.28125
+        }
+      },
+      "geometry": {
+        "width": 48,
+        "height": 48,
+        "gap": 8
+      }
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "layout": {
+        "overflow": false,
+        "plan": {
+          "x": 14,
+          "y": 123,
+          "right": 376,
+          "bottom": 790.28125
+        },
+        "history": {
+          "x": 14,
+          "y": 814.28125
+        }
+      },
+      "geometry": {
+        "width": 48,
+        "height": 48,
+        "gap": 8
+      }
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "layout": {
+        "overflow": false,
+        "plan": {
+          "x": 24,
+          "y": 132,
+          "right": 424.1875,
+          "bottom": 980.59375
+        },
+        "history": {
+          "x": 448.1875,
+          "y": 132
+        }
+      },
+      "geometry": {
+        "width": 48,
+        "height": 48,
+        "gap": 8
+      }
+    },
+    {
+      "width": 820,
+      "height": 1180,
+      "layout": {
+        "overflow": false,
+        "plan": {
+          "x": 24,
+          "y": 132,
+          "right": 454.09375,
+          "bottom": 980.59375
+        },
+        "history": {
+          "x": 478.09375,
+          "y": 132
+        }
+      },
+      "geometry": {
+        "width": 48,
+        "height": 48,
+        "gap": 8
+      }
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "layout": {
+        "overflow": false,
+        "plan": {
+          "x": 24,
+          "y": 132,
+          "right": 571.390625,
+          "bottom": 980.59375
+        },
+        "history": {
+          "x": 595.390625,
+          "y": 132
+        }
+      },
+      "geometry": {
+        "width": 48,
+        "height": 48,
+        "gap": 8
+      }
+    }
+  ]
+}

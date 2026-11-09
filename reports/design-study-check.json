@@ -1,6 +1,6 @@
 {
   "status": "PASS",
-  "completedAt": "2026-11-09T22:03:05.387Z",
+  "completedAt": "2026-11-09T22:32:08.064Z",
   "a1Revision": 2,
   "activeDesigns": 8,
   "syntheticOnly": true,
@@ -376,7 +376,7 @@
       "width": 320,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 1003.609375,
+      "firstDrug": 1079.609375,
       "clipped": []
     },
     {
@@ -384,7 +384,7 @@
       "width": 390,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 849.28125,
+      "firstDrug": 892.28125,
       "clipped": []
     },
     {
@@ -392,7 +392,7 @@
       "width": 768,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 706.46875,
+      "firstDrug": 725.96875,
       "clipped": []
     },
     {
@@ -400,7 +400,7 @@
       "width": 1024,
       "overflow": false,
       "fontLoaded": true,
-      "firstDrug": 718.125,
+      "firstDrug": 737.625,
       "clipped": []
     },
     {

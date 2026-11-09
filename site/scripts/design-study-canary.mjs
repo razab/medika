@@ -19,19 +19,19 @@ const touchGeometry=()=>p.evaluate(()=>{
 });
 async function assertTouchGeometry(context){const geometry=await touchGeometry();assert.deepEqual(geometry.undersized,[],context+' touch size');assert.deepEqual(geometry.crowded,[],context+' touch spacing');return geometry;}
 try{
-  for(const route of ['/design-study',...ids.map(id=>'/design-study/'+id)])assert.equal((await fetch(origin+route,{headers:{Origin:'https://chat.example','Sec-Fetch-Site':'cross-site'}})).status,200,route);
+  for(const route of ['/design-study',...ids.map(id=>'/design-study/'+(id==='a1'?'a1-synthetic':id))])assert.equal((await fetch(origin+route,{headers:{Origin:'https://chat.example','Sec-Fetch-Site':'cross-site'}})).status,200,route);
   await p.goto(origin+'/design-study');await p.evaluate(()=>document.fonts.ready);assert.equal(await p.locator('.study').count(),ids.length);assert.equal(await p.locator('.study#a3').count(),0);
   for(const group of ['frontend','pro','baseline'])await p.locator('#'+group).screenshot({path:'reports/design-study-'+group+'.png'});
   for(const id of ids)for(const width of [320,390,768,1024]){
-    await p.setViewportSize({width,height:844});await p.goto(origin+'/design-study/'+id);await p.evaluate(()=>document.fonts.ready);
+    await p.setViewportSize({width,height:844});await p.goto(origin+'/design-study/'+(id==='a1'?'a1-synthetic':id));await p.evaluate(()=>document.fonts.ready);
     const text=await p.locator('.mock').innerText();for(const value of ['Алиса','Даня','ТестСироп','ТестСпрей','ТестТаблетки','ТестРаствор','2,5 мл','37,4 °C','4 капли',...(id==='a1'?['1 пшик','2 пшика','Второй ужин','Через 10–15 мин после ТестСпрей']:['19:00','21:30','1 впрыскивание'])])assert.ok(text.includes(value),id+' missing '+value);
     const result=await inspect();assert.equal(result.overflow,false,id+' overflow '+width);assert.deepEqual(result.clipped,[],id+' clipped '+width);assert.ok(result.firstDrug<420,id+' drug below fold');assert.ok(result.fontLoaded);results.push({id,width,...result});
     if(width===390||id==='b3'&&width===768)await p.screenshot({path:'reports/design-study-'+id+'-'+width+'.png',fullPage:true});
-    if(width===390){await p.getByRole('link',{name:'Следующий',exact:true}).click();assert.ok(p.url().endsWith(ids[(ids.indexOf(id)+1)%ids.length]));}
+    if(width===390){await p.getByRole('link',{name:'Следующий',exact:true}).click();assert.ok(p.url().endsWith(ids[(ids.indexOf(id)+1)%ids.length]==='a1'?'a1-synthetic':ids[(ids.indexOf(id)+1)%ids.length]));}
   }
   // A1 uses the same component in the gallery, on a phone, and on an iPad.
   for(const [width,height]of [[320,844],[390,844],[768,1024],[820,1180],[1024,768],[1180,820]]){
-    await p.setViewportSize({width,height});await p.goto(origin+'/design-study/a1');await p.evaluate(()=>document.fonts.ready);
+    await p.setViewportSize({width,height});await p.goto(origin+'/design-study/a1-synthetic');await p.evaluate(()=>document.fonts.ready);
     assert.equal(await p.locator('.care-current .care-med').count(),5);assert.equal(await p.locator('.care-med-later').count(),2);
     assert.equal(await p.locator('.care-current .care-instruction:visible').count(),0);
     assert.doesNotMatch(await p.locator('.mock').innerText(),/Сегодня|9 ноября|19:00|21:30|в каждую ноздрю|впрыскивание/);

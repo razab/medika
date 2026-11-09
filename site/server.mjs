@@ -19,11 +19,14 @@ import {prepareMedicinePhotos,medicinePhotoInput} from './lib/medicine-photos.mj
 import {medicinePhotoKey} from './public/medicine-images.js';
 
 const root=dirname(fileURLToPath(import.meta.url));
-// Explicitly public synthetic specimens; this allowlist never serves clinical files.
+// Public design shells and synthetic specimens; copied medical data stays behind the API.
 const designStudyAssets=Object.fromEntries([
   ['/design-study',['design-study/index.html','text/html']],
   ['/design-study/',['design-study/index.html','text/html']],
   ['/design-study.css',['design-study.css','text/css']],
+  ['/design-study/a1-synthetic',['design-study/a1-synthetic.html','text/html']],
+  ['/design-study/a1-sandbox.js',['design-study/a1-sandbox.js','text/javascript']],
+  ['/design-study/a1-sandbox.css',['design-study/a1-sandbox.css','text/css']],
   ...['a1','a2','a3','b1','b2','b3','c1','c2','c3'].map(id=>['/design-study/'+id,['design-study/'+id+'.html','text/html']]),
   ...['golostext','manrope'].map(id=>['/design-study/'+id+'.ttf',['design-study/'+id+'.ttf','font/ttf']])
 ]);
@@ -65,6 +68,7 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       assert(allowedHosts.has(req.headers.host?.toLowerCase()),'Этот адрес не разрешён',403);
       const scheme=req.headers['x-forwarded-proto']==='https'&&['127.0.0.1','::1'].includes(req.socket.remoteAddress)?'https':'http';
       const url=new URL(req.url,`${scheme}://${req.headers.host}`), route=url.pathname, method=req.method;
+      if(route==='/design-study/a1')res.setHeader('Content-Security-Policy',`default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src ${url.origin}/api/session ${url.origin}/api/design-study/a1-snapshot; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'`);
       // Links from chats may be cross-site; the shell and public CA contain no medical data.
       const publicRead=['GET','HEAD'].includes(method)&&(['/','/family','/family/','/voice-lab','/voice-lab/','/ocr-lab','/ocr-lab/','/playground','/medika-ca.cer'].includes(route)||Object.hasOwn(designStudyAssets,route));
       if(!publicRead){
@@ -79,6 +83,11 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       if(route.startsWith('/api/')) {
         if((imageRoute||ocrImageRoute)&&method==='GET'||labAudioRoute&&['GET','HEAD'].includes(method)) assert(req.headers.cookie?.split(';').some(s=>s.trim()===`medika_session=${token}`),'Откройте приложение перед просмотром',403);
         else assert(req.headers['x-medika-token']===token,'Сессия обновлена. Перезагрузите страницу.',403);
+      }
+      if(route==='/api/design-study/a1-snapshot'){
+        assert(method==='GET','Снимок доступен только для чтения',405);
+        try{return send(200,JSON.parse(await readFile(join(dataDir,'design-study/a1-family.json'),'utf8')));}
+        catch(error){if(error.code==='ENOENT')throw new InputError('Копия для демо ещё не подготовлена',404);throw error;}
       }
       if(labAudioRoute&&['GET','HEAD'].includes(method)){
         const bytes=await voiceLab.audio(labAudioRoute[1]),range=req.headers.range;let start=0,end=bytes.length-1;
