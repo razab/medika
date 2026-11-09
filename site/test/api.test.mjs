@@ -40,7 +40,9 @@ test('API: источник, изоляция, история, версии, PRN
     const input={personId:anna.id,name:'Ибупрофен',purpose:'Цель со слов врача · тест',dose:'2.5',unit:'мл',strength:'100 мг/5 мл',ingredients:'ибупрофен',startDate:date,type:'daily',times:'08:00',timeZone:'Europe/Chisinau',confirmed:true,documentId:doc.id};
     await call('/prescriptions',{...input,personId:boris.id},400);
     const rx=await call('/prescriptions',input,201),planned=(await call('/schedule?date='+date)).items[0];
-    const event=await call('/events',{rxId:rx.id,key:planned.key,date,status:'taken',dose:'2.5'},201);
+    await call('/events',{rxId:rx.id,rxVersion:rx.version+1,key:planned.key,date,status:'taken',dose:'2.5'},409);
+    assert.equal((await call('/state')).events.length,0);
+    const event=await call('/events',{rxId:rx.id,rxVersion:rx.version,key:planned.key,date,status:'taken',dose:'2.5'},201);
     assert.equal(planned.purpose,input.purpose);assert.equal(event.purpose,input.purpose);
     await call('/prescriptions/'+rx.id,{...input,purpose:'Изменённая цель · тест',times:'10:00',dose:'3',version:rx.version},200,'PUT');
     const changed=(await call('/schedule?date='+date)).items;

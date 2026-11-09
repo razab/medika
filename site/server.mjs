@@ -188,6 +188,7 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       }
       if(route==='/api/events'&&method==='POST') {
         const input=await body(req),rx=store.get('prescriptions',input.rxId);assert(rx,'Назначение не найдено',404);
+        assert(input.rxVersion===undefined||input.rxVersion===rx.version,'Назначение изменилось. Обновите расписание перед отметкой.',409);
         assert(!rx.carePhase||rx.carePhase===(store.get('people',rx.personId)?.carePhase||'prevention'),'Назначение относится к другой фазе лечения');
         assert(['taken','skipped','deferred'].includes(input.status),'Неизвестный статус');
         const occurredAt=input.occurredAt||new Date().toISOString();assert(Number.isFinite(Date.parse(occurredAt)),'Некорректное фактическое время');

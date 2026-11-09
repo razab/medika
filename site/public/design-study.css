@@ -134,3 +134,23 @@
 .a1:has(input[value="all"]:checked) .care-person.color-mint{--person-surface:#edf7f3;--person-line:#d7e9df}
 .a1:has(input[value="all"]:checked) .care-person.color-lilac{--person-surface:#f3f1f9;--person-line:#e2ddef}
 @container screen (min-width:700px){.family-preview-footer{padding-left:24px;padding-right:24px}.family-live .care-event{grid-template-columns:48px 58px minmax(0,1fr)}}
+.prescription-fields{margin:0;font-size:13px;line-height:1.5}
+.prescription-fields>div{display:grid;grid-template-columns:86px minmax(0,1fr);gap:12px;padding:5px 0}
+.prescription-fields dt{color:#58687b}
+.prescription-fields dd{margin:0;color:#172337;overflow-wrap:anywhere}
+.medicine-more{min-height:48px;min-width:48px;display:block;margin-top:12px;padding:9px 12px;border:1px solid #cbd5e3;border-radius:8px;background:white;color:#315ac1;font:inherit;cursor:pointer}
+.medicine-more:focus-visible{outline:2px solid #315ac1;outline-offset:3px}
+#family-info{width:min(540px,calc(100% - 28px));max-height:88dvh;overflow:auto;padding:18px;border:1px solid #d1d9e5;border-radius:16px;color:#172337;background:white;font:14px/1.6 Golos,system-ui,sans-serif}
+#family-info::backdrop{background:#17233780}
+#family-info>header{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px}
+#family-info h2{font-size:20px;line-height:1.3;font-weight:600}
+#family-info h3{font-size:14px;font-weight:600;margin-bottom:10px}
+#family-info .prescription-fields>div{grid-template-columns:110px minmax(0,1fr)}
+#family-info :focus-visible{outline:2px solid #315ac1;outline-offset:3px}
+#family-info>section+section{margin-top:18px}
+#family-info button{min-height:48px;min-width:76px;padding:8px 12px;flex-shrink:0;border:1px solid #cbd5e3;border-radius:8px;background:white;color:#315ac1;font:inherit;cursor:pointer}
+.medicine-source{margin-top:18px;border-top:1px solid #dfe5ed}
+.medicine-source>summary{min-height:48px;padding:12px 0;cursor:pointer}
+.medicine-source p{white-space:pre-wrap;overflow-wrap:anywhere;padding:4px 0 12px;color:#485970;font-size:13px}
+#family-status{position:fixed;bottom:max(16px,env(safe-area-inset-bottom));left:16px;right:16px;max-width:560px;margin:auto;z-index:10;background:#172337;color:white;border-radius:10px;padding:12px 16px;font-size:13px;line-height:1.5;pointer-events:none}
+#family-status:empty{display:none}

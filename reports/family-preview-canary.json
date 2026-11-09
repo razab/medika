@@ -3,92 +3,50 @@
   "syntheticOnly": true,
   "physicalDeviceTested": false,
   "checks": [
-    "Synthetic API → shared A1 rows → source details → family filter → reload; no clinical writes",
+    "Checkbox writes correct patient/dose once; survives reload; uncheck voids without deleting history",
+    "503, lost response after commit, and rapid repeated change do not create duplicate facts or false checkbox state",
+    "Structured prescription, separate source dialog, person filters and reload",
     {
       "width": 320,
       "height": 844,
       "overflow": false,
-      "minWidth": 52,
-      "minHeight": 48,
-      "minGap": 8
-    },
-    {
-      "width": 320,
-      "expanded": {
-        "overflow": false,
-        "minWidth": 52,
-        "minHeight": 48,
-        "minGap": 8
-      }
-    },
-    {
-      "width": 390,
-      "height": 844,
-      "overflow": false,
-      "minWidth": 66,
+      "minWidth": 48,
       "minHeight": 48,
       "minGap": 8
     },
     {
       "width": 390,
-      "expanded": {
-        "overflow": false,
-        "minWidth": 66,
-        "minHeight": 48,
-        "minGap": 8
-      }
+      "height": 844,
+      "overflow": false,
+      "minWidth": 48,
+      "minHeight": 48,
+      "minGap": 8
     },
     {
       "width": 768,
       "height": 1024,
       "overflow": false,
-      "minWidth": 105.59375,
+      "minWidth": 48,
       "minHeight": 48,
       "minGap": 8
-    },
-    {
-      "width": 768,
-      "expanded": {
-        "overflow": false,
-        "minWidth": 105.59375,
-        "minHeight": 48,
-        "minGap": 8
-      }
     },
     {
       "width": 820,
       "height": 1180,
       "overflow": false,
-      "minWidth": 105.59375,
+      "minWidth": 48,
       "minHeight": 48,
       "minGap": 8
-    },
-    {
-      "width": 820,
-      "expanded": {
-        "overflow": false,
-        "minWidth": 105.59375,
-        "minHeight": 48,
-        "minGap": 8
-      }
     },
     {
       "width": 1024,
       "height": 768,
       "overflow": false,
-      "minWidth": 105.59375,
+      "minWidth": 48,
       "minHeight": 48,
       "minGap": 8
-    },
-    {
-      "width": 1024,
-      "expanded": {
-        "overflow": false,
-        "minWidth": 105.59375,
-        "minHeight": 48,
-        "minGap": 8
-      }
     }
   ],
-  "clinicalMutations": 0
+  "prescriptionsUnchanged": true,
+  "syntheticActiveFacts": 1
 }
