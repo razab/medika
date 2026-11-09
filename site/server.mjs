@@ -19,6 +19,14 @@ import {prepareMedicinePhotos,medicinePhotoInput} from './lib/medicine-photos.mj
 import {medicinePhotoKey} from './public/medicine-images.js';
 
 const root=dirname(fileURLToPath(import.meta.url));
+// Explicitly public synthetic specimens; this allowlist never serves clinical files.
+const designStudyAssets=Object.fromEntries([
+  ['/design-study',['design-study/index.html','text/html']],
+  ['/design-study/',['design-study/index.html','text/html']],
+  ['/design-study.css',['design-study.css','text/css']],
+  ...['a1','a2','a3','b1','b2','b3','c1','c2','c3'].map(id=>['/design-study/'+id,['design-study/'+id+'.html','text/html']]),
+  ...['golostext','manrope'].map(id=>['/design-study/'+id+'.ttf',['design-study/'+id+'.ttf','font/ttf']])
+]);
 export function imageType(bytes) {
   if(bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]))) return 'image/png';
   if(bytes[0]===255&&bytes[1]===216&&bytes[2]===255) return 'image/jpeg';
@@ -58,7 +66,7 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       const scheme=req.headers['x-forwarded-proto']==='https'&&['127.0.0.1','::1'].includes(req.socket.remoteAddress)?'https':'http';
       const url=new URL(req.url,`${scheme}://${req.headers.host}`), route=url.pathname, method=req.method;
       // Links from chats may be cross-site; the shell and public CA contain no medical data.
-      const publicRead=['GET','HEAD'].includes(method)&&['/','/voice-lab','/voice-lab/','/ocr-lab','/ocr-lab/','/playground','/medika-ca.cer'].includes(route);
+      const publicRead=['GET','HEAD'].includes(method)&&(['/','/voice-lab','/voice-lab/','/ocr-lab','/ocr-lab/','/playground','/medika-ca.cer'].includes(route)||Object.hasOwn(designStudyAssets,route));
       if(!publicRead){
         assert(!req.headers.origin||req.headers.origin===url.origin,'Запрос с другого сайта отклонён',403);
         assert(req.headers['sec-fetch-site']!=='cross-site','Запрос с другого сайта отклонён',403);
@@ -243,7 +251,7 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       if(route==='/medika-ca.cer'&&method==='GET'){res.writeHead(200,{'Content-Type':'application/x-x509-ca-cert','Content-Disposition':'attachment; filename=medika-ca.cer'});return res.end(await readFile(join(root,'data/medika-ca.cer')));}
       if(route==='/ocr-sample.png'){res.writeHead(200,{'Content-Type':'image/png'});return res.end(await readFile(join(root,'public/ocr-sample.png')));}
       const packageImage=route.match(/^\/medicine-images\/([a-z0-9-]+\.jpg)$/);if(packageImage){let bytes;try{bytes=await readFile(join(root,'public/medicine-images',packageImage[1]));}catch{throw new InputError('Фото не найдено',404);}res.writeHead(200,{'Content-Type':'image/jpeg','Cache-Control':'public, max-age=86400'});return res.end(method==='HEAD'?undefined:bytes);}
-      const assets={'/ocr-lab':['ocr-lab.html','text/html'],'/ocr-lab/':['ocr-lab.html','text/html'],'/playground':['ocr-lab.html','text/html'],'/ocr-lab.js':['ocr-lab.js','text/javascript'],'/prescription-workspace.js':['prescription-workspace.js','text/javascript'],'/prescription-workspace.css':['prescription-workspace.css','text/css'],'/medicine-forms.js':['medicine-forms.js','text/javascript'],'/routine.js':['routine.js','text/javascript'],'/':['index.html','text/html'],'/voice-lab':['voice-lab.html','text/html'],'/voice-lab/':['voice-lab.html','text/html'],'/voice-lab.js':['voice-lab.js','text/javascript'],'/voice-lab.css':['voice-lab.css','text/css'],'/prescription-summary.js':['prescription-summary.js','text/javascript'],'/medicine-images.js':['medicine-images.js','text/javascript'],'/app.js':['app.js','text/javascript'],'/style.css':['style.css','text/css'],'/icon.svg':['icon.svg','image/svg+xml'],'/voice-recorder.js':['voice-recorder.js','text/javascript'],'/voice-capture.js':['voice-capture.js','text/javascript']};
+      const assets={...designStudyAssets,'/ocr-lab':['ocr-lab.html','text/html'],'/ocr-lab/':['ocr-lab.html','text/html'],'/playground':['ocr-lab.html','text/html'],'/ocr-lab.js':['ocr-lab.js','text/javascript'],'/prescription-workspace.js':['prescription-workspace.js','text/javascript'],'/prescription-workspace.css':['prescription-workspace.css','text/css'],'/medicine-forms.js':['medicine-forms.js','text/javascript'],'/routine.js':['routine.js','text/javascript'],'/':['index.html','text/html'],'/voice-lab':['voice-lab.html','text/html'],'/voice-lab/':['voice-lab.html','text/html'],'/voice-lab.js':['voice-lab.js','text/javascript'],'/voice-lab.css':['voice-lab.css','text/css'],'/prescription-summary.js':['prescription-summary.js','text/javascript'],'/medicine-images.js':['medicine-images.js','text/javascript'],'/app.js':['app.js','text/javascript'],'/style.css':['style.css','text/css'],'/icon.svg':['icon.svg','image/svg+xml'],'/voice-recorder.js':['voice-recorder.js','text/javascript'],'/voice-capture.js':['voice-capture.js','text/javascript']};
       assert(assets[route],'Страница не найдена',404);
       const [file,mime]=assets[route];res.writeHead(200,{'Content-Type':`${mime}; charset=utf-8`});res.end(method==='HEAD'?undefined:await readFile(join(root,'public',file)));
     } catch(e) {

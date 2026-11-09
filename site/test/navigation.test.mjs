@@ -17,6 +17,13 @@ test('Внешняя ссылка открывает оболочку; чужи�
       const page=await call('/',headers);assert.equal(page.status,200);assert.match(page.body,/<html/);assert.doesNotMatch(page.body,/medika_session|"people"/);
     }
     assert.equal((await call('/',navigation,'HEAD')).status,200);
+    // Only the explicit synthetic gallery is public; nearby paths and API stay protected.
+    for(const path of ['/design-study','/design-study/','/design-study/a1','/design-study/a3','/design-study/b3','/design-study/c3','/design-study.css','/design-study/golostext.ttf']){
+      assert.equal((await call(path,{...navigation,Origin:'https://chat.example'})).status,200,path);
+      assert.equal((await call(path,navigation,'HEAD')).status,200,path+' HEAD');
+    }
+    for(const path of ['/design-study/private','/design-study/../data/medika.sqlite','/design-study/a1.html'])assert.equal((await call(path,navigation)).status,403,path);
+    assert.equal((await call('/design-study',navigation,'POST')).status,403);
     for(const path of ['/api/session','/api/state','/api/backup','/api/documents/00000000-0000-0000-0000-000000000000/image']){
       assert.equal((await call(path,{...navigation,'X-Medika-Token':token})).status,403);
       assert.equal((await call(path,{Origin:'https://chat.example','X-Medika-Token':token})).status,403);
