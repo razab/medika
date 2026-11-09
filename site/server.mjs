@@ -25,6 +25,7 @@ const designStudyAssets=Object.fromEntries([
   ['/design-study/',['design-study/index.html','text/html']],
   ['/design-study.css',['design-study.css','text/css']],
   ['/design-study/a1-synthetic',['design-study/a1-synthetic.html','text/html']],
+  ['/design-study/a1-events.js',['design-study/a1-events.js','text/javascript']],
   ['/design-study/a1-sandbox.js',['design-study/a1-sandbox.js','text/javascript']],
   ['/design-study/a1-sandbox.css',['design-study/a1-sandbox.css','text/css']],
   ...['a1','a2','a3','b1','b2','b3','c1','c2','c3'].map(id=>['/design-study/'+id,['design-study/'+id+'.html','text/html']]),

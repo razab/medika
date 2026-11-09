@@ -1,4 +1,4 @@
-import {mkdir,writeFile} from 'node:fs/promises';
+import {mkdir,writeFile,rename} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {designSnapshot} from '../lib/design-snapshot.mjs';
 const origin='http://127.0.0.1:4382',timeZone='Europe/Chisinau';
@@ -7,5 +7,5 @@ async function get(path){const r=await fetch(origin+'/api'+path,{headers:{'X-Med
 const state=await get('/state'),copiedAt=new Date(),last=[...(state.activities||[]),...(state.temperatures||[]),...(state.events||[])].filter(r=>r.status!=='void'&&Number.isFinite(Date.parse(r.occurredAt))&&Date.parse(r.occurredAt)<=Number(copiedAt)).sort((a,b)=>Date.parse(b.occurredAt)-Date.parse(a.occurredAt))[0];
 // Freeze the last populated day so the design review includes actual history.
 const now=last?new Date(last.occurredAt):copiedAt,date=now.toLocaleDateString('sv-SE',{timeZone}),schedule=await get('/schedule?date='+date),snapshot=designSnapshot(state,schedule,{date,now,copiedAt,timeZone});
-const directory=fileURLToPath(new URL('../data/design-study/',import.meta.url));await mkdir(directory,{recursive:true,mode:0o700});await writeFile(directory+'a1-family.json',JSON.stringify(snapshot,null,2),{mode:0o600});
+const directory=fileURLToPath(new URL('../data/design-study/',import.meta.url));await mkdir(directory,{recursive:true,mode:0o700});const temporary=directory+'a1-family.json.tmp';await writeFile(temporary,JSON.stringify(snapshot,null,2),{mode:0o600});await rename(temporary,directory+'a1-family.json');
 console.log(JSON.stringify({saved:'site/data/design-study/a1-family.json',people:snapshot.model.cards.length,history:snapshot.model.history.length,contextDate:date}));

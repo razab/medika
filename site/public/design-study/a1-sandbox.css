@@ -36,3 +36,46 @@
 }
 
 .study-head>.real-data-demo{min-height:48px}
+/* Actions stay separate from disclosure, including compact phone layouts. */
+.sandbox-jump{display:flex;gap:8px;padding:8px 14px;justify-content:flex-end;flex-wrap:wrap}
+.design-sandbox button,.sandbox-jump a{min-height:48px;min-width:48px;font:inherit;cursor:pointer}
+.sandbox-jump a,.sandbox-jump button,.sandbox-phases button,.sandbox-row-actions button,.sandbox-history-head button,.sandbox-empty-event,.sandbox-outside{display:flex;align-items:center;justify-content:center;padding:8px 12px;border:1px solid #d1d9e5;border-radius:9px;background:white;color:#315ac1;text-decoration:none;font-size:12px}
+.sandbox-phases{display:flex;gap:8px;margin:4px 0 14px;flex-wrap:wrap}
+.sandbox-phases button{flex:1;min-width:90px}
+.sandbox-phases button[aria-pressed=true]{color:white;background:#315ac1;border-color:#315ac1}
+.sandbox-current-label small{display:block;font-size:10px;margin-top:3px;color:#627084}
+.sandbox-row-actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px}
+.sandbox-row-actions button{flex:1;min-width:120px}
+.sandbox-warning{font-size:12px;line-height:1.5;color:#86541b;background:#fff6e8;padding:8px 10px;margin:8px 0}
+.dependency-state{font-size:11px;line-height:1.5;color:#526176;margin:4px 0 8px}
+.sandbox-dose.is-selected{border-left:2px solid #8da8e6;padding-left:8px}
+.sandbox-history-head{display:flex;flex-direction:column;align-items:start;gap:8px;margin-bottom:14px}
+.sandbox-history-head h2{margin:0!important}
+.sandbox-history-head button{max-width:100%;text-align:left;overflow-wrap:anywhere}
+.sandbox-recent{border-bottom:1px solid #dfe5ed;margin-bottom:16px;padding-bottom:12px}
+.sandbox-recent summary,.sandbox-outside{min-height:48px;font-size:12px;display:flex;align-items:center;cursor:pointer}
+.sandbox-recent p{font-size:12px;line-height:1.5;margin:8px 0}
+.sandbox-recent span,.sandbox-outside small{display:block;font-size:11px;color:#627084}
+.sandbox-outside{width:100%;display:block;text-align:left;margin:8px 0}
+.sandbox-demo-events h3{font-size:12px;color:#315ac1;margin:12px 0 4px}
+.sandbox-history .care-event{grid-template-columns:42px 42px minmax(0,1fr);position:relative}
+.sandbox-history .care-event:has(button){grid-template-columns:42px 42px minmax(0,1fr) 48px}
+.sandbox-history .care-event button{border:1px solid #d1d9e5;background:white;border-radius:8px;padding:4px;font-size:10px;color:#315ac1;margin-left:0}
+.sandbox-history time small{font-size:9px;line-height:1.4}
+.sandbox-history .care-event[data-kind=medication] strong{color:#315ac1}
+.sandbox-history .is-cancelled strong{text-decoration:line-through;color:#627084}
+#sandbox-status{display:flex;align-items:center;gap:12px;pointer-events:auto}
+#sandbox-status:empty{display:none}
+#sandbox-status button{background:#fff;color:#172337;border:0;border-radius:8px;padding:8px}
+#sandbox-info form{display:grid;gap:16px;margin-top:16px}
+#sandbox-info label{display:grid;gap:6px;min-width:0}
+#sandbox-info input,#sandbox-info select,#sandbox-info textarea{width:100%;box-sizing:border-box;min-height:48px;border:1px solid #b8c5d7;border-radius:8px;padding:10px;background:white;color:#172337;font:16px/1.4 Golos,system-ui,sans-serif}
+#sandbox-info .sandbox-primary{background:#315ac1;border-color:#315ac1;color:white;min-height:48px}
+#sandbox-info .sandbox-form-error{font-size:13px;color:#9b3024}
+#sandbox-info .sandbox-time-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media(max-width:370px){#sandbox-info .sandbox-time-fields{grid-template-columns:minmax(0,1fr)}}
+@container screen (min-width:700px){.sandbox-jump a{display:none}.sandbox-jump{padding:8px 24px}}
+.sandbox-review{flex-wrap:wrap}
+.sandbox-review select{min-height:48px;min-width:96px;border:1px solid #cbd5e3;border-radius:8px;color:#315ac1;background:white;padding:8px;font:inherit}
+#slot-fields{display:grid;gap:16px}
+#sandbox-info input,#sandbox-info select,#sandbox-info textarea{min-width:0}
