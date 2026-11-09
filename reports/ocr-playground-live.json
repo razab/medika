@@ -1,0 +1,14 @@
+{
+  "status": "PASS",
+  "url": "http://192.168.0.38/playground?case=b70f9471-ec92-4cfb-a1ab-00635f941204&view=day&preview=1",
+  "syntheticCase": true,
+  "actualOCR": true,
+  "readyCourses": 7,
+  "variants": 6,
+  "crossSiteLink": true,
+  "manualMarkAndUndo": true,
+  "clinicalDataUnchanged": true,
+  "httpAndHttps": true,
+  "physicalDeviceTested": false,
+  "checkedAt": "2026-11-09T12:40:34.507Z"
+}

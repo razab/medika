@@ -21,7 +21,8 @@ export function openStore(directory) {
   function state() { return {version:1,people:rows('people'),documents:rows('documents'),prescriptions:rows('prescriptions'),events:rows('events'),temperatures:rows('temperatures'),activities:rows('activities'),medicinePhotos:rows('medicinePhotos')}; }
   function get(table,id) { const row=db.prepare(`SELECT data FROM ${table} WHERE id=?`).get(id); return row?JSON.parse(row.data):null; }
   function audit(action,record) { const id=newId(),createdAt=new Date().toISOString();db.prepare('INSERT INTO audit VALUES(?,?,?)').run(id,createdAt,JSON.stringify({id,createdAt,action,record})); }
-  function transaction(fn) { db.exec('BEGIN IMMEDIATE');try{const result=fn();db.exec('COMMIT');return result;}catch(e){db.exec('ROLLBACK');throw e;} }
+  let inTransaction=false;
+  function transaction(fn) { if(inTransaction)return fn();db.exec('BEGIN IMMEDIATE');inTransaction=true;try{const result=fn();db.exec('COMMIT');return result;}catch(e){db.exec('ROLLBACK');throw e;}finally{inTransaction=false;} }
   function insert(table,data) {
     const record={...data,id:data.id||newId(),version:1,createdAt:new Date().toISOString()};
     return transaction(()=>{

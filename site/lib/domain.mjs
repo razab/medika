@@ -1,3 +1,4 @@
+import {medicineForms,allowedMedicineUnits} from '../public/medicine-forms.js';
 import { randomUUID } from 'node:crypto';
 import {anchors,dayType,emptyRoutine,slotDetails} from '../public/routine.js';
 
@@ -60,7 +61,7 @@ export function personInput(input) {
   const birthday = input.birthday ? day(input.birthday) : '';
   assert(!birthday || birthday <= new Date().toISOString().slice(0, 10), 'Дата рождения не может быть в будущем');
   const age={};if(input.ageYears!==''&&input.ageYears!=null){assert(Number.isInteger(Number(input.ageYears))&&Number(input.ageYears)>=0&&Number(input.ageYears)<=130,'Возраст: целое число от 0 до 130');age.ageYears=Number(input.ageYears);age.ageAsOf=day(input.ageAsOf||new Date().toISOString().slice(0,10));}
-  return { name: string(input.name, 'Имя', 100, true), birthday, weight: positive(input.weight, 'Вес', true), allergies: string(input.allergies, 'Аллергии', 1000), notes: string(input.notes, 'Примечания', 3000), color: ['mint','blue','peach','lilac'].includes(input.color) ? input.color : 'mint',...age,...(input.carePhase!==undefined?{carePhase:phaseInput(input.carePhase)}:{}),...(input.displayName!==undefined?{displayName:string(input.displayName,'Имя на семейной доске',100)}:{}),...(input.routine!==undefined?{routine:routineInput(input.routine)}:{}) };
+  return { name: string(input.name, 'Имя', 100, true), birthday, weight: positive(input.weight, 'Вес', true), allergies: string(input.allergies, 'Аллергии', 1000), notes: string(input.notes, 'Примечания', 3000), color: ['mint','blue','peach','lilac'].includes(input.color) ? input.color : 'mint',...age,...(input.carePhase!==undefined?{carePhase:phaseInput(input.carePhase)}:{}),...(input.displayName!==undefined?{displayName:string(input.displayName,'Имя на семейной доске',100)}:{}),...(input.routine!==undefined?{routine:routineInput(input.routine)}:{}),...(input.daySlots!==undefined?{daySlots:daySlotsInput(input.daySlots)}:{}) };
 }
 function clock(value){return typeof value==='string'&&/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value);}
 export function routineInput(input){
@@ -76,23 +77,35 @@ export function routineInput(input){
     return [d,{times,intakes:[...p.intakes]}];
   }));
 }
+export function daySlotsInput(input){
+  assert(input&&typeof input==='object','Укажите доступные слоты');
+  return Object.fromEntries(['weekday','weekend'].map(kind=>{
+    const slots=input[kind];assert(Array.isArray(slots)&&slots.length>=1&&slots.length<=12,'От 1 до 12 доступных слотов');
+    const result=slots.map(s=>{assert(s&&typeof s.id==='string'&&/^[a-z][a-zA-Z0-9-]{0,39}$/.test(s.id),'Некорректный ID слота');const time=string(s.time,'Время слота',5);assert(!time||clock(time),'Время слота: ЧЧ:ММ');return {id:s.id,label:string(s.label,'Название слота',60,true),time};});
+    assert(new Set(result.map(s=>s.id)).size===result.length,'Слот повторяется');return [kind,result];
+  }));
+}
+const validAnchor=a=>['','first','second','third','clock',...Object.keys(anchors)].includes(a)||typeof a==='string'&&/^slot:[a-z][a-zA-Z0-9-]{0,39}$/.test(a);
 function slotsInput(input){
   assert(Array.isArray(input)&&input.length>=1&&input.length<=12,'Укажите от 1 до 12 приёмов');
   return input.map(s=>{
-    assert(s&&['','first','second','third','clock',...Object.keys(anchors)].includes(s.anchor),'Выберите точку дня');
+    assert(s&&validAnchor(s.anchor),'Выберите точку дня');
     assert(['','before','with','after'].includes(s.relation||''),'Укажите связь с едой');
     assert(!s.relation||!['bedtime','clock',''].includes(s.anchor),'Связь с едой доступна для приёмов пищи');
     assert(s.anchor!=='clock'||clock(s.time),'Укажите точное время');
-    return {anchor:s.anchor,relation:s.relation||'',...(s.anchor==='clock'?{time:s.time}:{})};
+    if(s.weekendAnchor!==undefined)assert(validAnchor(s.weekendAnchor),'Выберите слот выходного дня');
+    return {anchor:s.anchor,relation:s.relation||'',...(s.anchor==='clock'?{time:s.time}:{}),...(s.weekendAnchor!==undefined?{weekendAnchor:s.weekendAnchor}:{})};
   });
 }
 export function validateRoutineBinding(rx,person){
   if(rx.type!=='routine')return;
-  for(const profile of Object.values(person?.routine||emptyRoutine()))for(const slot of rx.routineSlots){
-    const details=slotDetails(slot,profile);
+  for(const [kind,profile] of Object.entries(person?.routine||emptyRoutine()))for(const original of rx.routineSlots){
+    const slot=kind==='weekend'&&original.weekendAnchor?{...original,anchor:original.weekendAnchor}:original;
+    const details=slotDetails(slot,profile,person?.daySlots?.[kind]);
     assert(!slot.relation||details.anchor!=='bedtime','Перед сном — отдельная точка, без привязки к еде');
   }
 }
+export function procedureNote(rx){const r=rx.regimen;return r?[r.mixing?'Схема смеси: '+r.mixing:'',r.durationMinutes?'По назначению: '+r.durationMinutes+' мин':''].filter(Boolean).join('\n'):'';}
 export const units = ['табл.', 'капс.', 'мл', 'мг', 'мкг', 'г', 'кап.', 'доза', 'впрыскивание', 'пакет', 'свеча', 'нанесение'];
 export function occurrenceInput(input){
   assert(input&&typeof input==='object'&&!Array.isArray(input),'Ожидается запись события');
@@ -145,6 +158,10 @@ export function rxInput(input) {
   const ingredients = string(input.ingredients, 'Действующие вещества', 600).split(/[+;,\n]/).map(x=>x.trim()).filter(Boolean);
   if(input.maxPer24h!==''&&input.maxPer24h!=null)assert(Number.isInteger(Number(input.maxPer24h)), 'Максимум приёмов должен быть целым числом');
   const extra={};
+  if(input.medicineForm){assert(Object.hasOwn(medicineForms,input.medicineForm),'Выберите форму препарата');assert(allowedMedicineUnits(input.medicineForm).includes(input.unit),'Единица дозы не подходит для формы препарата');if(['кап.','впрыскивание'].includes(input.unit))assert(Number.isInteger(Number(input.dose)),'Капли и впрыскивания: целое количество');extra.medicineForm=input.medicineForm;}
+  if(input.regimen!==undefined){const r=input.regimen;assert(r&&typeof r==='object','Укажите рецепт процедуры');if(r.durationMinutes)assert(/^\d{1,3}$/.test(r.durationMinutes)&&Number(r.durationMinutes)>0&&Number(r.durationMinutes)<=240,'Длительность процедуры: от 1 до 240 минут');if(r.minAgeYears!==undefined)assert(Number.isInteger(r.minAgeYears)&&r.minAgeYears>=0&&r.minAgeYears<=130,'Возрастное ограничение: 0–130 лет');extra.regimen={...(r.minAgeYears!==undefined?{minAgeYears:r.minAgeYears}:{}),ageSource:string(r.ageSource,'Источник возраста',1000),packageText:string(r.packageText,'Текст упаковки',2000),origin:string(r.origin,'Источник назначения',30),mixing:string(r.mixing,'Смесь',1000),durationMinutes:string(r.durationMinutes,'Минуты процедуры',10),choiceGroup:string(r.choiceGroup,'Группа альтернатив',100),manufacturer:string(r.manufacturer,'Производитель',200),parserVersion:string(r.parserVersion,'Версия разбора',80)};}
+  if(input.importFingerprint!==undefined)extra.importFingerprint=string(input.importFingerprint,'Отпечаток импорта',64);
+  if(input.importKey!==undefined)extra.importKey=string(input.importKey,'Ключ импорта',200);
   if(type==='routine')extra.routineSlots=slotsInput(input.routineSlots);
   if(input.legacyTimes!==undefined){assert(Array.isArray(input.legacyTimes)&&input.legacyTimes.length<=12&&input.legacyTimes.every(clock),'Некорректные прежние часы');extra.legacyTimes=[...input.legacyTimes];}
   if(input.carePhase!==undefined)extra.carePhase=phaseInput(input.carePhase);
@@ -158,9 +175,10 @@ export function scheduleFor(rx, date, person) {
   if (rx.archived || rx.type === 'prn' || date < rx.startDate || rx.endDate && date > rx.endDate || rx.type === 'once' && date !== rx.startDate) return [];
   if(['daily','routine'].includes(rx.type)&&rx.weekdays&&!rx.weekdays.includes(new Date(date+'T12:00:00Z').getUTCDay()))return [];
   if(rx.type==='routine'){
-    const profile=(person?.routine||emptyRoutine())[dayType(date)];
-    return rx.routineSlots.map((slot,i)=>{
-      const details=slotDetails(slot,profile);
+    const kind=dayType(date),profile=(person?.routine||emptyRoutine())[kind];
+    return rx.routineSlots.map((original,i)=>{
+      const slot=kind==='weekend'&&original.weekendAnchor?{...original,anchor:original.weekendAnchor}:original;
+      const details=slotDetails(slot,profile,person?.daySlots?.[kind]);
       // Before/after food and ranges do not imply an exact administration time.
       const scheduledAt=clock(details.displayTime)&&!slot.relation?zonedInstant(date,details.displayTime,rx.timeZone):null;
       return {key:`${rx.id}@routine-${date}-${i}`,rxId:rx.id,personId:rx.personId,date,time:scheduledAt?details.displayTime:'',...(scheduledAt?{scheduledAt}:{}),timeZone:rx.timeZone,name:rx.name,dose:rx.dose,unit:rx.unit,ingredients:rx.ingredients,conditions:rx.conditions,doseScope:rx.doseScope,purpose:rx.purpose,carePhase:rx.carePhase,...details,slotIndex:i,...(rx.legacyTimes?.[i]?{legacyKey:`${rx.id}@${zonedInstant(date,rx.legacyTimes[i],rx.timeZone)}`}:{})};

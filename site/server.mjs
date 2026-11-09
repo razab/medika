@@ -1,12 +1,14 @@
+import {createLocalOCR} from './lib/local-ocr.mjs';
+import {createPrescriptionLab} from './lib/prescription-lab.mjs';
+import {applyPrescriptionPlan} from './lib/prescription-import.mjs';
+import {availableSlots} from './lib/prescription-plan.mjs';
 import http from 'node:http';
-import { readFile, writeFile, mkdir, access, unlink } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, access } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomBytes, createHash } from 'node:crypto';
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
 import { openStore } from './lib/store.mjs';
-import { assert, InputError, validateRoutineBinding, personInput, rxInput, temperatureInput, activityInput, day, newId, string, positive, scheduleFor, parseSuggestions, localParts,courseEnd } from './lib/domain.mjs';
+import { assert, InputError, validateRoutineBinding, personInput, rxInput, temperatureInput, activityInput, procedureNote, day, newId, string, positive, scheduleFor, parseSuggestions, localParts,courseEnd } from './lib/domain.mjs';
 import { catalog, rules, referenceInfo, checkPerson, intakeWarnings } from './lib/reference.mjs';
 import { parseEntry } from './lib/entry-parser.mjs';
 import { parseWithCodex,codexStatus,codexPeople } from './lib/codex-parser.mjs';
@@ -16,7 +18,7 @@ import { createVoiceLab } from './lib/voice-lab.mjs';
 import {prepareMedicinePhotos,medicinePhotoInput} from './lib/medicine-photos.mjs';
 import {medicinePhotoKey} from './public/medicine-images.js';
 
-const exec=promisify(execFile), root=dirname(fileURLToPath(import.meta.url));
+const root=dirname(fileURLToPath(import.meta.url));
 export function imageType(bytes) {
   if(bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]))) return 'image/png';
   if(bytes[0]===255&&bytes[1]===216&&bytes[2]===255) return 'image/jpeg';
@@ -28,8 +30,9 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
   await mkdir(uploads,{recursive:true,mode:0o700});
   const voiceLab=await createVoiceLab(dataDir,{context:()=>codexPeople(store.state()),...voiceLabOptions});
   const token=randomBytes(32).toString('hex'), ocrBinary=join(root,'scripts/medika-ocr');
-  let ocrReady=false,ocrBusy=false,photoBusy=false;
+  let ocrReady=false,photoBusy=false;
   try { await access(ocrBinary);ocrReady=true; } catch {}
+  const recognize=createLocalOCR(ocrBinary,dataDir),prescriptionLab=await createPrescriptionLab(dataDir,{recognize:async bytes=>{const hash=createHash('sha256').update(bytes).digest('hex'),saved=store.db.prepare('SELECT data FROM documents WHERE hash=?').all(hash).map(r=>JSON.parse(r.data)).filter(d=>d.mime);if(saved.length){const d=saved[0],reviewed=saved.every(x=>x.sourceKind==='doctor'&&x.text===d.text);return {text:d.ocrText??d.text,lines:d.lines||[],engine:'Apple Vision · сохранённый результат',...(reviewed&&d.text!==(d.ocrText??d.text)?{reviewedText:d.text}:{})};}assert(ocrReady,'OCR не настроен',503);return recognize(bytes);},imageType});
   function recordActivity(raw){
     const input=activityInput({...raw,clientKey:raw.clientKey===undefined?newId():raw.clientKey});assert(store.get('people',input.personId),'Выберите человека');
     if(input.relatedRxId)assert(store.get('prescriptions',input.relatedRxId)?.personId===input.personId,'Назначение принадлежит другому человеку');
@@ -55,17 +58,18 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       const scheme=req.headers['x-forwarded-proto']==='https'&&['127.0.0.1','::1'].includes(req.socket.remoteAddress)?'https':'http';
       const url=new URL(req.url,`${scheme}://${req.headers.host}`), route=url.pathname, method=req.method;
       // Links from chats may be cross-site; the shell and public CA contain no medical data.
-      const publicRead=['GET','HEAD'].includes(method)&&['/','/voice-lab','/voice-lab/','/medika-ca.cer'].includes(route);
+      const publicRead=['GET','HEAD'].includes(method)&&['/','/voice-lab','/voice-lab/','/ocr-lab','/ocr-lab/','/playground','/medika-ca.cer'].includes(route);
       if(!publicRead){
         assert(!req.headers.origin||req.headers.origin===url.origin,'Запрос с другого сайта отклонён',403);
         assert(req.headers['sec-fetch-site']!=='cross-site','Запрос с другого сайта отклонён',403);
       }
       if(route==='/api/health'&&method==='GET') return send(200,{ok:true,app:'medika',version:'0.1.0',ocr:ocrReady});
       if(route==='/api/session'&&method==='GET') return send(200,{token},{'Set-Cookie':`medika_session=${token}; HttpOnly; SameSite=Strict; Path=/`});
+      const ocrImageRoute=route.match(/^\/api\/ocr-lab\/cases\/([a-f\d-]+)\/(?:image|package-image\/m\d+-[a-f\d]{16})$/);
       const imageRoute=route.match(/^\/api\/documents\/([a-f\d-]+)\/image$/);
       const labAudioRoute=route.match(/^\/api\/voice-lab\/recordings\/([a-f\d-]+)\/audio$/);
       if(route.startsWith('/api/')) {
-        if(imageRoute&&method==='GET'||labAudioRoute&&['GET','HEAD'].includes(method)) assert(req.headers.cookie?.split(';').some(s=>s.trim()===`medika_session=${token}`),'Откройте приложение перед просмотром',403);
+        if((imageRoute||ocrImageRoute)&&method==='GET'||labAudioRoute&&['GET','HEAD'].includes(method)) assert(req.headers.cookie?.split(';').some(s=>s.trim()===`medika_session=${token}`),'Откройте приложение перед просмотром',403);
         else assert(req.headers['x-medika-token']===token,'Сессия обновлена. Перезагрузите страницу.',403);
       }
       if(labAudioRoute&&['GET','HEAD'].includes(method)){
@@ -123,6 +127,21 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
         return send(200,store.update('temperatures',record.id,{status:'void',voidReason:string(input.reason,'Причина отмены',1000,true)},input.version));
       }
       if(route==='/api/course-end'&&method==='POST'){const input=await body(req);return send(200,{endDate:courseEnd(input.startDate,input.count,input.unit),convention:'Последний день включительно: день перед календарной годовщиной начала курса. Проверьте границу по назначению.'});}
+      if(route==='/api/ocr-lab'&&method==='GET')return send(200,{cases:await prescriptionLab.list(),demo:prescriptionLab.demo,ocr:ocrReady});
+      if(route==='/api/ocr-lab/context'&&method==='GET')return send(200,{startDate:localParts(new Date(),'Europe/Chisinau').date,timeZone:'Europe/Chisinau',people:store.state().people.map(p=>({id:p.id,name:p.name,birthday:p.birthday,ageYears:p.ageYears,ageAsOf:p.ageAsOf,weight:p.weight,sourceVersion:p.version,carePhase:p.carePhase,selected:p.ageYears!=null&&p.ageYears<18,daySlots:{weekday:availableSlots(p,'weekday'),weekend:availableSlots(p,'weekend')}}))});
+      if(route==='/api/ocr-lab/cases'&&method==='POST')return send(201,await prescriptionLab.create(await body(req)));
+      const packImage=route.match(/^\/api\/ocr-lab\/cases\/([a-f\d-]+)\/package-image\/(m\d+-[a-f\d]{16})$/);if(packImage&&method==='GET'){const image=await prescriptionLab.packageImage(packImage[1],packImage[2]);res.writeHead(200,{'Content-Type':image.mime});return res.end(image.bytes);}
+      const labCase=route.match(/^\/api\/ocr-lab\/cases\/([a-f\d-]+)(?:\/(image|package|events|apply|export))?$/);
+      if(labCase){const [,id,action]=labCase;
+        if(method==='GET'&&action==='image'){const image=await prescriptionLab.image(id);res.writeHead(200,{'Content-Type':image.mime});return res.end(image.bytes);}
+        if(method==='DELETE'&&!action)return send(200,await prescriptionLab.remove(id));
+        if(method==='GET'&&!action)return send(200,prescriptionLab.view(await prescriptionLab.read(id)));
+        if(method==='GET'&&action==='export')return send(200,{format:'medika-prescription-test',version:1,...await prescriptionLab.read(id)});
+        if(method==='PUT'&&!action)return send(200,await prescriptionLab.update(id,await body(req,1024*1024)));
+        if(method==='POST'&&action==='package')return send(200,await prescriptionLab.package(id,await body(req)));
+        if(method==='POST'&&action==='events')return send(200,await prescriptionLab.event(id,await body(req,10000)));
+        if(method==='POST'&&action==='apply')return send(200,await applyPrescriptionPlan(store,uploads,prescriptionLab,id,await body(req,10000)));
+      }
       if(route==='/api/people'&&method==='POST') return send(201,store.insert('people',personInput(await body(req))));
       const personRoute=route.match(/^\/api\/people\/([a-f\d-]+)$/);
       if(personRoute&&method==='PUT') { const input=await body(req),person=personInput(input);for(const rx of store.state().prescriptions.filter(r=>r.personId===personRoute[1]&&!r.archived))validateRoutineBinding(rx,person);return send(200,store.update('people',personRoute[1],person,input.version)); }
@@ -146,10 +165,10 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       if(route==='/api/schedule'&&method==='GET') {
         const date=day(url.searchParams.get('date')),personId=url.searchParams.get('personId'),state=store.state();
         const prescriptions=state.prescriptions.filter(r=>!personId||r.personId===personId);
-        const planned=prescriptions.flatMap(r=>scheduleFor(r,date,state.people.find(p=>p.id===r.personId)));
+        const planned=prescriptions.filter(r=>!r.carePhase||r.carePhase===(state.people.find(p=>p.id===r.personId)?.carePhase||'prevention')).flatMap(r=>scheduleFor(r,date,state.people.find(p=>p.id===r.personId)));
         const items=planned.map(e=>({...e,event:state.events.find(x=>(x.key===e.key||x.key===e.legacyKey)&&x.status!=='void')||null}));
         const recorded=state.events.filter(e=>e.date===date&&e.status!=='void'&&(!personId||e.personId===personId)&&!items.some(p=>p.event?.id===e.id)).map(event=>({...event,event,historical:true}));
-        const prn=prescriptions.filter(r=>r.type==='prn'&&!r.archived&&r.startDate<=date&&(!r.endDate||r.endDate>=date));
+        const prn=prescriptions.filter(r=>(!r.carePhase||r.carePhase===(state.people.find(p=>p.id===r.personId)?.carePhase||'prevention'))&&r.type==='prn'&&!r.archived&&r.startDate<=date&&(!r.endDate||r.endDate>=date));
         return send(200,{items:[...items,...recorded].sort((a,b)=>(a.scheduledAt||a.occurredAt||'').localeCompare(b.scheduledAt||b.occurredAt||'')),prn});
       }
       if(route==='/api/check'&&method==='POST') {
@@ -161,18 +180,21 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       }
       if(route==='/api/events'&&method==='POST') {
         const input=await body(req),rx=store.get('prescriptions',input.rxId);assert(rx,'Назначение не найдено',404);
+        assert(!rx.carePhase||rx.carePhase===(store.get('people',rx.personId)?.carePhase||'prevention'),'Назначение относится к другой фазе лечения');
         assert(['taken','skipped','deferred'].includes(input.status),'Неизвестный статус');
         const occurredAt=input.occurredAt||new Date().toISOString();assert(Number.isFinite(Date.parse(occurredAt)),'Некорректное фактическое время');
         assert(Date.parse(occurredAt)<=Date.now()+60000,'Фактический приём не может быть в будущем');
         const date=rx.type==='prn'?localParts(occurredAt,rx.timeZone).date:day(input.date),event=rx.type==='prn'?null:scheduleFor(rx,date,store.get('people',rx.personId)).find(e=>e.key===input.key);
         assert(event||rx.type==='prn'&&!rx.archived&&date>=rx.startDate&&(!rx.endDate||date<=rx.endDate),'Событие отсутствует в действующем расписании');
         assert(rx.type!=='prn'||input.status==='taken','Для приёма по необходимости записывается факт');
+        const manualClientKey=rx.type==='prn'&&input.clientKey?string(input.clientKey,'Ключ ручной отметки',120,true):'';
+        if(manualClientKey){assert(/^[a-zA-Z0-9_-]{8,120}$/.test(manualClientKey),'Некорректный ключ отметки');const previous=store.state().events.find(e=>e.rxId===rx.id&&e.manualClientKey===manualClientKey);if(previous){assert(previous.status==='taken'&&previous.actualDose===positive(input.dose||rx.dose,'Фактическая доза'),'Ключ относится к другой отметке',409);return send(200,previous);}}
         const key=event?.key||`${rx.id}@prn-${newId()}`;
         if(event?.legacyKey){const legacy=store.db.prepare('SELECT data FROM events WHERE event_key=?').get(event.legacyKey);assert(!legacy||JSON.parse(legacy.data).status==='void','Этот приём уже отмечен по прежнему расписанию',409);}
         const old=store.db.prepare('SELECT data FROM events WHERE event_key=?').get(key);
         assert(!old||JSON.parse(old.data).status==='void','Этот приём уже отмечен. Обновите расписание.',409);
         const actualDose=input.status==='taken'?positive(input.dose||rx.dose,'Фактическая доза'):rx.dose;
-        const record={...(event||{rxId:rx.id,personId:rx.personId,name:rx.name,dose:rx.dose,unit:rx.unit,timeZone:rx.timeZone,conditions:rx.conditions,ingredients:rx.ingredients,date,time:localParts(occurredAt,rx.timeZone).time,...(rx.doseScope?{doseScope:rx.doseScope}:{}),...(rx.purpose?{purpose:rx.purpose}:{}),...(rx.carePhase!==undefined?{carePhase:rx.carePhase}:{})}),key,status:input.status,occurredAt:new Date(occurredAt).toISOString(),actualDose,note:string(input.note,'Примечание',2000),author:string(input.author||'Я','Автор',100)};
+        const record={...(event||{rxId:rx.id,personId:rx.personId,name:rx.name,dose:rx.dose,unit:rx.unit,timeZone:rx.timeZone,conditions:rx.conditions,ingredients:rx.ingredients,date,time:localParts(occurredAt,rx.timeZone).time,...(rx.doseScope?{doseScope:rx.doseScope}:{}),...(rx.purpose?{purpose:rx.purpose}:{}),...(rx.carePhase!==undefined?{carePhase:rx.carePhase}:{})}),key,...(manualClientKey?{manualClientKey}:{}),status:input.status,occurredAt:new Date(occurredAt).toISOString(),actualDose,note:string(input.note||procedureNote(rx),'Примечание',2000),author:string(input.author||'Я','Автор',100)};
         for(const field of ['legacyKey','anchor','label','displayTime','relation','slotIndex'])delete record[field];
         if(old) {const previous=JSON.parse(old.data);return send(200,store.update('events',previous.id,record,previous.version));}
         return send(201,store.insert('events',record));
@@ -193,14 +215,8 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
         if(found) return send(200,{...JSON.parse(found.data),duplicate:true});
         const id=newId();
         if(bytes) {
-          assert(!ocrBusy,'Распознавание уже выполняется. Дождитесь результата перед следующей загрузкой.',429);
-          ocrBusy=true;
-          try {
-            await writeFile(join(uploads,id),bytes,{mode:0o600});
-            const {stdout}=await exec(ocrBinary,[join(uploads,id)],{timeout:45000,maxBuffer:2*1024*1024});
-            const result=JSON.parse(stdout);text=string(result.text,'Распознанный текст',50000);lines=result.lines;
-          } catch(e) { await unlink(join(uploads,id)).catch(()=>{});throw new InputError('Не удалось распознать изображение. Проверьте файл; можно вставить текст вручную.',422); }
-          finally {ocrBusy=false;}
+          const result=await recognize(bytes);text=result.text;lines=result.lines;
+          await writeFile(join(uploads,id),bytes,{mode:0o600});
         }
         return send(201,store.insert('documents',{id,personId:input.personId,hash,name,mime,text,lines,ocrText:text,sourceKind,reviewNotes:'',suggestions:sourceKind==='household'?[]:parseSuggestions(text)}));
       }
@@ -225,8 +241,9 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       assert(!route.startsWith('/api/'),'Метод или маршрут не найден',404);
       assert(method==='GET'||method==='HEAD','Метод не разрешён',405);
       if(route==='/medika-ca.cer'&&method==='GET'){res.writeHead(200,{'Content-Type':'application/x-x509-ca-cert','Content-Disposition':'attachment; filename=medika-ca.cer'});return res.end(await readFile(join(root,'data/medika-ca.cer')));}
+      if(route==='/ocr-sample.png'){res.writeHead(200,{'Content-Type':'image/png'});return res.end(await readFile(join(root,'public/ocr-sample.png')));}
       const packageImage=route.match(/^\/medicine-images\/([a-z0-9-]+\.jpg)$/);if(packageImage){let bytes;try{bytes=await readFile(join(root,'public/medicine-images',packageImage[1]));}catch{throw new InputError('Фото не найдено',404);}res.writeHead(200,{'Content-Type':'image/jpeg','Cache-Control':'public, max-age=86400'});return res.end(method==='HEAD'?undefined:bytes);}
-      const assets={'/routine.js':['routine.js','text/javascript'],'/':['index.html','text/html'],'/voice-lab':['voice-lab.html','text/html'],'/voice-lab/':['voice-lab.html','text/html'],'/voice-lab.js':['voice-lab.js','text/javascript'],'/voice-lab.css':['voice-lab.css','text/css'],'/prescription-summary.js':['prescription-summary.js','text/javascript'],'/medicine-images.js':['medicine-images.js','text/javascript'],'/app.js':['app.js','text/javascript'],'/style.css':['style.css','text/css'],'/icon.svg':['icon.svg','image/svg+xml'],'/voice-recorder.js':['voice-recorder.js','text/javascript'],'/voice-capture.js':['voice-capture.js','text/javascript']};
+      const assets={'/ocr-lab':['ocr-lab.html','text/html'],'/ocr-lab/':['ocr-lab.html','text/html'],'/playground':['ocr-lab.html','text/html'],'/ocr-lab.js':['ocr-lab.js','text/javascript'],'/prescription-workspace.js':['prescription-workspace.js','text/javascript'],'/prescription-workspace.css':['prescription-workspace.css','text/css'],'/medicine-forms.js':['medicine-forms.js','text/javascript'],'/routine.js':['routine.js','text/javascript'],'/':['index.html','text/html'],'/voice-lab':['voice-lab.html','text/html'],'/voice-lab/':['voice-lab.html','text/html'],'/voice-lab.js':['voice-lab.js','text/javascript'],'/voice-lab.css':['voice-lab.css','text/css'],'/prescription-summary.js':['prescription-summary.js','text/javascript'],'/medicine-images.js':['medicine-images.js','text/javascript'],'/app.js':['app.js','text/javascript'],'/style.css':['style.css','text/css'],'/icon.svg':['icon.svg','image/svg+xml'],'/voice-recorder.js':['voice-recorder.js','text/javascript'],'/voice-capture.js':['voice-capture.js','text/javascript']};
       assert(assets[route],'Страница не найдена',404);
       const [file,mime]=assets[route];res.writeHead(200,{'Content-Type':`${mime}; charset=utf-8`});res.end(method==='HEAD'?undefined:await readFile(join(root,'public',file)));
     } catch(e) {

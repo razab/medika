@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {personInput,rxInput,scheduleFor} from '../lib/domain.mjs';
-import {emptyRoutine} from '../public/routine.js';
+import {emptyRoutine,nextDose} from '../public/routine.js';
 const routine=emptyRoutine();
 routine.weekday={times:{breakfast:'08:00',dinner:'18:00–19:00'},intakes:['breakfast','dinner','']};
 routine.weekend={times:{breakfast:'09:00',lunch:'13:00'},intakes:['breakfast','lunch','']};
@@ -34,3 +34,5 @@ test('Распорядок и слоты проверяются на грани�
   }
   for(const s of [{anchor:'bad'},{anchor:'clock',time:'25:00'},{anchor:'bedtime',relation:'after'}])assert.throws(()=>rxInput({...rx,ingredients:'',routineSlots:[s]}));
 });
+
+test('Ближайший приём выбирает будущий слот сегодня, а не утренний задним числом',()=>{const items=[{slot:{time:'07:30'}},{slot:{time:'19:00'}}];assert.equal(nextDose(items,'2026-11-09','2026-11-09','14:00'),items[1]);assert.equal(nextDose(items,'2026-11-10','2026-11-09','14:00'),items[0]);});
