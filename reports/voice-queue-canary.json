@@ -8,6 +8,7 @@
     "Manual event entry remains usable during held ASR; confirmation/undo stays above the composer with at least 8 px separation",
     "Three actual browser microphone captures accepted while first ASR request is held; one processor; stable per-recording timestamp and key",
     "A second same-origin tab cannot start another worker or interrupt the active one",
+    "Successful recognition updates history without creating a success popup or undo banner",
     "FIFO facts retain capture time, not completion time; ambiguous job stays reviewable without opening a modal or blocking later jobs; audio removed after ASR",
     "Explicit manual clarification writes once and removes its queued draft only on success",
     {
