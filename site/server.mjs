@@ -1,3 +1,4 @@
+import {medicineInput,medicineKey} from './lib/medicines.mjs';
 import {familyView} from './lib/family-view.mjs';
 import {createLocalOCR} from './lib/local-ocr.mjs';
 import {createPrescriptionLab} from './lib/prescription-lab.mjs';
@@ -41,7 +42,7 @@ export function imageType(bytes) {
 export async function createApp({dataDir=join(root,'data'),port=4382,publicHost='medika.localhost',additionalHosts=[],entryParser=parseEntry,voiceLabOptions={}}={}) {
   const store=openStore(dataDir), uploads=join(dataDir,'uploads');
   await mkdir(uploads,{recursive:true,mode:0o700});
-  const voiceLab=await createVoiceLab(dataDir,{context:()=>codexPeople(store.state()),...voiceLabOptions});
+  const voiceLab=await createVoiceLab(dataDir,{context:()=>({people:codexPeople(store.state()),medicines:store.state().medicines.filter(m=>!m.archived).map(m=>m.name)}),...voiceLabOptions});
   const token=randomBytes(32).toString('hex'), ocrBinary=join(root,'scripts/medika-ocr');
   let ocrReady=false,photoBusy=false;
   try { await access(ocrBinary);ocrReady=true; } catch {}
@@ -80,7 +81,7 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       const url=new URL(req.url,`${scheme}://${req.headers.host}`), route=url.pathname, method=req.method;
       if(route==='/design-study/a1')res.setHeader('Content-Security-Policy',`default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src ${url.origin}/api/session ${url.origin}/api/design-study/a1-snapshot; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'`);
       // Links from chats may be cross-site; the shell and public CA contain no medical data.
-      const publicRead=['GET','HEAD'].includes(method)&&(['/','/manage','/family','/family/','/voice-lab','/voice-lab/','/ocr-lab','/ocr-lab/','/playground','/medika-ca.cer'].includes(route)||Object.hasOwn(designStudyAssets,route));
+      const publicRead=['GET','HEAD'].includes(method)&&(['/','/manage','/family','/family/','/voice-lab','/voice-lab/','/ocr-lab','/ocr-lab/','/playground','/medika-ca.cer','/medicines','/medicines/'].includes(route)||Object.hasOwn(designStudyAssets,route));
       if(!publicRead){
         assert(!req.headers.origin||req.headers.origin===url.origin,'Запрос с другого сайта отклонён',403);
         assert(req.headers['sec-fetch-site']!=='cross-site','Запрос с другого сайта отклонён',403);
@@ -172,11 +173,23 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       if(route==='/api/people'&&method==='POST') return send(201,store.insert('people',personInput(await body(req))));
       const personRoute=route.match(/^\/api\/people\/([a-f\d-]+)$/);
       if(personRoute&&method==='PUT') { const input=await body(req),person=personInput(input);for(const rx of store.state().prescriptions.filter(r=>r.personId===personRoute[1]&&!r.archived))validateRoutineBinding(rx,person);return send(200,store.update('people',personRoute[1],person,input.version)); }
+      if(route==='/api/medicines'&&method==='GET')return send(200,store.state().medicines);
+      if(route==='/api/medicines'&&method==='POST'){
+        const m=medicineInput(await body(req)),all=store.state().medicines,old=m.clientKey&&all.find(r=>r.clientKey===m.clientKey);
+        if(old){assert(Object.keys(m).every(k=>JSON.stringify(m[k])===JSON.stringify(old[k])),'Этот ключ уже использован для другого лекарства',409);return send(200,old);}
+        assert(!all.some(r=>medicineKey(r)===medicineKey(m)),'Такое лекарство уже есть в списке или архиве',409);return send(201,store.insert('medicines',m));
+      }
+      const medicineRoute=route.match(/^\/api\/medicines\/([a-f\d-]+)$/);
+      if(medicineRoute&&method==='PUT'){
+        const input=await body(req),m=medicineInput(input);assert(!store.state().medicines.some(r=>r.id!==medicineRoute[1]&&medicineKey(r)===medicineKey(m)),'Такое лекарство уже есть',409);return send(200,store.update('medicines',medicineRoute[1],m,input.version));
+      }
       if(route==='/api/prescriptions'&&method==='POST') {
         const input=await body(req),rx=rxInput(input);
         assert(store.get('people',input.personId),'Выберите человека');
         validateRoutineBinding(rx,store.get('people',input.personId));
         if(rx.documentId) assert(store.get('documents',rx.documentId)?.personId===input.personId,'Документ принадлежит другому человеку');
+        if(rx.manualKey){const old=store.state().prescriptions.find(r=>r.manualKey===rx.manualKey);if(old){assert(old.personId===input.personId&&Object.keys(rx).every(k=>JSON.stringify(rx[k])===JSON.stringify(old[k])),'Этот ключ уже использован для другого назначения',409);return send(200,old);}}
+        if(rx.medicineId){const m=store.get('medicines',rx.medicineId);assert(m&&!m.archived,'Лекарство недоступно');assert(input.medicineVersion===m.version,'Лекарство изменено. Откройте форму заново.',409);assert(rx.name===m.name&&rx.medicineForm===m.medicineForm&&rx.strength===m.strength,'Данные назначения не соответствуют выбранному лекарству');}
         return send(201,store.insert('prescriptions',{...rx,personId:input.personId,archived:false}));
       }
       const rxRoute=route.match(/^\/api\/prescriptions\/([a-f\d-]+)$/);
@@ -184,13 +197,14 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
         const input=await body(req),old=store.get('prescriptions',rxRoute[1]);assert(old,'Назначение не найдено',404);
         const rx=rxInput(input);
         validateRoutineBinding(rx,store.get('people',old.personId));
+        if(rx.medicineId)assert(store.get('medicines',rx.medicineId),'Лекарство не найдено');
         if(rx.documentId) assert(store.get('documents',rx.documentId)?.personId===old.personId,'Документ принадлежит другому человеку');
         return send(200,store.update('prescriptions',old.id,{...rx,archived:input.archived===true},input.version));
       }
       const archiveRoute=route.match(/^\/api\/prescriptions\/([a-f\d-]+)\/archive$/);
       if(archiveRoute&&method==='POST') { const input=await body(req);return send(200,store.update('prescriptions',archiveRoute[1],{archived:input.archived!==false},input.version)); }
       if(route==='/api/schedule'&&method==='GET'){const date=day(url.searchParams.get('date'));return send(200,scheduleView(store.state(),date,url.searchParams.get('personId')));}
-      if(route==='/api/family'&&method==='GET'){const now=new Date(),timeZone='Europe/Chisinau',date=localParts(now,timeZone).date,state=store.state();return send(200,{...familyView(state,scheduleView(state,date),{date,now,timeZone},{maskIds:false}),medicinePhotos:state.medicinePhotos,capabilities:{voice:await voiceStatus()}});}
+      if(route==='/api/family'&&method==='GET'){const now=new Date(),timeZone='Europe/Chisinau',date=localParts(now,timeZone).date,state=store.state();return send(200,{...familyView(state,scheduleView(state,date),{date,now,timeZone},{maskIds:false}),medicinePhotos:state.medicinePhotos,medicines:state.medicines.filter(m=>!m.archived),capabilities:{voice:await voiceStatus()}});}
       if(route==='/api/check'&&method==='POST') {
         const input=await body(req),state=store.state();assert(state.people.some(p=>p.id===input.personId),'Выберите человека');
         const candidate=input.candidate?{name:string(input.candidate.name,'Препарат',200,true),ingredients:string(input.candidate.ingredients,'Состав',600).split(/[+;,\n]/).map(s=>s.trim()).filter(Boolean)}:null;
@@ -264,7 +278,7 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       if(route==='/api/backup'&&method==='GET') {
         const state=store.state();
         const images={};for(const doc of state.documents) if(doc.mime) images[doc.id]=(await readFile(join(uploads,doc.id))).toString('base64');
-        return send(200,{...state,format:'medika-backup',version:4,exportedAt:new Date().toISOString(),images,audit:store.history()},{'Content-Disposition':`attachment; filename="medika-backup-${new Date().toISOString().slice(0,10)}.json"`});
+        return send(200,{...state,format:'medika-backup',version:5,exportedAt:new Date().toISOString(),images,audit:store.history()},{'Content-Disposition':`attachment; filename="medika-backup-${new Date().toISOString().slice(0,10)}.json"`});
       }
       if(route==='/api/restore'&&method==='POST') return send(200,await restoreBackup(store,uploads,await body(req,64*1024*1024),imageType));
       if(route==='/api/audit'&&method==='GET') return send(200,store.history().slice(-200).reverse());
@@ -273,7 +287,7 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       if(route==='/medika-ca.cer'&&method==='GET'){res.writeHead(200,{'Content-Type':'application/x-x509-ca-cert','Content-Disposition':'attachment; filename=medika-ca.cer'});return res.end(await readFile(join(root,'data/medika-ca.cer')));}
       if(route==='/ocr-sample.png'){res.writeHead(200,{'Content-Type':'image/png'});return res.end(await readFile(join(root,'public/ocr-sample.png')));}
       const packageImage=route.match(/^\/medicine-images\/([a-z0-9-]+\.jpg)$/);if(packageImage){let bytes;try{bytes=await readFile(join(root,'public/medicine-images',packageImage[1]));}catch{throw new InputError('Фото не найдено',404);}res.writeHead(200,{'Content-Type':'image/jpeg','Cache-Control':'public, max-age=86400'});return res.end(method==='HEAD'?undefined:bytes);}
-      const assets={...designStudyAssets,'/family':['family-preview.html','text/html'],'/family/':['family-preview.html','text/html'],'/family-preview-model.js':['family-preview-model.js','text/javascript'],'/family-card.js':['family-card.js','text/javascript'],'/ocr-lab':['ocr-lab.html','text/html'],'/ocr-lab/':['ocr-lab.html','text/html'],'/playground':['ocr-lab.html','text/html'],'/ocr-lab.js':['ocr-lab.js','text/javascript'],'/prescription-workspace.js':['prescription-workspace.js','text/javascript'],'/prescription-workspace.css':['prescription-workspace.css','text/css'],'/medicine-forms.js':['medicine-forms.js','text/javascript'],'/routine.js':['routine.js','text/javascript'],'/':['family-preview.html','text/html'],'/manage':['index.html','text/html'],'/family-workspace.js':['family-workspace.js','text/javascript'],'/family-workspace.css':['family-workspace.css','text/css'],'/voice-lab':['voice-lab.html','text/html'],'/voice-lab/':['voice-lab.html','text/html'],'/voice-lab.js':['voice-lab.js','text/javascript'],'/voice-lab.css':['voice-lab.css','text/css'],'/prescription-summary.js':['prescription-summary.js','text/javascript'],'/medicine-images.js':['medicine-images.js','text/javascript'],'/app.js':['app.js','text/javascript'],'/style.css':['style.css','text/css'],'/icon.svg':['icon.svg','image/svg+xml'],'/voice-recorder.js':['voice-recorder.js','text/javascript'],'/voice-capture.js':['voice-capture.js','text/javascript'],'/voice-queue.js':['voice-queue.js','text/javascript']};
+      const assets={...designStudyAssets,'/medicines':['medicines.html','text/html'],'/medicines/':['medicines.html','text/html'],'/medicines.js':['medicines.js','text/javascript'],'/medicines.css':['medicines.css','text/css'],'/family':['family-preview.html','text/html'],'/family/':['family-preview.html','text/html'],'/family-preview-model.js':['family-preview-model.js','text/javascript'],'/family-card.js':['family-card.js','text/javascript'],'/ocr-lab':['ocr-lab.html','text/html'],'/ocr-lab/':['ocr-lab.html','text/html'],'/playground':['ocr-lab.html','text/html'],'/ocr-lab.js':['ocr-lab.js','text/javascript'],'/prescription-workspace.js':['prescription-workspace.js','text/javascript'],'/prescription-workspace.css':['prescription-workspace.css','text/css'],'/medicine-forms.js':['medicine-forms.js','text/javascript'],'/routine.js':['routine.js','text/javascript'],'/':['family-preview.html','text/html'],'/manage':['index.html','text/html'],'/family-workspace.js':['family-workspace.js','text/javascript'],'/family-workspace.css':['family-workspace.css','text/css'],'/voice-lab':['voice-lab.html','text/html'],'/voice-lab/':['voice-lab.html','text/html'],'/voice-lab.js':['voice-lab.js','text/javascript'],'/voice-lab.css':['voice-lab.css','text/css'],'/prescription-summary.js':['prescription-summary.js','text/javascript'],'/medicine-images.js':['medicine-images.js','text/javascript'],'/app.js':['app.js','text/javascript'],'/style.css':['style.css','text/css'],'/icon.svg':['icon.svg','image/svg+xml'],'/voice-recorder.js':['voice-recorder.js','text/javascript'],'/voice-capture.js':['voice-capture.js','text/javascript'],'/voice-queue.js':['voice-queue.js','text/javascript']};
       assert(assets[route],'Страница не найдена',404);
       const [file,mime]=assets[route];res.writeHead(200,{'Content-Type':`${mime}; charset=utf-8`});res.end(method==='HEAD'?undefined:await readFile(join(root,'public',file)));
     } catch(e) {

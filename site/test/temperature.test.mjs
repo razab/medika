@@ -36,7 +36,7 @@ test('Температура: отдельные факты, история от
     await call('/temperatures/'+latest.id+'/void',{reason:'Тест исправления',version:latest.version});
     await call('/temperatures/'+latest.id+'/void',{reason:'Повтор',version:latest.version},409);
     assert.ok((await call('/audit')).some(a=>a.action==='update:temperatures'));
-    const backup=await call('/backup');assert.equal(backup.version,4);assert.equal(backup.temperatures.length,3);
+    const backup=await call('/backup');assert.equal(backup.version,5);assert.equal(backup.temperatures.length,3);
     assert.equal((await call('/restore',backup)).inserted,0);
     await call('/restore',{...backup,temperatures:undefined},400);
     await call('/restore',{...backup,temperatures:[{...backup.temperatures[0],personId:'unknown'}]},400);

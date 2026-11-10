@@ -47,3 +47,8 @@ test('Семейный обзор: у старой температуры ест
   assert.equal(measurementStamp({date,timeUnknown:true,occurredAt:null},date),'время неизвестно');
   assert.match(measurementStamp({date:'2025-11-08',occurredAt:'2025-11-08T13:24:00Z'},date),/2025/);
 });
+
+test('Ручной препарат: явная форма видна в карточке без текстового поля form',()=>{
+ const rx={id:'manual',personId:'a',name:'ТестРаствор',medicineForm:'liquid',form:'',dose:'1',unit:'мл',confirmed:true,startDate:date,type:'prn'},model=familyPreview({people:[{id:'a',name:'Алиса'}],prescriptions:[rx]},{items:[],prn:[rx]},{date,now});
+ assert.equal(Object.fromEntries(model.cards[0].prn[0].info.fields)['Форма'],'Раствор / сироп');
+});

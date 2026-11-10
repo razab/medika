@@ -8,8 +8,9 @@ import {namedPeople} from './entry-parser.mjs';
 import {catalog} from './reference.mjs';
 
 const root=dirname(fileURLToPath(import.meta.url)),binary=join(root,'../tools/codex/node_modules/.bin/codex'),schema=join(root,'codex-entry-schema.json');
-export const parserRevision='dual-asr-sol-v3';
+export const parserRevision='dual-asr-sol-library-v4';
 export const knownMedicines=catalog.map(({name,aliases})=>({name,aliases}));
+export const knownMedicinesFor=state=>[...knownMedicines,...(state.medicines||[]).filter(m=>!m.archived).map(m=>({name:m.name,aliases:[]}))];
 export function codexPeople(state){return state.people.map(p=>({id:p.id,name:p.name,displayName:p.displayName||p.name,medicines:[...new Set(state.prescriptions.filter(r=>r.personId===p.id&&!r.archived).map(r=>r.name))]}));}
 export const codexModel='gpt-6.1-sol';
 export const comparisonModels=['gpt-6.1-terra','gpt-6.1-sol','gpt-6-luna'];
@@ -70,7 +71,7 @@ export async function parseWithCodex(state,input,{model=codexModel}={}){
     assert((await codexStatus()).ready,'Codex для Медики не установлен',503);
     directory=await mkdtemp(join(tmpdir(),'medika-terra-'));
     const people=codexPeople(state);
-    const prompt=instructions+'\nINPUT\n'+JSON.stringify({text,people,knownMedicines,referenceLocalDate:localParts(recordedAt,timeZone).date,timeZone});
+    const prompt=instructions+'\nINPUT\n'+JSON.stringify({text,people,knownMedicines:knownMedicinesFor(state),referenceLocalDate:localParts(recordedAt,timeZone).date,timeZone});
     const output=join(directory,'result.json');
     const args=['exec','--ignore-user-config','--ephemeral','--skip-git-repo-check','--sandbox','read-only','--model',model,'--config','forced_login_method="chatgpt"','--config','model_reasoning_effort="low"','--config','web_search="disabled"','--disable','shell_tool','--disable','multi_agent','--disable','apps','--json','--output-schema',schema,'--output-last-message',output,'-'];
     await new Promise((resolve,reject)=>{

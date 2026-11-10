@@ -1,3 +1,4 @@
+import {medicineInput,medicineKey} from './medicines.mjs';
 import {writeFile,unlink,readFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {medicinePhotoInput} from './medicine-photos.mjs';
@@ -10,12 +11,16 @@ const canonical=value=>JSON.stringify(value,(_,v)=>v&&typeof v==='object'&&!Arra
 function metadata(record){assert(idOK(record.id)&&Number.isInteger(record.version)&&record.version>=1&&iso(record.createdAt),'Повреждены идентификатор, версия или дата записи');if(record.updatedAt)assert(iso(record.updatedAt),'Повреждена дата изменения');return {id:record.id,version:record.version,createdAt:record.createdAt,...(record.updatedAt?{updatedAt:record.updatedAt}:{})};}
 
 export async function restoreBackup(store,uploads,input,imageType){
-  assert(input.format==='medika-backup'&&[1,2,3,4].includes(input.version),'Версия резервной копии Медики не поддерживается');
+  assert(input.format==='medika-backup'&&[1,2,3,4,5].includes(input.version),'Версия резервной копии Медики не поддерживается');
   for(const key of ['people','documents','prescriptions','events'])assert(Array.isArray(input[key])&&input[key].length<=10000,'Некорректный раздел копии: '+key);
   if(input.version>=2||input.temperatures!==undefined)assert(Array.isArray(input.temperatures)&&input.temperatures.length<=10000,'Некорректный раздел копии: temperatures');
   if(input.version>=3||input.activities!==undefined)assert(Array.isArray(input.activities)&&input.activities.length<=10000,'Некорректный раздел копии: activities');
   assert(input.images&&typeof input.images==='object'&&!Array.isArray(input.images),'Отсутствует раздел изображений');
-  const data={people:[],documents:[],prescriptions:[],events:[],temperatures:[],activities:[],medicinePhotos:[]};
+  const data={people:[],documents:[],prescriptions:[],events:[],temperatures:[],activities:[],medicines:[],medicinePhotos:[]};
+  assert((input.version<5&&input.medicines===undefined)||Array.isArray(input.medicines)&&input.medicines.length<=10000,'Повреждён раздел лекарств');
+  data.medicines=(input.medicines||[]).map(m=>({...medicineInput(m),...metadata(m)}));
+  const medicineIds=new Set([...store.state().medicines,...data.medicines].map(m=>m.id));
+  const medicineKeys=new Map(store.state().medicines.map(m=>[medicineKey(m),m.id]));for(const m of data.medicines){assert(!medicineKeys.has(medicineKey(m))||medicineKeys.get(medicineKey(m))===m.id,'Повторное лекарство в копии',409);medicineKeys.set(medicineKey(m),m.id);}
   assert(input.medicinePhotos===undefined||Array.isArray(input.medicinePhotos)&&input.medicinePhotos.length<=1000,'Повреждён раздел фото лекарств');
   data.medicinePhotos=(input.medicinePhotos||[]).map(p=>({...medicinePhotoInput(p),...metadata(p)}));
   const photoKeys=new Set();for(const p of data.medicinePhotos){assert(!photoKeys.has(p.key),'Повторное фото лекарства');photoKeys.add(p.key);const old=store.state().medicinePhotos.find(x=>x.key===p.key);assert(!old||old.id===p.id,'Фото лекарства уже существует',409);}
@@ -44,6 +49,7 @@ export async function restoreBackup(store,uploads,input,imageType){
   data.prescriptions=input.prescriptions.map(r=>{
     assert(personIds.has(r.personId),'Назначение ссылается на неизвестного человека');
     const validated=rxInput({...r,times:Array.isArray(r.times)?r.times.join(', '):r.times,ingredients:Array.isArray(r.ingredients)?r.ingredients.join(' + '):r.ingredients});
+    if(validated.medicineId)assert(medicineIds.has(validated.medicineId),'Назначение ссылается на неизвестное лекарство');
     if(validated.documentId)assert(docs.get(validated.documentId)?.personId===r.personId,'Оригинал назначения принадлежит другому человеку');
     return {...validated,personId:r.personId,archived:r.archived===true,...metadata(r)};
   });
@@ -68,6 +74,8 @@ export async function restoreBackup(store,uploads,input,imageType){
     for(const record of records){assert(!ids.has(record.id),'Повторный идентификатор в копии');ids.add(record.id);let existing=store.get(table,record.id);if(table==='documents'&&existing)existing={...existing,suggestions:existing.sourceKind==='household'?[]:parseSuggestions(existing.text)};assert(!existing||canonical(existing)===canonical(record),'В копии другая версия существующей записи. Ничего не восстановлено.',409);if(!existing)planned.push([table,record]);}
   }
   const keys=new Set(store.state().events.map(r=>r.key));for(const [table,r]of planned)if(table==='events'){assert(!keys.has(r.key),'Дублируется отметка приёма');keys.add(r.key);}
+  const manualKeys=new Set(store.state().prescriptions.filter(r=>r.manualKey).map(r=>r.manualKey));for(const [table,r]of planned)if(table==='prescriptions'&&r.manualKey){assert(!manualKeys.has(r.manualKey),'Дублируется ключ ручного назначения');manualKeys.add(r.manualKey);}
+  const medicineClientKeys=new Set(store.state().medicines.filter(m=>m.clientKey).map(m=>m.clientKey));for(const [table,r]of planned)if(table==='medicines'&&r.clientKey){assert(!medicineClientKeys.has(r.clientKey),'Дублируется ключ лекарства');medicineClientKeys.add(r.clientKey);}
   const clientKeys=new Set(store.state().activities.map(r=>r.clientKey));for(const [table,r]of planned)if(table==='activities'){assert(!clientKeys.has(r.clientKey),'Дублируется ключ события');clientKeys.add(r.clientKey);}
   assert(!input.audit||Array.isArray(input.audit)&&input.audit.length<=50000,'Повреждён журнал изменений');
   const audit=input.audit||[];for(const a of audit)assert(idOK(a.id)&&iso(a.createdAt)&&typeof a.action==='string'&&JSON.stringify(a).length<=200000,'Повреждена запись журнала изменений');

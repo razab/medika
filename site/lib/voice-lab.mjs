@@ -3,7 +3,7 @@ import {join} from 'node:path';
 import {createHash} from 'node:crypto';
 import {assert,string,newId,occurrenceInput,InputError} from './domain.mjs';
 import {prepareAudio,transcribePrepared,voiceStatus,combineTranscripts} from './voice.mjs';
-import {parseWithCodex,codexStatus,codexPeople,parserRevision} from './codex-parser.mjs';
+import {parseWithCodex,codexStatus,codexPeople,parserRevision,knownMedicinesFor} from './codex-parser.mjs';
 
 export const labPhrases=[
   {id:'temperature',text:'Даня, две минуты назад температура тридцать восемь и два.',expected:{personId:'lab-danya',kind:'temperature',celsius:'38.2',secondsAgo:120}},
@@ -34,8 +34,8 @@ export function scoreLabDraft(phraseId,draft,capturedAt){
   return {passed:Object.values(checks).every(Boolean),checks};
 }
 export async function createVoiceLab(dataDir,{prepare=prepareAudio,transcribe=transcribePrepared,parse=parseWithCodex,availability,context=()=>[]}={}){
-  function currentContext(){const people=context();return {...labState,prescriptions:labState.people.flatMap(p=>{const found=people.find(x=>[x.name,x.displayName].some(n=>n?.toLowerCase()===p.name.toLowerCase()));return (found?.medicines||[]).map(name=>({personId:p.id,name}));})};}
-  const analysisKey=state=>hash(Buffer.from(JSON.stringify({parserRevision,people:codexPeople(state)})));
+  function currentContext(){const supplied=context(),people=Array.isArray(supplied)?supplied:supplied.people;return {...labState,medicines:Array.isArray(supplied)?[]:(supplied.medicines||[]).map(name=>({name})),prescriptions:labState.people.flatMap(p=>{const found=people.find(x=>[x.name,x.displayName].some(n=>n?.toLowerCase()===p.name.toLowerCase()));return (found?.medicines||[]).map(name=>({personId:p.id,name}));})};}
+  const analysisKey=state=>hash(Buffer.from(JSON.stringify({parserRevision,people:codexPeople(state),knownMedicines:knownMedicinesFor(state)})));
   const dir=join(dataDir,'voice-lab');await mkdir(dir,{recursive:true,mode:0o700});let busy=null;
   const jsonPath=id=>join(dir,id+'.json'),wavPath=id=>join(dir,id+'.wav');
   async function load(id){assert(idOK(id),'Неизвестная запись',404);try{return JSON.parse(await readFile(jsonPath(id),'utf8'));}catch(e){if(e.code==='ENOENT')throw new InputError('Запись не найдена',404);throw e;}}

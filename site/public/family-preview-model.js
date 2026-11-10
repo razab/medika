@@ -15,7 +15,7 @@ function prescriptionFields(rx,item,group){
   const summary=prescriptionSummary(rx),sequence=prescriptionSequence(rx);
   return [['Доза',shortDose(rx)+(rx.doseScope==='each-nostril'?' в каждую ноздрю':'')],['Кратность',summary.frequency==='Частота не указана'?'':summary.frequency],['Приём',[group.label,item.relation].filter(Boolean).join(' · ')],['Порядок',sequence],['Время',item.anchor==='clock'?clock(item.displayTime)||clock(item.time):''],['Курс',[rx.startDate?`с ${showDate(rx.startDate)}`:'',rx.endDate?`по ${showDate(rx.endDate)}`:''].filter(Boolean).join(' ')]].filter(([,value])=>value);
 }
-function medicineInfo(rx){return {fields:[['Форма',medicineForms[rx.form]?.name||rx.form],['Концентрация',rx.strength],['Способ применения',rx.route]].filter(([,value])=>value),notes:[['Условия',rx.conditions],['Цель',rx.purpose]].filter(([,value])=>value),source:rx.sourceText||''};}
+function medicineInfo(rx){return {fields:[['Форма',medicineForms[rx.medicineForm||rx.form]?.name||rx.form],['Концентрация',rx.strength],['Способ применения',rx.route]].filter(([,value])=>value),notes:[['Условия',rx.conditions],['Цель',rx.purpose]].filter(([,value])=>value),source:rx.sourceText||''};}
 
 // Display focus uses configured context only; it never changes the plan or marks a missed dose.
 export function selectFamilyGroup(groups,{now=new Date(),timeZone='Europe/Chisinau'}={}){

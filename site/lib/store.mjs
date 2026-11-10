@@ -15,10 +15,11 @@ export function openStore(directory) {
     CREATE TABLE IF NOT EXISTS events(id TEXT PRIMARY KEY,rx_id TEXT NOT NULL REFERENCES prescriptions(id),event_key TEXT UNIQUE NOT NULL,data TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS temperatures(id TEXT PRIMARY KEY,person_id TEXT NOT NULL REFERENCES people(id),data TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS activities(id TEXT PRIMARY KEY,person_id TEXT NOT NULL REFERENCES people(id),client_key TEXT UNIQUE NOT NULL,data TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS medicines(id TEXT PRIMARY KEY,data TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS medicinePhotos(id TEXT PRIMARY KEY,data TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS audit(id TEXT PRIMARY KEY,created_at TEXT NOT NULL,data TEXT NOT NULL);`);
   function rows(table) { return db.prepare(`SELECT data FROM ${table}`).all().map(r=>JSON.parse(r.data)); }
-  function state() { return {version:1,people:rows('people'),documents:rows('documents'),prescriptions:rows('prescriptions'),events:rows('events'),temperatures:rows('temperatures'),activities:rows('activities'),medicinePhotos:rows('medicinePhotos')}; }
+  function state() { return {version:1,people:rows('people'),documents:rows('documents'),prescriptions:rows('prescriptions'),events:rows('events'),temperatures:rows('temperatures'),activities:rows('activities'),medicinePhotos:rows('medicinePhotos'),medicines:rows('medicines')}; }
   function get(table,id) { const row=db.prepare(`SELECT data FROM ${table} WHERE id=?`).get(id); return row?JSON.parse(row.data):null; }
   function audit(action,record) { const id=newId(),createdAt=new Date().toISOString();db.prepare('INSERT INTO audit VALUES(?,?,?)').run(id,createdAt,JSON.stringify({id,createdAt,action,record})); }
   let inTransaction=false;

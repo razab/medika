@@ -86,7 +86,7 @@ export function parseEntry(state,input,{now=new Date()}={}){
   if(temp&&/^\d{2}-\d$/u.test(celsius)){celsius=celsius.replace('-','.');notes.push('Тире в распознавании прочитано как запятая — проверьте число.');}
   if(temp&&(extraTemperature||!/^\d{2}(?:\.\d{1,2})?$/u.test(celsius))){celsius='';missing.push('celsius');notes.push('Нужно одно точное значение температуры.');}
   if(/(?:врач\s+назначил|назначено|предписано|принимать.+раз[а-я]*\s+в\s+день|prescribed)/iu.test(text))assert(false,'Это похоже на предписание врача. Добавьте его в блоке «Врач», отдельно от фактов приёма.');
-  const medicines=p?[...new Set([...state.prescriptions.filter(r=>r.personId===p.id).map(r=>r.name),...state.documents.filter(d=>d.personId===p.id&&d.sourceKind!=='household').flatMap(d=>d.suggestions.map(s=>s.name)),...(state.activities||[]).filter(r=>r.personId===p.id&&r.kind==='medication').map(r=>r.name)])]:[];
+  const medicines=p?[...new Set([...(state.medicines||[]).filter(m=>!m.archived).map(m=>m.name),...state.prescriptions.filter(r=>r.personId===p.id).map(r=>r.name),...state.documents.filter(d=>d.personId===p.id&&d.sourceKind!=='household').flatMap(d=>d.suggestions.map(s=>s.name)),...(state.activities||[]).filter(r=>r.personId===p.id&&r.kind==='medication').map(r=>r.name)])]:[];
   const tokens=text.match(/[\p{L}\d-]+/gu)||[];
   const matches=medicines.filter(m=>tokens.some(t=>phonetic(t)===phonetic(m))||wordPattern([m.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')]).test(text));
   const medicineVerbs='дал[аи]?|дали|принял[аи]?|выпил[аи]?|поставил[аи]?|закапал[аи]?|получил[аи]?|дали|gave|took|taken|received';

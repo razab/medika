@@ -169,6 +169,8 @@ export function rxInput(input) {
   if(input.carePhase!==undefined)extra.carePhase=phaseInput(input.carePhase);
   if(input.weekdays!==undefined){assert(Array.isArray(input.weekdays)&&input.weekdays.length>0&&input.weekdays.length<=7&&input.weekdays.every(n=>Number.isInteger(n)&&n>=0&&n<=6),'Выберите дни недели');assert(['daily','routine'].includes(type),'Дни недели применяются только к ежедневному расписанию');extra.weekdays=[...new Set(input.weekdays)].sort();}
   if(input.doseScope){assert(['each-nostril','total'].includes(input.doseScope),'Неизвестная область дозы');extra.doseScope=input.doseScope;}
+  if(input.medicineId!==undefined)extra.medicineId=string(input.medicineId,'Лекарство',80);
+  if(input.manualKey!==undefined){extra.manualKey=string(input.manualKey,'Ключ назначения',120,true);assert(/^[a-zA-Z0-9_-]{8,120}$/.test(extra.manualKey),'Некорректный ключ назначения');}
   if(input.purpose!==undefined)extra.purpose=string(input.purpose,'Зачем назначено',1000);
   return { name: string(input.name, 'Название препарата', 200, true), ingredients, form: string(input.form, 'Форма', 150), strength: string(input.strength, 'Концентрация', 150), dose: positive(input.dose, 'Доза на приём'), unit: input.unit, route: string(input.route, 'Способ применения', 150), startDate, endDate, type, times, timeZone, intervalHours, anchorTime, anchor, minHours: positive(input.minHours, 'Минимальный интервал', true), maxPer24h: positive(input.maxPer24h, 'Максимум приёмов за 24 часа', true), conditions: string(input.conditions, 'Условия приёма', 2000), sourceText: string(input.sourceText, 'Текст назначения', 10000), documentId: string(input.documentId, 'Документ', 80), confirmed: true,...extra };
 }

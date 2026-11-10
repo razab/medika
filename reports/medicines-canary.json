@@ -1,0 +1,59 @@
+{
+  "status": "PASS",
+  "syntheticOnly": true,
+  "physicalDeviceTested": false,
+  "checks": [
+    "Family menu opens the real medicines module; cancel writes nothing; standalone medicine survives reload, HTML is escaped, concentration never fills a patient dose; manual PRN is distinct from doctor OCR",
+    "A manually assigned medicine appears on the working family screen and can be marked taken",
+    "Patient-specific slots, PRN and editing work; changing concentration or archiving preserves prescription snapshots and old facts; existing OCR medication can be saved without rewriting its source",
+    "A lost medicine-creation response is retried explicitly with the same key, producing one medicine",
+    "A lost manual-prescription response also reuses its key, producing one prescription",
+    "All nine real form variants restrict dose units and leave the patient dose empty",
+    "Inhalation composition and duration are stored only from explicit user input",
+    {
+      "width": 320,
+      "height": 844,
+      "geometry": {
+        "width": 77,
+        "height": 48,
+        "gap": 8,
+        "overflow": false
+      },
+      "touchCenterAndEdges": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "geometry": {
+        "width": 91.015625,
+        "height": 48,
+        "gap": 8,
+        "overflow": false
+      },
+      "touchCenterAndEdges": true
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "geometry": {
+        "width": 92.109375,
+        "height": 48,
+        "gap": 8,
+        "overflow": false
+      },
+      "touchCenterAndEdges": true
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "geometry": {
+        "width": 92.109375,
+        "height": 48,
+        "gap": 8,
+        "overflow": false
+      },
+      "touchCenterAndEdges": true
+    },
+    "SQLite restart and durable v5 export/restore preserve medicines, links, prescriptions and facts without duplicates"
+  ]
+}
