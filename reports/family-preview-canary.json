@@ -15,12 +15,30 @@
       "minGap": 8
     },
     {
+      "width": 320,
+      "expanded": {
+        "overflow": false,
+        "minWidth": 48,
+        "minHeight": 48,
+        "minGap": 8
+      }
+    },
+    {
       "width": 390,
       "height": 844,
       "overflow": false,
       "minWidth": 48,
       "minHeight": 48,
       "minGap": 8
+    },
+    {
+      "width": 390,
+      "expanded": {
+        "overflow": false,
+        "minWidth": 48,
+        "minHeight": 48,
+        "minGap": 8
+      }
     },
     {
       "width": 768,
@@ -31,6 +49,15 @@
       "minGap": 8
     },
     {
+      "width": 768,
+      "expanded": {
+        "overflow": false,
+        "minWidth": 48,
+        "minHeight": 48,
+        "minGap": 8
+      }
+    },
+    {
       "width": 820,
       "height": 1180,
       "overflow": false,
@@ -39,12 +66,30 @@
       "minGap": 8
     },
     {
+      "width": 820,
+      "expanded": {
+        "overflow": false,
+        "minWidth": 48,
+        "minHeight": 48,
+        "minGap": 8
+      }
+    },
+    {
       "width": 1024,
       "height": 768,
       "overflow": false,
       "minWidth": 48,
       "minHeight": 48,
       "minGap": 8
+    },
+    {
+      "width": 1024,
+      "expanded": {
+        "overflow": false,
+        "minWidth": 48,
+        "minHeight": 48,
+        "minGap": 8
+      }
     }
   ],
   "prescriptionsUnchanged": true,

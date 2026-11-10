@@ -4,9 +4,11 @@
   "recognitionStubbed": true,
   "physicalDeviceTested": false,
   "checks": [
+    "Passive phase, no inline switches; treatment preview/cancel and language preference do not write medical data; only Russian/English",
     "External root link; prior-day medicine; current intake saved and survives reload",
     "Prescription editing leaves old facts intact; atomic fact correction; explicit unknown time; dependency does not invent a clock",
-    "Per-person phase and personal slots save through versioned API without overwriting profile or another patient",
+    "Stale treatment save is rejected, preserving the concurrent profile update and phase",
+    "Per-person phase and personal slots save from treatment settings through versioned API without overwriting past facts, profile or another patient",
     "Empty-profile temperature two minutes ago, corrected and voided; symptom with unknown time persists",
     "Unknown-time scheduled fact preserves the date explicitly entered by the user",
     "Existing voice pipeline retained: stub transcription → actual parser/record endpoint, named person overrides current filter",
@@ -24,10 +26,17 @@
     {
       "width": 320,
       "touchCentersAndEdges": true,
+      "historyReadOnly": true,
       "modal": {
         "width": 83.96875,
         "height": 48,
         "gap": 32,
+        "overflow": false
+      },
+      "treatmentGeometry": {
+        "width": 83.96875,
+        "height": 48,
+        "gap": 8,
         "overflow": false
       }
     },
@@ -45,10 +54,17 @@
     {
       "width": 390,
       "touchCentersAndEdges": true,
+      "historyReadOnly": true,
       "modal": {
         "width": 83.96875,
         "height": 48,
         "gap": 12,
+        "overflow": false
+      },
+      "treatmentGeometry": {
+        "width": 83.96875,
+        "height": 48,
+        "gap": 8,
         "overflow": false
       }
     },
@@ -66,10 +82,17 @@
     {
       "width": 768,
       "touchCentersAndEdges": true,
+      "historyReadOnly": true,
       "modal": {
         "width": 83.96875,
         "height": 48,
         "gap": 12,
+        "overflow": false
+      },
+      "treatmentGeometry": {
+        "width": 83.96875,
+        "height": 48,
+        "gap": 8,
         "overflow": false
       }
     },
@@ -87,10 +110,17 @@
     {
       "width": 820,
       "touchCentersAndEdges": true,
+      "historyReadOnly": true,
       "modal": {
         "width": 83.96875,
         "height": 48,
         "gap": 12,
+        "overflow": false
+      },
+      "treatmentGeometry": {
+        "width": 83.96875,
+        "height": 48,
+        "gap": 8,
         "overflow": false
       }
     },
@@ -108,10 +138,17 @@
     {
       "width": 1024,
       "touchCentersAndEdges": true,
+      "historyReadOnly": true,
       "modal": {
         "width": 83.96875,
         "height": 48,
         "gap": 12,
+        "overflow": false
+      },
+      "treatmentGeometry": {
+        "width": 83.96875,
+        "height": 48,
+        "gap": 8,
         "overflow": false
       }
     },
