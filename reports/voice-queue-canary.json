@@ -1,0 +1,64 @@
+{
+  "status": "PASS",
+  "syntheticOnly": true,
+  "microphone": "Chromium fake device; real capture/encoding",
+  "recognitionStubbed": true,
+  "physicalDeviceTested": false,
+  "checks": [
+    "Manual event entry remains usable during held ASR; confirmation/undo stays above the composer with at least 8 px separation",
+    "Three actual browser microphone captures accepted while first ASR request is held; one processor; stable per-recording timestamp and key",
+    "A second same-origin tab cannot start another worker or interrupt the active one",
+    "FIFO facts retain capture time, not completion time; ambiguous job stays reviewable without opening a modal or blocking later jobs; audio removed after ASR",
+    "Explicit manual clarification writes once and removes its queued draft only on success",
+    {
+      "width": 320,
+      "height": 844,
+      "geometry": {
+        "width": 80,
+        "height": 48,
+        "gap": 8,
+        "overflow": false
+      },
+      "voiceCenterAndEdges": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "geometry": {
+        "width": 96,
+        "height": 48,
+        "gap": 8,
+        "overflow": false
+      },
+      "voiceCenterAndEdges": true
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "geometry": {
+        "width": 96,
+        "height": 48,
+        "gap": 8,
+        "overflow": false
+      },
+      "voiceCenterAndEdges": true
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "geometry": {
+        "width": 96,
+        "height": 48,
+        "gap": 8,
+        "overflow": false
+      },
+      "voiceCenterAndEdges": true
+    },
+    "Reload preserves queued blobs, keys and timestamps; interrupted work does not auto-repeat, explicit resume drains the queue",
+    "Lost post-commit response pauses queue; explicit retry reuses saved transcript and idempotency key, without new ASR/model work or duplicate fact",
+    "A new capture is also accepted during semantic parsing/saving, without launching the next ASR early",
+    "A denied redo keeps the old job; an unrelated subsequent recording cannot silently replace it",
+    "429 stops processing without automatic retries; later captures remain accepted and durable; failed audio removed; explicit dismissal resumes pending work",
+    "Durable queue bounds: ten jobs, 8 MiB exact/over boundary, empty audio, RU/EN only, invalid time; stopped work is never retried automatically"
+  ]
+}

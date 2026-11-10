@@ -69,3 +69,10 @@
 #treatment-preview h3{font-size:13px;margin:0 0 8px}
 #treatment-preview ul{padding-left:20px;font-size:13px;line-height:1.6}
 #family-info .family-setting-note{font-size:12px;color:#627084;margin-top:12px}
+
+.family-preview-footer .family-voice-queue{grid-column:2;grid-row:2;font-size:11px;padding:6px}
+.family-preview-footer .family-voice-queue[hidden]{display:none}
+.family-preview-footer:has(.family-voice-queue:not([hidden])) p{grid-column:1;grid-row:2;align-self:center}
+#family-info .family-voice-jobs>section{padding:16px 0;border-top:1px solid #dce4ee}
+#family-info .family-voice-jobs h3{font-size:14px;margin:0 0 8px}
+#family-info .family-voice-jobs p{font-size:13px;white-space:pre-wrap;overflow-wrap:anywhere}
