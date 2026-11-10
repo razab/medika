@@ -29,3 +29,21 @@ test('A1: короткие дозы, экранирование и блокир�
   const html=careDrug('<script>bad</script>','2 мл','<img src=x onerror=bad>',{readOnly:true,taken:true});assert.doesNotMatch(html,/<script>|<img/);assert.match(html,/disabled checked/);assert.match(html,/&lt;script&gt;/);assert.doesNotMatch(careFamily([{id:'a" onfocus="bad',name:'<img>'}]),/<img|value="a" onfocus/);
   const inhalation=familyPreview({people:[],prescriptions:[],activities:[{kind:'inhalation',name:'ТестРаствор',amount:'2',unit:'мл',occurredAt:'2026-11-09T16:00:00Z'}]},{items:[],prn:[]},{date,now}).history[0];assert.equal(inhalation.name,'Ингаляция · ТестРаствор');
 });
+test('Семейный обзор: середина дня не держит завтрак, выполненный слот не возвращает старые пропуски',async()=>{
+  const {selectFamilyGroup}=await import('../public/family-preview-model.js'),at=time=>new Date('2026-11-10T'+time+'Z');
+  const groups=[{time:'07:30',rows:[{name:'Первый'}]},{time:'19:00',rows:[{name:'Первый'}]},{time:'23:00',rows:[{name:'Первый'}]}];
+  assert.equal(selectFamilyGroup(groups,{now:at('11:38:00')}),1);assert.equal(selectFamilyGroup(groups,{now:at('05:35:00')}),0);assert.equal(selectFamilyGroup(groups,{now:at('21:10:00')}),2);
+  const done=structuredClone(groups);done[1].rows[0].taken=true;assert.equal(selectFamilyGroup(done,{now:at('11:38:00')}),1);
+  const child=[{time:'07:30',rows:[{}]},{time:'13:30',rows:[{}]},{time:'21:30',rows:[{}]}];assert.equal(selectFamilyGroup(child,{now:at('11:38:00')}),1);
+  const chain=structuredClone(groups);chain[1].rows=[{name:'Первый',taken:true,takenAt:'2026-11-10T20:00:00Z'},{name:'Второй',after:'Через 10–15 мин после Первый'}];
+  assert.equal(selectFamilyGroup(chain,{now:at('20:05:00')}),1);assert.equal(selectFamilyGroup(chain,{now:at('20:20:00')}),2);
+  chain[1].rows[0].takenAt=null;assert.equal(selectFamilyGroup(chain,{now:at('20:05:00')}),2);
+});
+test('Семейный обзор: у старой температуры есть дата, у неизвестного времени нет выдуманных часов',async()=>{
+  const {measurementStamp}=await import('../public/family-preview-model.js'),date='2026-11-10';
+  assert.equal(measurementStamp({date,occurredAt:'2026-11-10T11:00:00Z'},date),'13:00');
+  assert.equal(measurementStamp({date:'2026-11-09',occurredAt:'2026-11-09T13:24:00Z'},date),'вчера · 15:24');
+  assert.equal(measurementStamp({date:'2026-11-08',occurredAt:'2026-11-08T13:24:00Z'},date),'8 ноября · 15:24');
+  assert.equal(measurementStamp({date,timeUnknown:true,occurredAt:null},date),'время неизвестно');
+  assert.match(measurementStamp({date:'2025-11-08',occurredAt:'2025-11-08T13:24:00Z'},date),/2025/);
+});

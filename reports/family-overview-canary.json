@@ -1,0 +1,70 @@
+{
+  "status": "PASS",
+  "syntheticOnly": true,
+  "clockFrozen": "2026-11-10T11:38:00Z",
+  "physicalDeviceTested": false,
+  "medicalPlanUnchanged": true,
+  "checks": [
+    "13:38 → dinner for Alice, lunch for Danya; old/unknown measurement labels; closed overview; course warning; save/reload/void; all other slots and exact clock remain accessible",
+    {
+      "width": 320,
+      "height": 844,
+      "overflow": false,
+      "allCurrentDosesVisible": true,
+      "personHeadersVisible": true,
+      "allCardsVisible": true,
+      "topGap": 56,
+      "minWidth": 48,
+      "minHeight": 48,
+      "minGap": 8
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "overflow": false,
+      "allCurrentDosesVisible": true,
+      "personHeadersVisible": true,
+      "allCardsVisible": true,
+      "topGap": 56,
+      "minWidth": 48,
+      "minHeight": 48,
+      "minGap": 8
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "overflow": false,
+      "allCurrentDosesVisible": true,
+      "personHeadersVisible": true,
+      "allCardsVisible": true,
+      "topGap": 0,
+      "minWidth": 48,
+      "minHeight": 48,
+      "minGap": 8
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "overflow": false,
+      "allCurrentDosesVisible": true,
+      "personHeadersVisible": true,
+      "allCardsVisible": true,
+      "topGap": 0,
+      "minWidth": 48,
+      "minHeight": 48,
+      "minGap": 8
+    },
+    {
+      "width": 1280,
+      "height": 752,
+      "overflow": false,
+      "allCurrentDosesVisible": true,
+      "personHeadersVisible": true,
+      "allCardsVisible": true,
+      "topGap": 0,
+      "minWidth": 48,
+      "minHeight": 48,
+      "minGap": 8
+    }
+  ]
+}
