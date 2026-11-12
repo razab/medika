@@ -1,0 +1,100 @@
+{
+  "status": "PASS",
+  "syntheticOnly": true,
+  "physicalDeviceTested": false,
+  "checks": [
+    "Change prescription: breakfast → second dinner, same ID, dose/course/source and immutable current/past facts; no duplicate prescription or second intake",
+    "Slot → required exact time, cancel and blank time write nothing; saved 17:15 immediately appears without altering a fact",
+    "Exact time → meal; changing only second of multiple intakes preserves the first and its occurrence identity",
+    "Legacy daily clock prescription moves to a meal with original time aliases, retaining old facts and duplicate protection",
+    {
+      "width": 320,
+      "height": 844,
+      "mode": "slot:breakfast",
+      "geometry": {
+        "minWidth": 83.96875,
+        "minHeight": 48,
+        "gap": 12,
+        "overflow": false
+      }
+    },
+    {
+      "width": 320,
+      "height": 844,
+      "mode": "clock",
+      "geometry": {
+        "minWidth": 83.96875,
+        "minHeight": 48,
+        "gap": 32,
+        "overflow": false
+      }
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "mode": "slot:breakfast",
+      "geometry": {
+        "minWidth": 83.96875,
+        "minHeight": 48,
+        "gap": 12,
+        "overflow": false
+      }
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "mode": "clock",
+      "geometry": {
+        "minWidth": 83.96875,
+        "minHeight": 48,
+        "gap": 12,
+        "overflow": false
+      }
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "mode": "slot:breakfast",
+      "geometry": {
+        "minWidth": 83.96875,
+        "minHeight": 48,
+        "gap": 12,
+        "overflow": false
+      }
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "mode": "clock",
+      "geometry": {
+        "minWidth": 83.96875,
+        "minHeight": 48,
+        "gap": 12,
+        "overflow": false
+      }
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "mode": "slot:breakfast",
+      "geometry": {
+        "minWidth": 83.96875,
+        "minHeight": 48,
+        "gap": 12,
+        "overflow": false
+      }
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "mode": "clock",
+      "geometry": {
+        "minWidth": 83.96875,
+        "minHeight": 48,
+        "gap": 12,
+        "overflow": false
+      }
+    },
+    "Moved prescriptions and all facts survive service restart and backup/restore without duplicates"
+  ]
+}
