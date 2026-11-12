@@ -11,3 +11,14 @@ test('OCR-кэш переживает ошибку AI и перезапуск, �
  const dir=await mkdtemp(join(tmpdir(),'medika-pack-cache-'));let ocrCalls=0,modelCalls=0,fail=true;const options={imageType:()=>true,recognize:async()=>{ocrCalls++;return {text};},prepare:async()=>['thumbnail'],parse:async t=>{modelCalls++;if(fail)throw Error('429 test limit');return validateMedicineRecognition(t,output);}};
  try{const image=Buffer.from('synthetic-image').toString('base64'),first=await createMedicineRecognition(dir,options);await assert.rejects(first.recognize({images:[]}),/одно или два/);await assert.rejects(first.recognize({images:['bad!']}),/6 МБ/);await assert.rejects(first.recognize({images:[image]}),/429/);assert.equal(ocrCalls,1);assert.equal(modelCalls,1);fail=false;const resumed=await createMedicineRecognition(dir,options),result=await resumed.recognize({images:[image]});assert.equal(ocrCalls,1);assert.equal(modelCalls,2);assert(result.canSave);assert((await resumed.recognize({images:[image]})).cached);assert.equal(modelCalls,2);assert.equal((await resumed.get(result.recognitionKey)).text,`Фото 1:\n${text}`);const stored=JSON.parse(await readFile(join(dir,'medicine-recognition',result.recognitionKey+'.json'),'utf8'));assert.equal(stored.status,'complete');assert(!JSON.stringify(stored).includes(image));}finally{await rm(dir,{recursive:true,force:true});}
 });
+test('Реальные виды упаковок: инъекции, дозированный ингалятор, порошок для суспензии и пробиотические единицы',async()=>{
+ const {inferMedicineForm,allowedMedicineUnits}=await import('../public/medicine-forms.js');
+ for(const [label,form]of [['Раствор для инъекций','injection'],['Soluție injectabilă','injection'],['Suspensie de inhalat presurizată','inhaler'],['Pulbere pentru suspensie orală','suspension']])assert.equal(inferMedicineForm(label),form);
+ assert.deepEqual(allowedMedicineUnits('inhaler'),['доза','мкг']);assert(!allowedMedicineUnits('injection').includes('табл.'));assert(!allowedMedicineUnits('suspension').includes('пакет'));
+ const t='TESTPRO\nSachets\n10 milliards',v=validateMedicineRecognition(t,{...output,name:'TESTPRO',nameEvidence:'TESTPRO',medicineForm:'powder',formEvidence:'Sachets',strengthEvidence:'10 milliards',instructionsEvidence:'',manufacturerEvidence:''});assert(v.canSave);assert.equal(v.strength,'10 milliards');
+});
+
+test('Дозированный ингалятор сохраняет обе напечатанные концентрации в micrograme без пересчёта',()=>{
+ const t='TESTINHALER\nSuspensie de inhalat presurizată\n25 micrograme / 250 micrograme / doză',v=validateMedicineRecognition(t,{...output,name:'TESTINHALER',nameEvidence:'TESTINHALER',medicineForm:'inhaler',formEvidence:'Suspensie de inhalat presurizată',strengthEvidence:'25 micrograme / 250 micrograme / doză',instructionsEvidence:'',manufacturerEvidence:''});
+ assert(v.canSave);assert.equal(v.strength,'25 micrograme / 250 micrograme / doză');
+});

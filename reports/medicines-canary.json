@@ -8,7 +8,7 @@
     "Patient-specific slots, PRN and editing work; changing concentration or archiving preserves prescription snapshots and old facts; existing OCR medication can be saved without rewriting its source",
     "A lost medicine-creation response is retried explicitly with the same key, producing one medicine",
     "A lost manual-prescription response also reuses its key, producing one prescription",
-    "All nine real form variants restrict dose units and leave the patient dose empty",
+    "All twelve real form variants restrict dose units and leave the patient dose empty",
     "Inhalation composition and duration are stored only from explicit user input",
     {
       "width": 320,

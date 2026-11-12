@@ -3,7 +3,7 @@
  "required":["name","nameEvidence","medicineForm","formEvidence","strengthEvidence","instructionsEvidence","manufacturerEvidence","notes","conflicts"],
  "properties":{
   "name":{"type":"string"},"nameEvidence":{"type":"string"},
-  "medicineForm":{"type":"string","enum":["","powder","tablet","capsule","drops","spray","liquid","inhalation","suppository","topical"]},
+  "medicineForm":{"type":"string","enum":["","injection","inhaler","suspension","powder","tablet","capsule","drops","spray","liquid","inhalation","suppository","topical"]},
   "formEvidence":{"type":"string"},"strengthEvidence":{"type":"string"},"instructionsEvidence":{"type":"string"},"manufacturerEvidence":{"type":"string"},
   "notes":{"type":"array","items":{"type":"string"}},"conflicts":{"type":"array","items":{"type":"string"}}
  }
