@@ -1,4 +1,4 @@
-import {medicineReferenceHTML} from '/medicine-reference.js';
+import {medicineReferenceHTML,medicineGroupLabel} from '/medicine-reference.js';
 import {medicineForms,allowedMedicineUnits,inferMedicineForm} from '/medicine-forms.js';
 import {anchors,relations,dailyRoutine,profileSlots} from '/routine.js';
 import {escapeHTML as e} from '/family-card.js';
@@ -18,7 +18,7 @@ const fromRx=r=>({name:r.name,medicineForm:r.medicineForm||inferMedicineForm([r.
 function unmatched(){const known=new Set(state.medicines.map(key)),found=new Map();for(const r of state.prescriptions.filter(r=>!r.archived)){const m=fromRx(r);if(!r.medicineId&&!known.has(key(m)))found.set(key(m),{...m,rxId:r.id});}return [...found.values()];}
 const photos=m=>photosForMedicine(m.name,state.medicinePhotos||[]).photos;
 const thumbnail=m=>{const photo=photos(m).at(-1);return photo?`<img class="medicine-thumbnail" src="${e(photo.src)}" alt="" loading="lazy">`:'';};
-const row=(m,attr)=>`<button type="button" class="medicine-row" ${attr}>${thumbnail(m)}<span><strong>${e(m.name)}</strong><small>${e([medicineForms[m.medicineForm]?.name,m.strength].filter(Boolean).join(' · '))}</small></span></button>`;
+const row=(m,attr)=>`<button type="button" class="medicine-row" ${attr}>${thumbnail(m)}<span><strong>${e(m.name)}</strong><small>${e([medicineForms[m.medicineForm]?.name,m.strength].filter(Boolean).join(' · '))}</small><small class="medicine-list-group">${e(medicineGroupLabel(m.reference))}</small></span></button>`;
 function render(){const active=state.medicines.filter(m=>!m.archived),archived=state.medicines.filter(m=>m.archived),other=unmatched();list.innerHTML=`<div class="medicine-list">${active.map(m=>row(m,`data-medicine="${e(m.id)}"`)).join('')||'<p class="muted">Сохранённых препаратов пока нет.</p>'}</div>${other.length?`<h3>Из назначений</h3><div class="medicine-list">${other.map(m=>row(m,`data-from-rx="${e(m.rxId)}"`)).join('')}</div>`:''}${archived.length?`<details><summary>Архив · ${archived.length}</summary><div class="medicine-list">${archived.map(m=>row(m,`data-medicine="${e(m.id)}"`)).join('')}</div></details>`:''}`;}
 async function refresh(){state=await api('/state');render();}
 function show(title,body){delete dialog.dataset.photo;delete dialog.dataset.recognition;dialog.innerHTML=`<header class="dialog-head"><h2 id="dialog-title">${e(title)}</h2><button type="button" data-close>Закрыть</button></header>${body}`;dialog.showModal();}

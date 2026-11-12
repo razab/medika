@@ -28,6 +28,31 @@
       "variants": 4,
       "sourceSummaryCenterAndEdges": true
     },
+    "Group is visible before opening a medicine: steroid, antibiotic, combination, long escaped wording, unknown; no inference from a name",
+    {
+      "width": 320,
+      "height": 844,
+      "overviewLabels": true,
+      "summaryCenterAndEdges": true
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "overviewLabels": true,
+      "summaryCenterAndEdges": true
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "overviewLabels": true,
+      "summaryCenterAndEdges": true
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "overviewLabels": true,
+      "summaryCenterAndEdges": true
+    },
     "The same reference opens from the family medicine information dialog without changing the prescription or historical dose",
     "Editing a note preserves the reference; changing the product concentration invalidates it instead of carrying old rules to another product",
     "An existing prescription keeps its original strength and never displays a new-concentration reference just because the catalogue ID is the same",
