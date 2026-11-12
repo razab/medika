@@ -21,3 +21,20 @@ export function localInstant(date,time,zone){
   for(let i=0;i<3;i++){const p=Object.fromEntries(new Intl.DateTimeFormat('sv-SE',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(instant)).map(p=>[p.type,p.value]));const represented=Date.parse(`${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}:00Z`);if(represented===wanted)return new Date(instant).toISOString();instant+=wanted-represented;}
   throw Error('Такого местного времени нет; укажите другое');
 }
+
+export function dependencyTimer(snapshot,actions,row,now=Date.now()){
+  const link=row.dependency;if(!link||rowEvent(snapshot,actions,row))return null;
+  const ids=link.prescriptionIds||[link.prescriptionId],previous=allRows(snapshot).filter(r=>r.personId===row.personId&&ids.includes(r.prescriptionId)&&(link.matching==='anchor'?r.anchor===row.anchor&&(r.anchor!=='clock'||r.slotIndex===row.slotIndex):row.slotIndex!==null?r.slotIndex===row.slotIndex:r.slotLabel===row.slotLabel));
+  const events=previous.map(r=>rowEvent(snapshot,actions,r)).filter(e=>e&&e.personId===row.personId);
+  // Carry an unfinished interval over midnight without borrowing another meal's record.
+  const occurrence=key=>String(key||'').replace(/@routine-\d{4}-\d{2}-\d{2}-/,'@routine-day-');
+  if(!events.length)for(const event of activeEvents(snapshot,actions))if(event.personId===row.personId&&['taken','recorded',undefined].includes(event.status)&&previous.some(r=>event.rowKey!==r.key&&occurrence(event.rowKey)===occurrence(r.key))&&now-Date.parse(event.occurredAt)>=0&&now-Date.parse(event.occurredAt)<=link.maxMinutes*60000)events.push(event);
+  events.sort((a,b)=>Date.parse(b.occurredAt||b.input?.createdAt||0)-Date.parse(a.occurredAt||a.input?.createdAt||0));const event=events[0];
+  if(!event)return {state:'missing',text:'Нет записи первого приёма'};
+  if(!event.occurredAt||!Number.isFinite(Date.parse(event.occurredAt)))return {state:'unknown',text:'Время первого приёма неизвестно'};
+  if(activeEvents(snapshot,actions).some(e=>e.personId===row.personId&&['taken','recorded',undefined].includes(e.status)&&e.rowKey!==row.key&&occurrence(e.rowKey)===occurrence(row.key)&&Date.parse(e.occurredAt)>=Date.parse(event.occurredAt)&&Date.parse(e.occurredAt)<=now))return null;
+  const start=Date.parse(event.occurredAt),from=start+link.minMinutes*60000,to=start+link.maxMinutes*60000;
+  if(start>now)return {state:'unknown',text:'Время первого приёма в будущем'};
+  const seconds=Math.max(0,Math.ceil(((now<from?from:to)-now)/1000)),clock=Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0'),state=now<from?'waiting':now<=to?'ready':'expired';
+  return {state,eventId:event.id,key:row.key+'|'+event.id+'|'+start+'|'+link.minMinutes+'|'+link.maxMinutes,text:state==='waiting'?'До второго препарата '+clock:state==='ready'?'Интервал '+link.minMinutes+'–'+link.maxMinutes+' мин · осталось '+clock:'Интервал '+link.minMinutes+'–'+link.maxMinutes+' мин истёк'};
+}

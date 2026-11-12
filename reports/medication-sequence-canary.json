@@ -1,0 +1,52 @@
+{
+  "status": "PASS",
+  "syntheticOnly": true,
+  "physicalDeviceTested": false,
+  "audibleSoundOnDeviceTested": false,
+  "checks": [
+    "Catalogue saves user sequence and aftercare; morning does not start evening, another patient is independent; cycle is rejected",
+    "Live seconds, 15-minute boundary, one attempted beep, reload without a duplicate beep, 30-minute expiry and no automatic intake",
+    "Unknown actual time does not invent a countdown; correction/void removes it; separate evening prescription matches second ordinal; second intake stops timer and shows aftercare",
+    {
+      "width": 320,
+      "height": 844,
+      "geometry": {
+        "width": 119,
+        "height": 48,
+        "gap": 12,
+        "overflow": false
+      }
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "geometry": {
+        "width": 273,
+        "height": 48,
+        "gap": 12,
+        "overflow": false
+      }
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "geometry": {
+        "width": 273,
+        "height": 48,
+        "gap": 12,
+        "overflow": false
+      }
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "geometry": {
+        "width": 273,
+        "height": 48,
+        "gap": 12,
+        "overflow": false
+      }
+    },
+    "Durable backup, restart and restore preserve links, reminders, prescriptions and immutable history"
+  ]
+}

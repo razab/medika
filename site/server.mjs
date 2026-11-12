@@ -1,5 +1,5 @@
 import {createMedicineRecognition} from './lib/medicine-recognition.mjs';
-import {medicineInput,medicineKey} from './lib/medicines.mjs';
+import {medicineInput,medicineKey,validateMedicineSequence} from './lib/medicines.mjs';
 import {familyView} from './lib/family-view.mjs';
 import {createLocalOCR} from './lib/local-ocr.mjs';
 import {createPrescriptionLab} from './lib/prescription-lab.mjs';
@@ -179,12 +179,12 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       if(route==='/api/medicines'&&method==='GET')return send(200,store.state().medicines);
       if(route==='/api/medicines'&&method==='POST'){
         const m=medicineInput(await body(req)),all=store.state().medicines,old=m.clientKey&&all.find(r=>r.clientKey===m.clientKey);
-        if(old){assert(Object.keys(m).every(k=>JSON.stringify(m[k])===JSON.stringify(old[k])),'Этот ключ уже использован для другого лекарства',409);return send(200,old);}
+        validateMedicineSequence(m,all);if(old){assert(Object.keys(m).every(k=>JSON.stringify(m[k])===JSON.stringify(old[k])),'Этот ключ уже использован для другого лекарства',409);return send(200,old);}
         assert(!all.some(r=>medicineKey(r)===medicineKey(m)),'Такое лекарство уже есть в списке или архиве',409);const recognized=m.recognitionKey?await medicineRecognition.get(m.recognitionKey):null;let status=201;const saved=store.transaction(()=>{const current=store.state().medicines,found=m.clientKey&&current.find(r=>r.clientKey===m.clientKey);if(found){assert(Object.keys(m).every(k=>JSON.stringify(m[k])===JSON.stringify(found[k])),'Этот ключ уже использован для другого лекарства',409);status=200;return found;}assert(!current.some(r=>medicineKey(r)===medicineKey(m)),'Такое лекарство уже есть',409);const result=store.insert('medicines',{...m,...(recognized?{sourceText:recognized.text,sourceModel:recognized.model}:{})});if(recognized&&!store.state().medicinePhotos.some(p=>p.key===medicinePhotoKey(m.name)))store.insert('medicinePhotos',medicinePhotoInput({name:m.name,photos:recognized.photos}));return result;});return send(status,saved);
       }
       const medicineRoute=route.match(/^\/api\/medicines\/([a-f\d-]+)$/);
       if(medicineRoute&&method==='PUT'){
-        const input=await body(req),m=medicineInput(input),old=store.get('medicines',medicineRoute[1]);assert(!store.state().medicines.some(r=>r.id!==medicineRoute[1]&&medicineKey(r)===medicineKey(m)),'Такое лекарство уже есть',409);if(!m.reference&&old?.reference&&old.reference.productKey!==medicineKey(m))m.reference=undefined;return send(200,store.update('medicines',medicineRoute[1],m,input.version));
+        const input=await body(req),m=medicineInput(input),old=store.get('medicines',medicineRoute[1]);assert(old,'Лекарство не найдено',404);validateMedicineSequence({...old,...m},store.state().medicines);assert(!store.state().medicines.some(r=>r.id!==medicineRoute[1]&&medicineKey(r)===medicineKey(m)),'Такое лекарство уже есть',409);if(!m.reference&&old?.reference&&old.reference.productKey!==medicineKey(m))m.reference=undefined;return send(200,store.update('medicines',medicineRoute[1],m,input.version));
       }
       if(route==='/api/prescriptions'&&method==='POST') {
         const input=await body(req),rx=rxInput(input);

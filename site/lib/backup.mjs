@@ -1,4 +1,4 @@
-import {medicineInput,medicineKey} from './medicines.mjs';
+import {medicineInput,medicineKey,validateMedicineSequence} from './medicines.mjs';
 import {writeFile,unlink,readFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {medicinePhotoInput} from './medicine-photos.mjs';
@@ -19,6 +19,7 @@ export async function restoreBackup(store,uploads,input,imageType){
   const data={people:[],documents:[],prescriptions:[],events:[],temperatures:[],activities:[],medicines:[],medicinePhotos:[]};
   assert((input.version<5&&input.medicines===undefined)||Array.isArray(input.medicines)&&input.medicines.length<=10000,'Повреждён раздел лекарств');
   data.medicines=(input.medicines||[]).map(m=>({...medicineInput(m),...metadata(m)}));
+  const allMedicines=new Map([...store.state().medicines,...data.medicines].map(m=>[m.id,m]));for(const m of data.medicines)validateMedicineSequence(m,[...allMedicines.values()],{allowArchived:true});
   const medicineIds=new Set([...store.state().medicines,...data.medicines].map(m=>m.id));
   const medicineKeys=new Map(store.state().medicines.map(m=>[medicineKey(m),m.id]));for(const m of data.medicines){assert(!medicineKeys.has(medicineKey(m))||medicineKeys.get(medicineKey(m))===m.id,'Повторное лекарство в копии',409);medicineKeys.set(medicineKey(m),m.id);}
   assert(input.medicinePhotos===undefined||Array.isArray(input.medicinePhotos)&&input.medicinePhotos.length<=1000,'Повреждён раздел фото лекарств');
