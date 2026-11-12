@@ -59,3 +59,9 @@ test('Конкретные часы видны в отдельных групп�
   const view=familyPreview({people:[person],prescriptions:[rx]},{items,prn:[]},{date,now:new Date(date+'T06:00:00Z')}).cards[0];
   const groups=[view.current,...view.earlier,...view.later];assert.deepEqual(groups.map(g=>g.label),['09:15','17:00']);assert.equal(groups[1].rows.length,2);assert.equal(Object.fromEntries(groups[1].rows[0].fields)['Время'],'17:00');
 });
+
+test('Рабочая отметка остаётся у свёрнутых прошлых и последующих приёмов; readOnly сохраняется',()=>{
+ assert.match(careDrug('Тест','1 мл','',{later:true,showTake:true,actionKey:'planned'}),/data-take="planned"/);
+ assert.match(careDrug('Тест','1 мл','',{later:true,showTake:true,readOnly:true,actionKey:'unassigned'}),/disabled/);
+ assert.doesNotMatch(careDrug('Тест','1 мл','',{later:true}),/class="care-take/);
+});

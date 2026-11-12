@@ -6,6 +6,27 @@
   "checks": [
     "Catalogue saves user sequence and aftercare; morning does not start evening, another patient is independent; cycle is rejected",
     "Live seconds, 15-minute boundary, one attempted beep, reload without a duplicate beep, 30-minute expiry and no automatic intake",
+    {
+      "width": 320,
+      "height": 844,
+      "expiredTimerRecordCenterAndEdges": true
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "expiredTimerRecordCenterAndEdges": true
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "expiredTimerRecordCenterAndEdges": true
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "expiredTimerRecordCenterAndEdges": true
+    },
+    "After expiry and focus moving to a clock group, the timer records the intended medicine at its real earlier time; cancel writes nothing and saving clears the timer",
     "Unknown actual time does not invent a countdown; correction/void removes it; separate evening prescription matches second ordinal; second intake stops timer and shows aftercare",
     {
       "width": 320,
@@ -46,6 +67,26 @@
         "gap": 12,
         "overflow": false
       }
+    },
+    {
+      "width": 320,
+      "height": 844,
+      "otherSlotCheckboxCenterAndEdges": true
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "otherSlotCheckboxCenterAndEdges": true
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "otherSlotCheckboxCenterAndEdges": true
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "otherSlotCheckboxCenterAndEdges": true
     },
     "Durable backup, restart and restore preserve links, reminders, prescriptions and immutable history"
   ]

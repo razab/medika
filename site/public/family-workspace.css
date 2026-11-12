@@ -92,3 +92,9 @@
 #family-info .family-rx-schedule{border:0;padding:0;margin:0;min-width:0;display:grid;gap:16px}#family-info .family-rx-schedule legend{margin-bottom:8px;font-size:13px}.family-rx-occurrence{display:grid;gap:12px}.family-rx-occurrence+.family-rx-occurrence{padding-top:16px;border-top:1px solid #dce3ed}.family-rx-food>summary{display:flex;align-items:center;min-height:48px;font-size:13px;color:#627084;cursor:pointer}.family-rx-food>label{margin-top:8px}
 
 .family-app .care-med summary:has(.family-medicine-group){row-gap:3px}.family-app .care-med summary:has(.family-medicine-group)::after{grid-column:3;grid-row:1}.family-medicine-group{grid-column:1/3;grid-row:2;display:block;font-size:12px;line-height:1.3;font-weight:450;color:#627084;overflow-wrap:anywhere}.care-med summary:has(.family-thumb) .family-medicine-group{padding-left:36px}
+
+.family-timers p{align-items:center;gap:8px 12px}.family-timers button{min-width:48px;min-height:48px;padding:8px 12px;border:1px solid #cbd5e3;border-radius:8px;background:#fff;color:#315ac1;font:13px Golos,system-ui,sans-serif;touch-action:manipulation}
+
+.family-timers{display:grid;gap:8px}.family-timers p{margin:0}.family-timers button:disabled{opacity:.6}
+.family-app .care-med-later:has(>.care-take){grid-template-columns:minmax(0,1fr) 48px}
+.family-timers[hidden]{display:none}
