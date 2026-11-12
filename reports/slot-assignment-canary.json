@@ -5,7 +5,7 @@
   "checks": [
     "Empty patient → medicine, dose and dinner → explicit save → immediately visible real prescription → reload, with no invented dose or intake",
     "Existing slot plus preselects its meal; cancel writes nothing; the new medicine can be marked taken",
-    "Catalogue → real family form, medicine prefilled; per-person slots and phase; unavailable weekend meal is blocked; multiple slots save without changing past facts",
+    "Catalogue → real family form, medicine prefilled; per-person slots and phase; a former weekday-only meal saves for every day; multiple slots save without changing past facts",
     "Lost response refreshes the real journal; no automatic repeated POST or duplicate prescription",
     "Explicitly choosing another phase shows the new prescription under Other prescriptions without switching the active treatment or changing a fact",
     {
@@ -16,6 +16,11 @@
     {
       "width": 390,
       "height": 844,
+      "centerAndEdges": true
+    },
+    {
+      "width": 844,
+      "height": 390,
       "centerAndEdges": true
     },
     {

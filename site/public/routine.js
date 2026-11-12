@@ -10,9 +10,14 @@ export function slotDetails(slot,profile,daySlots=[]){
   const raw=anchor==='clock'?slot.time:daySlots.length?available?.time||'':profile.times[anchor]||'';
   return {anchor:resolved||'unassigned',label:anchors[resolved]||(anchor==='clock'?'Точное время':'Не привязан'),displayTime:raw||'',relation:slot.relation?relations[slot.relation]:''};
 }
-export function profileSlots(person,kind){
-  if(person.daySlots)return person.daySlots[kind];
-  const p=(person.routine||emptyRoutine())[kind],order=Object.keys(anchors).filter(a=>(p.times[a]||p.intakes.includes(a))&&!(a==='lunch'&&p.intakes[1]==='dinner'));
+// Preserve legacy profiles in storage; the usual routine now applies every day.
+export function dailyRoutine(person){
+  const routine=person?.routine||emptyRoutine();
+  return routine.weekday||routine.weekend;
+}
+export function profileSlots(person){
+  if(person?.daySlots)return (person.daySlots.weekday?.length?person.daySlots.weekday:person.daySlots.weekend||[]).map(slot=>({...slot}));
+  const p=dailyRoutine(person),order=Object.keys(anchors).filter(a=>(p.times[a]||p.intakes.includes(a))&&!(a==='lunch'&&p.intakes[1]==='dinner'));
   return order.map(id=>({id,label:anchors[id]||id,time:/^\d{2}:\d{2}$/.test(p.times[id]||'')?p.times[id]:''}));
 }
 

@@ -1,18 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {personInput,rxInput,scheduleFor} from '../lib/domain.mjs';
-import {emptyRoutine,nextDose} from '../public/routine.js';
+import {emptyRoutine,nextDose,profileSlots} from '../public/routine.js';
 const routine=emptyRoutine();
 routine.weekday={times:{breakfast:'08:00',dinner:'18:00–19:00'},intakes:['breakfast','dinner','']};
 routine.weekend={times:{breakfast:'09:00',lunch:'13:00'},intakes:['breakfast','lunch','']};
 const person=personInput({name:'Тест',routine});
 const rx={id:'rx',personId:'p',...rxInput({name:'Тест',dose:'1',unit:'табл.',startDate:'2026-11-01',endDate:'2026-11-10',type:'routine',routineSlots:[{anchor:'first'},{anchor:'second'},{anchor:'third'}],timeZone:'Europe/Chisinau',confirmed:true})};
-test('Личные будни/выходные, диапазон и неизвестный третий не превращаются в выдуманные часы',()=>{
+test('Единый личный распорядок, диапазон и неизвестный третий не превращаются в выдуманные часы',()=>{
   const weekday=scheduleFor(rx,'2026-11-09',person),weekend=scheduleFor(rx,'2026-11-08',person);
   assert.deepEqual(weekday.map(s=>s.anchor),['breakfast','dinner','unassigned']);
   assert.deepEqual(weekday.map(s=>s.displayTime),['08:00','18:00–19:00','']);
   assert.equal(weekday[1].scheduledAt,undefined);assert.equal(weekday[2].scheduledAt,undefined);
-  assert.deepEqual(weekend.map(s=>s.displayTime),['09:00','13:00','']);
+  assert.deepEqual(weekend.map(s=>s.displayTime),['08:00','18:00–19:00','']);
   const danya=structuredClone(person);danya.routine.weekday.intakes[1]='lunch';
   assert.equal(scheduleFor(rx,'2026-11-09',danya)[1].anchor,'lunch');
   assert.equal(scheduleFor(rx,'2026-10-31',person).length,0);
@@ -36,3 +36,10 @@ test('Распорядок и слоты проверяются на грани�
 });
 
 test('Ближайший приём выбирает будущий слот сегодня, а не утренний задним числом',()=>{const items=[{slot:{time:'07:30'}},{slot:{time:'19:00'}}];assert.equal(nextDose(items,'2026-11-09','2026-11-09','14:00'),items[1]);assert.equal(nextDose(items,'2026-11-10','2026-11-09','14:00'),items[0]);});
+
+test('Прежний слот будней доступен каждый день, запасной профиль и сырой источник сохраняются',()=>{
+  const person={daySlots:{weekday:[{id:'secondDinner',label:'Второй ужин',time:''}],weekend:[]}},before=structuredClone(person);
+  const prescription={...rx,routineSlots:[{anchor:'slot:secondDinner',weekendAnchor:'slot:lunch'}]};
+  for(const date of ['2026-11-08','2026-11-09'])assert.equal(scheduleFor(prescription,date,person)[0].label,'Второй ужин');
+  assert.deepEqual(person,before);assert.deepEqual(profileSlots({daySlots:{weekday:[],weekend:before.daySlots.weekday}}),before.daySlots.weekday);
+});

@@ -1,5 +1,5 @@
 import {medicineForms,allowedMedicineUnits,inferMedicineForm} from '/medicine-forms.js';
-import {anchors,relations,dayType,emptyRoutine,profileSlots} from '/routine.js';
+import {anchors,relations,emptyRoutine,profileSlots} from '/routine.js';
 import {captureVoice} from '/voice-capture.js';
 import {prescriptionSummary} from '/prescription-summary.js';
 import {photosForMedicine} from '/medicine-images.js';
@@ -64,19 +64,18 @@ function patientSchedule(){
     return `<div class="schedule-row" data-schedule-rx="${r.rxId||r.id}"><time>${asNeeded?'—':e(r.displayTime||r.time||'—').replace('–','–<wbr>')}</time>${medicinePhoto(shown.name)}<div><strong>${e(shown.name)}</strong><b>${e(prescriptionSummary(shown).dose)}</b>${asNeeded?'<span>По необходимости</span>':''}${details?`<span>${e(details)}</span>`:''}${status?`<span>${e(status)}</span>`:''}</div>${!recorded&&r.anchor!=='unassigned'?`<button data-act="take" data-id="${r.rxId||r.id}" data-key="${e(r.key||'')}" title="Принято сейчас" aria-label="Принято · ${e(r.name)}">✓</button>`:''}${r.anchor==='unassigned'?`<button data-act="rx" data-id="${r.rxId}" aria-label="Привязать приём · ${e(r.name)}">Привязать</button>`:''}</div>`;};
   const groups=[...new Set([...Object.keys(anchors),...items.map(r=>r.anchor).filter(a=>!['clock','unassigned'].includes(a)),'clock','unassigned'])];
   const grouped=groups.map(a=>{const rows=items.filter(r=>r.anchor===a).sort((a,b)=>a.slotIndex-b.slotIndex);return rows.length?`<section class="schedule-group" data-anchor="${a}"><h3>${e(anchors[a]||items.find(r=>r.anchor===a)?.label||(a==='clock'?'Точные часы':'Нужно привязать приём'))}</h3>${rows.map(r=>row(r)).join('')}</section>`:'';}).join('');
-  return `<section class="patient-schedule" aria-label="Расписание приёма"><header><h2>Расписание</h2><button id="schedule-today" type="button" aria-pressed="${schedule.date===today()}" ${busy||recording?'disabled':''}>Сегодня</button><input id="schedule-date" type="date" aria-label="Дата расписания" value="${e(schedule.date)}" min="1900-01-01" max="2200-12-31" ${busy||recording?'disabled':''}></header><div class="routine-toolbar"><span>${dayType(schedule.date)==='weekday'?'Будни':'Выходной'}</span><button data-act="routine">Распорядок</button></div>${grouped}${prn.map(r=>row(r,true)).join('')}${!items.length&&!prn.length?'<p class="quiet">На эту дату приёмов нет.</p>':''}</section>`;
+  return `<section class="patient-schedule" aria-label="Расписание приёма"><header><h2>Расписание</h2><button id="schedule-today" type="button" aria-pressed="${schedule.date===today()}" ${busy||recording?'disabled':''}>Сегодня</button><input id="schedule-date" type="date" aria-label="Дата расписания" value="${e(schedule.date)}" min="1900-01-01" max="2200-12-31" ${busy||recording?'disabled':''}></header><div class="routine-toolbar"><button data-act="routine">Распорядок</button></div>${grouped}${prn.map(r=>row(r,true)).join('')}${!items.length&&!prn.length?'<p class="quiet">На эту дату приёмов нет.</p>':''}</section>`;
 }
 function anchorOptions(value,personal=false){
-  const choices={...(personal?{first:'1-й по распорядку',second:'2-й по распорядку',third:'3-й по распорядку'}:{}),'':'Не привязан',...anchors,...(personal?Object.fromEntries([...new Map(['weekday','weekend'].flatMap(d=>profileSlots(current(),d)).map(s=>[s.id,s])).values()].map(s=>['slot:'+s.id,'По распорядку: '+s.label])):{}),...(personal?{clock:'Точное время'}:{})};
+  const choices={...(personal?{first:'1-й по распорядку',second:'2-й по распорядку',third:'3-й по распорядку'}:{}),'':'Не привязан',...anchors,...(personal?Object.fromEntries(profileSlots(current()).map(s=>['slot:'+s.id,'По распорядку: '+s.label])):{}),...(personal?{clock:'Точное время'}:{})};
   return Object.entries(choices).map(([v,l])=>`<option value="${v}" ${v===value?'selected':''}>${l}</option>`).join('');
 }
 function routineForm(){
-  const p=current(),slots=Object.fromEntries(['weekday','weekend'].map(d=>[d,profileSlots(p,d)]));
-  dialog('Слоты · '+label(p),`<div class="phase-switch routine-tabs" role="group" aria-label="Дни распорядка"><button type="button" data-routine-tab="weekday" aria-pressed="true">Будни</button><button type="button" data-routine-tab="weekend" aria-pressed="false">Выходные</button></div>${['weekday','weekend'].map(d=>`<div data-routine-panel="${d}" ${d==='weekend'?'hidden':''}>${Object.entries(anchors).map(([id,name])=>{const slot=slots[d].find(s=>s.id===id);return `<div class="available-slot"><label class="check"><input type="checkbox" name="${d}-${id}-available" ${slot?'checked':''}>${name}</label><input type="time" name="${d}-${id}-time" value="${slot?.time||''}" aria-label="${name} · время"></div>`;}).join('')}</div>`).join('')}<p class="quiet">Оставьте доступные слоты. Лекарства распределяются по ним автоматически.</p>${footer()}`,async data=>{
-    const daySlots=Object.fromEntries(['weekday','weekend'].map(d=>[d,Object.entries(anchors).filter(([id])=>data[d+'-'+id+'-available']==='on').map(([id,name])=>({id,label:name,time:data[d+'-'+id+'-time']}))]));
+  const p=current(),slots=profileSlots(p);
+  dialog('Слоты · '+label(p),`${Object.entries(anchors).map(([id,name])=>{const slot=slots.find(s=>s.id===id);return `<div class="available-slot"><label class="check"><input type="checkbox" name="${id}-available" ${slot?'checked':''}>${name}</label><input type="time" name="${id}-time" value="${slot?.time||''}" aria-label="${name} · время"></div>`;}).join('')}<p class="quiet">Один набор доступных слотов на каждый день.</p>${footer()}`,async data=>{
+    const slots=Object.entries(anchors).filter(([id])=>data[id+'-available']==='on').map(([id,name])=>({id,label:name,time:data[id+'-time']})),daySlots={weekday:slots,weekend:slots};
     await api('/people/'+p.id,{method:'PUT',body:{...p,daySlots,version:p.version}});await refresh();modal.close();
   });
-  modal.querySelectorAll('[data-routine-tab]').forEach(b=>b.onclick=()=>{modal.querySelectorAll('[data-routine-tab]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));modal.querySelectorAll('[data-routine-panel]').forEach(x=>x.hidden=x.dataset.routinePanel!==b.dataset.routineTab);});
 }
 
 let photoClipId=0;

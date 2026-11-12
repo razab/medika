@@ -7,11 +7,11 @@ test('Выписка сохраняет фазы, выбор одного из �
  const p=parsePrescription(complexText);assert.equal(p.entries.length,5);assert.equal(p.choiceGroups.length,1);assert.equal(p.entries[0].dose,'0.5');assert.equal(p.entries[0].minAgeYears,6);assert.equal(p.entries[2].doseScope,'each-nostril');assert.equal(p.entries[3].carePhase,'acute');assert.equal(p.entries[3].medicineForm,'inhalation');assert.match(p.entries[3].mixing,/NaCl/);assert.equal(p.entries[3].durationMinutes,'7');assert.deepEqual(p.entries[4].times,['17:00']);
  const plan=buildPrescriptionPlan(p,demoContext);assert.equal(plan.unresolvedChoices,1);assert.equal(plan.rows.filter(r=>r.entry.choiceGroup&&r.selected).length,0);assert.ok(plan.rows.find(r=>r.personId==='alice'&&r.entry.name==='AlphaTabs').blockers.some(b=>b.includes('6+')));
 });
-test('Один выбор → два пациента, разные вторые слоты, будни/выходные, точный час, готовые курсы',()=>{
+test('Один выбор → два пациента, разные вторые слоты каждый день, точный час, готовые курсы',()=>{
  const p=parsePrescription(complexText),edits={choices:{[p.choiceGroups[0].id]:p.entries[1].id},people:{alice:{[p.entries[0].id]:{excluded:true}}}};
  const plan=buildPrescriptionPlan(p,demoContext,edits);assert.equal(plan.blocked,0);assert.equal(plan.ready,7);assert.equal(plan.unresolvedChoices,0);
  const a=plan.rows.find(r=>r.personId==='alice'&&r.entry.name==='BetaDrops'),d=plan.rows.find(r=>r.personId==='danya'&&r.entry.name==='BetaDrops');assert.deepEqual(a.weekday.map(s=>s.id),['breakfast','dinner','secondDinner']);assert.deepEqual(d.weekday.map(s=>s.id),['breakfast','lunch','dinner']);
- const rx={...a.prescription,id:'rx',personId:'alice'};assert.deepEqual(scheduleFor(rx,'2026-11-09',plan.context.people[0]).map(s=>s.time),['07:30','19:00','21:30']);assert.deepEqual(scheduleFor(rx,'2026-11-14',plan.context.people[0]).map(s=>s.time),['09:00','14:00','19:00']);assert.equal(rx.endDate,'2026-11-18');
+ const rx={...a.prescription,id:'rx',personId:'alice'};assert.deepEqual(scheduleFor(rx,'2026-11-09',plan.context.people[0]).map(s=>s.time),['07:30','19:00','21:30']);assert.deepEqual(scheduleFor(rx,'2026-11-14',plan.context.people[0]).map(s=>s.time),['07:30','19:00','21:30']);assert.equal(rx.endDate,'2026-11-18');
 });
 test('Недостаток слотов, диапазоны и последовательность требуют уточнения; форма ограничивает единицы',()=>{
  const p=parsePrescription('Поддерживающее лечение\n1. Test капли 5 мг/мл — по 2 капли 4 раза в день, курс 5–7 дней.\nЗатем продолжить лечение\n2. Other таблетки 10 мг — по 1 таблетке 1 раз в день.');

@@ -1,6 +1,6 @@
 import {medicineForms,allowedMedicineUnits} from '../public/medicine-forms.js';
 import { randomUUID } from 'node:crypto';
-import {anchors,dayType,emptyRoutine,slotDetails} from '../public/routine.js';
+import {anchors,dailyRoutine,profileSlots,slotDetails} from '../public/routine.js';
 
 export class InputError extends Error { constructor(message, status = 400) { super(message); this.status = status; } }
 export const assert = (condition, message, status = 400) => { if (!condition) throw new InputError(message, status); };
@@ -67,7 +67,7 @@ function clock(value){return typeof value==='string'&&/^(?:[01]\d|2[0-3]):[0-5]\
 export function routineInput(input){
   assert(input&&typeof input==='object','Укажите распорядок');
   return Object.fromEntries(['weekday','weekend'].map(d=>{
-    const p=input[d];assert(p&&typeof p==='object'&&p.times&&typeof p.times==='object','Укажите будни и выходные');
+    const p=input[d];assert(p&&typeof p==='object'&&p.times&&typeof p.times==='object','Укажите распорядок');
     const times={};for(const a of Object.keys(anchors)){
       const value=string(p.times[a],'Время '+anchors[a],11).replace(/-/g,'–');
       const parts=value.split('–');assert(!value||parts.length<=2&&parts.every(clock)&&(parts.length===1||parts[0]<parts[1]),'Время: ЧЧ:ММ или ЧЧ:ММ–ЧЧ:ММ');
@@ -100,9 +100,8 @@ function slotsInput(input){
 }
 export function validateRoutineBinding(rx,person){
   if(rx.type!=='routine')return;
-  for(const [kind,profile] of Object.entries(person?.routine||emptyRoutine()))for(const original of rx.routineSlots){
-    const slot=kind==='weekend'&&original.weekendAnchor?{...original,anchor:original.weekendAnchor}:original;
-    const details=slotDetails(slot,profile,person?.daySlots?.[kind]);
+  for(const slot of rx.routineSlots){
+    const details=slotDetails(slot,dailyRoutine(person),person?.daySlots?profileSlots(person):[]);
     assert(!slot.relation||details.anchor!=='bedtime','Перед сном — отдельная точка, без привязки к еде');
   }
 }
@@ -179,10 +178,10 @@ export function scheduleFor(rx, date, person) {
   if (rx.archived || rx.type === 'prn' || date < rx.startDate || rx.endDate && date > rx.endDate || rx.type === 'once' && date !== rx.startDate) return [];
   if(['daily','routine'].includes(rx.type)&&rx.weekdays&&!rx.weekdays.includes(new Date(date+'T12:00:00Z').getUTCDay()))return [];
   if(rx.type==='routine'){
-    const kind=dayType(date),profile=(person?.routine||emptyRoutine())[kind];
+    const profile=dailyRoutine(person);
     return rx.routineSlots.map((original,i)=>{
-      const slot=kind==='weekend'&&original.weekendAnchor?{...original,anchor:original.weekendAnchor}:original;
-      const details=slotDetails(slot,profile,person?.daySlots?.[kind]);
+      const slot=original;
+      const details=slotDetails(slot,profile,person?.daySlots?profileSlots(person):[]);
       // Before/after food and ranges do not imply an exact administration time.
       const scheduledAt=clock(details.displayTime)&&!slot.relation?zonedInstant(date,details.displayTime,rx.timeZone):null;
       return {key:`${rx.id}@routine-${date}-${i}`,rxId:rx.id,personId:rx.personId,date,time:scheduledAt?details.displayTime:'',...(scheduledAt?{scheduledAt}:{}),timeZone:rx.timeZone,name:rx.name,dose:rx.dose,unit:rx.unit,ingredients:rx.ingredients,conditions:rx.conditions,doseScope:rx.doseScope,purpose:rx.purpose,carePhase:rx.carePhase,...details,slotIndex:i,...(rx.legacyTimes?.[i]?{legacyKey:`${rx.id}@${zonedInstant(date,rx.legacyTimes[i],rx.timeZone)}`}:{})};

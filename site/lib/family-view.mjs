@@ -1,5 +1,6 @@
 import {familyPreview,shortDose} from '../public/family-preview-model.js';
 import {prescriptionSequence} from '../public/prescription-summary.js';
+import {dailyRoutine} from '../public/routine.js';
 import {scheduleFor} from './domain.mjs';
 import {inferMedicineForm,medicineForms} from '../public/medicine-forms.js';
 import {createHash} from 'node:crypto';
@@ -14,7 +15,7 @@ export function familyView(state,schedule,{date,now,copiedAt=new Date(),timeZone
     const warnings=[];if(days&&max&&days>max)warnings.push(`Даты дают ${days} дней, в записи врача — ${limit[1]?'не более '+max:limit[2]+'–'+max}. Нужно сверить курс.`);
     if(r.startDate>date)warnings.push(`Начнётся ${r.startDate.split('-').reverse().join('.')}`);
     const person=(state.people||[]).find(p=>p.id===r.personId);
-    if(r.routineSlots?.some(s=>s.anchor==='third')&&['weekday','weekend'].some(day=>!person?.routine?.[day]?.intakes?.[2]))warnings.push('Третий личный слот не настроен');
+    if(r.routineSlots?.some(s=>s.anchor==='third')&&!dailyRoutine(person).intakes[2])warnings.push('Третий личный слот не настроен');
     return {...(!maskIds?{version:r.version,input:r}:{}),id:rxIds.get(r.id),personId:ids.get(r.personId),name:r.name,dose:String(r.dose||''),unit:r.unit||'',form:r.medicineForm||(medicineForms[r.form]?r.form:''),suggestedForm:inferMedicineForm([r.form,r.sourceText].filter(Boolean).join(' ')),source:r.sourceText||'',durationText:limit?(limit[1]?'не более '+max+' дней':limit[2]+'–'+max+' дней'):'',maxDays:max,missingThird:warnings.includes('Третий личный слот не настроен'),strength:r.strength||'',phase:r.carePhase||'',confirmed:Boolean(r.confirmed),routineSlots:r.routineSlots||[],startDate:r.startDate||'',endDate:r.endDate||'',warnings,dependency:link?{prescriptionId:previous?rxIds.get(previous.id):'',name:link[3].trim(),minMinutes:Number(link[1]),maxMinutes:Number(link[2]||link[1])}:null};
   });
   const row=r=>{
