@@ -4,3 +4,4 @@
 .photo-picker{padding:16px;border:1px dashed #9cacc7;border-radius:10px}.photo-picker input{max-width:100%}.photo-preview{display:flex;gap:12px;margin:12px 0;flex-wrap:wrap}.photo-preview img{width:96px;height:96px;object-fit:contain;border:1px solid #dce4ee;border-radius:8px}#photo-progress{font-size:13px;color:#627084;margin:12px 0}dialog p{overflow-wrap:anywhere}
 
 .medicine-thumbnail{width:40px;height:48px;object-fit:contain;flex:none}
+.medicine-to-slot{justify-content:center;border-radius:9px;padding:10px 14px}.other-schedules button{width:100%;margin-top:8px}

@@ -15,7 +15,7 @@ export async function createPrescriptionLab(dataDir,{recognize,imageType}){
  function bytes(raw){assert(typeof raw==='string'&&/^[A-Za-z0-9+/]+=*$/.test(raw),'Некорректное изображение');const b=Buffer.from(raw,'base64');assert(b.length>0&&b.length<=12*1024*1024,'Изображение: до 12 МБ',413);assert(imageType(b),'Нужен PNG, JPEG или WebP',415);return b;}
  return {
   demo:{text:complexText,context:demoContext},
-  async list(){const records=[];for(const name of (await readdir(dir)).filter(f=>/^[a-f\d-]{36}\.json$/.test(f)).slice(0,100)){const c=JSON.parse(await readFile(join(dir,name),'utf8'));records.push({id:c.id,name:c.name,updatedAt:c.updatedAt,revision:c.revision});}return records.sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt));},
+  async list(){const records=[];for(const name of (await readdir(dir)).filter(f=>/^[a-f\d-]{36}\.json$/.test(f)).slice(0,100)){const c=JSON.parse(await readFile(join(dir,name),'utf8'));records.push({id:c.id,name:c.name,updatedAt:c.updatedAt,revision:c.revision,synthetic:c.synthetic===true});}return records.sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt));},
   read,view,
   async remove(id){return exclusive(async()=>{await read(id);for(const name of (await readdir(dir)).filter(f=>f.startsWith(id+'.')))await unlink(join(dir,name));return {removed:true};});},
   async create(input){return exclusive(async()=>{

@@ -76,3 +76,11 @@
 #family-info .family-voice-jobs>section{padding:16px 0;border-top:1px solid #dce4ee}
 #family-info .family-voice-jobs h3{font-size:14px;margin:0 0 8px}
 #family-info .family-voice-jobs p{font-size:13px;white-space:pre-wrap;overflow-wrap:anywhere}
+.family-slot-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:8px 0}
+.family-slot-heading h3{margin:0}.family-slot-heading button{width:48px;min-width:48px;height:48px;border:1px solid #cbd5e3;border-radius:8px;background:white;color:#315ac1;font:22px Golos,system-ui,sans-serif;touch-action:manipulation}
+.family-add-medicine{display:block;width:100%;min-height:48px;margin:12px 0;border:1px solid #cbd5e3;border-radius:8px;background:white;color:#315ac1;font:14px Golos,system-ui,sans-serif}
+#family-info .family-slot-picker{border:0;padding:0;margin:0;min-width:0}#family-info .family-slot-picker legend{font-size:13px;margin-bottom:8px}#add-medicine-slots{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#family-info .family-slot-choice{position:relative;display:flex;align-items:center;justify-content:center;text-align:center;min-height:48px;min-width:48px;padding:8px;border:1px solid #cbd5e3;border-radius:8px;cursor:pointer}#family-info .family-slot-choice input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}#family-info .family-slot-choice:has(input:checked){background:#edf2ff;border-color:#315ac1;color:#315ac1}#family-info .family-slot-choice:has(input:focus-visible){outline:2px solid #315ac1;outline-offset:3px}.family-slot-choice small{display:block;font-size:11px;color:#627084}
+#family-info .family-prescription-options{margin:0}#family-info .family-prescription-options>label,#family-info .family-prescription-options>.sandbox-time-fields,#add-medicine-inhalation>label{margin-top:16px}#family-info .family-prescription-options summary,#family-info .family-test-tools>summary{display:flex;align-items:center;min-height:48px;cursor:pointer;color:#627084;font-size:13px}#family-info .family-catalogue-link{display:flex;align-items:center;min-height:48px;color:#315ac1;font-size:13px}
+
+#add-medicine-form .sandbox-form-error:empty{display:none}

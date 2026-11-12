@@ -15,3 +15,5 @@
 .schedule-row>time{flex-basis:60px;overflow-wrap:normal}
 
 .available-slot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0}.available-slot>input{width:125px}.button-link{display:inline-flex;align-items:center;justify-content:center;border:1px solid #dce4d7;border-radius:8px;padding:8px;font-size:12px;text-decoration:none;background:white}.source-actions{flex-wrap:wrap}.schedule-row>button[data-act=take]{flex:0 0 34px;font-size:20px;color:#185b4c}
+
+.tools>.test-tools>summary{display:flex;align-items:center;min-width:48px;min-height:48px;cursor:pointer}.tools>.test-tools>.tools{margin-top:8px}

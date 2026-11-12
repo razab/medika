@@ -1,0 +1,34 @@
+{
+  "status": "PASS",
+  "syntheticOnly": true,
+  "physicalDeviceTested": false,
+  "checks": [
+    "Empty patient → medicine, dose and dinner → explicit save → immediately visible real prescription → reload, with no invented dose or intake",
+    "Existing slot plus preselects its meal; cancel writes nothing; the new medicine can be marked taken",
+    "Catalogue → real family form, medicine prefilled; per-person slots and phase; unavailable weekend meal is blocked; multiple slots save without changing past facts",
+    "Lost response refreshes the real journal; no automatic repeated POST or duplicate prescription",
+    "Explicitly choosing another phase shows the new prescription under Other prescriptions without switching the active treatment or changing a fact",
+    {
+      "width": 320,
+      "height": 844,
+      "centerAndEdges": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "centerAndEdges": true
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "centerAndEdges": true
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "centerAndEdges": true
+    },
+    "Working doctor import has its own address, title and saved selection; no design variants, synthetic cases or voice-lab entry; legacy test selection remains intact",
+    "Prescriptions and facts survive service restart and backup restore without duplicates"
+  ]
+}
