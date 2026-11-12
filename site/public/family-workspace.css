@@ -84,3 +84,5 @@
 #family-info .family-prescription-options{margin:0}#family-info .family-prescription-options>label,#family-info .family-prescription-options>.sandbox-time-fields,#add-medicine-inhalation>label{margin-top:16px}#family-info .family-prescription-options summary,#family-info .family-test-tools>summary{display:flex;align-items:center;min-height:48px;cursor:pointer;color:#627084;font-size:13px}#family-info .family-catalogue-link{display:flex;align-items:center;min-height:48px;color:#315ac1;font-size:13px}
 
 #add-medicine-form .sandbox-form-error:empty{display:none}
+
+.family-schedule-mode{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}

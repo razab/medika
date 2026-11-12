@@ -10,12 +10,12 @@ test('A1: только подтверждённый текущий курс св
   const row={rxId:'rx',personId:'a',name:base.name,dose:base.dose,unit:base.unit,doseScope:base.doseScope};
   const items=[{...row,anchor:'breakfast',label:'Завтрак',displayTime:'07:30'},{...row,anchor:'dinner',label:'Ужин',displayTime:'19:00'},{...row,anchor:'clock',displayTime:'23:00'},...prescriptions.slice(1).map(r=>({...row,rxId:r.id,anchor:'dinner'})),{...row,historical:true,anchor:'dinner'}].map((item,index)=>({...item,key:'synthetic-slot-'+index}));
   const model=familyPreview({people,prescriptions},{items,prn:[]},{date,now});
-  assert.equal(model.cards[0].phase,'Острая фаза');assert.equal(model.cards[0].current.label,'Ужин');assert.equal(model.cards[0].current.rows.length,1);assert.equal(model.cards[0].earlier[0].label,'Завтрак');assert.equal(model.cards[0].later[0].label,'Отдельные приёмы');
+  assert.equal(model.cards[0].phase,'Острая фаза');assert.equal(model.cards[0].current.label,'Ужин');assert.equal(model.cards[0].current.rows.length,1);assert.equal(model.cards[0].earlier[0].label,'Завтрак');assert.equal(model.cards[0].later[0].label,'23:00');
   const current=model.cards[0].current.rows[0];assert.equal(current.dose,'2 пшика');assert.equal(Object.fromEntries(current.fields)['Доза'],'2 пшика в каждую ноздрю');assert.equal(current.after,'Через 10–15 мин после ТестПервый');assert.equal(Object.fromEntries(model.cards[0].later[0].rows[0].fields)['Время'],'23:00');assert.equal(current.rxVersion,3);assert.equal(current.canTake,true);
   assert.doesNotMatch(JSON.stringify(current.fields),/100 мг|Отдельное условие|использовать/);assert.equal(Object.fromEntries(current.info.fields)['Форма'],'Спрей');assert.equal(Object.fromEntries(current.info.fields)['Концентрация'],'100 мг/мл');assert.equal(Object.fromEntries(current.info.notes)['Условия'],'Отдельное условие');assert.equal(current.info.source,base.sourceText);
   assert.equal(model.cards[1].current,null);assert.equal(model.cards[1].phase,'Поддерживающая');
   const early=familyPreview({people,prescriptions},{items,prn:[]},{date,now:new Date('2026-11-09T03:00:00Z')});assert.equal(early.cards[0].current.label,'Завтрак');
-  const late=familyPreview({people,prescriptions},{items,prn:[]},{date,now:new Date('2026-11-09T21:30:00Z')});assert.equal(late.cards[0].current.label,'Отдельные приёмы');
+  const late=familyPreview({people,prescriptions},{items,prn:[]},{date,now:new Date('2026-11-09T21:30:00Z')});assert.equal(late.cards[0].current.label,'23:00');
   const family=[{id:'dad',name:'Папа'},{id:'mom',name:'Мама'},{id:'child',name:'Алиса'}],sorted=familyPreview({people:family,prescriptions:[]},{items:[],prn:[]},{date,now});assert.deepEqual(sorted.cards.map(p=>p.id),['child','mom','dad']);assert.deepEqual(family.map(p=>p.id),['dad','mom','child']);
 });
 test('A1: факт сохраняет свою дозу, отменённые/будущие/вчерашние события не становятся текущими',()=>{
@@ -51,4 +51,11 @@ test('Семейный обзор: у старой температуры ест
 test('Ручной препарат: явная форма видна в карточке без текстового поля form',()=>{
  const rx={id:'manual',personId:'a',name:'ТестРаствор',medicineForm:'liquid',form:'',dose:'1',unit:'мл',confirmed:true,startDate:date,type:'prn'},model=familyPreview({people:[{id:'a',name:'Алиса'}],prescriptions:[rx]},{items:[],prn:[rx]},{date,now});
  assert.equal(Object.fromEntries(model.cards[0].prn[0].info.fields)['Форма'],'Раствор / сироп');
+});
+
+test('Конкретные часы видны в отдельных группах обзора, одинаковые часы объединяются',()=>{
+  const person={id:'p',name:'Тест'},rx={id:'rx',personId:'p',name:'ТестЛекарство',dose:'1',unit:'табл.',confirmed:true,startDate:date};
+  const items=['09:15','17:00','17:00'].map((time,i)=>({...rx,rxId:rx.id,key:'clock-'+i,anchor:'clock',displayTime:time}));
+  const view=familyPreview({people:[person],prescriptions:[rx]},{items,prn:[]},{date,now:new Date(date+'T06:00:00Z')}).cards[0];
+  const groups=[view.current,...view.earlier,...view.later];assert.deepEqual(groups.map(g=>g.label),['09:15','17:00']);assert.equal(groups[1].rows.length,2);assert.equal(Object.fromEntries(groups[1].rows[0].fields)['Время'],'17:00');
 });

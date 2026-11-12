@@ -8,6 +8,7 @@
     "Catalogue → real family form, medicine prefilled; per-person slots and phase; a former weekday-only meal saves for every day; multiple slots save without changing past facts",
     "Lost response refreshes the real journal; no automatic repeated POST or duplicate prescription",
     "Explicitly choosing another phase shows the new prescription under Other prescriptions without switching the active treatment or changing a fact",
+    "Catalogue → exact time 17:15 → required clock without meal binding → visible clock group → reload → plus preselects the same clock; cancel and past facts unchanged",
     {
       "width": 320,
       "height": 844,

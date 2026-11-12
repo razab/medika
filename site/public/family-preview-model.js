@@ -46,9 +46,9 @@ export function familyPreview(state,schedule,{date,now=new Date(),timeZone='Euro
     for(const item of schedule.items||[]){
       const rx=prescriptions.get(item.rxId);
       if(item.personId!==person.id||item.historical||!rx?.confirmed||rx.personId!==person.id||rx.archived||rx.startDate>date||rx.endDate&&rx.endDate<date||rx.carePhase&&rx.carePhase!==(person.carePhase||'prevention'))continue;
-      const anchor=item.anchor||'clock',key=anchor==='clock'?'clock':anchor,label=anchor==='clock'?'Отдельные приёмы':anchor==='unassigned'?'Нужно привязать приём':item.label||'Приём без названия';
+      const anchor=item.anchor||'clock',at=clock(item.displayTime)||clock(item.time),key=anchor==='clock'?'clock:'+at:anchor,label=anchor==='clock'?(at||'Точное время'):anchor==='unassigned'?'Нужно привязать приём':item.label||'Приём без названия';
       if(!groups.has(key))groups.set(key,{key,label,time:'',rows:[]});
-      const group=groups.get(key),at=clock(item.displayTime)||clock(item.time);
+      const group=groups.get(key);
       if(at&&(!group.time||at<group.time))group.time=at;
       const event=item.event,shown=event?.status==='taken'?{...item,name:event.name,dose:event.actualDose||event.dose,unit:event.unit,doseScope:event.doseScope}:item;
       const sequence=prescriptionSequence(rx),fields=prescriptionFields(rx,item,group);
