@@ -1,0 +1,36 @@
+{
+  "status": "PASS",
+  "syntheticOnly": true,
+  "physicalDeviceTested": false,
+  "checks": [
+    "Structured reference renders escaped group, purpose, meal relation and method in the real medicine card",
+    {
+      "width": 320,
+      "height": 844,
+      "variants": 4,
+      "sourceSummaryCenterAndEdges": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "variants": 4,
+      "sourceSummaryCenterAndEdges": true
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "variants": 4,
+      "sourceSummaryCenterAndEdges": true
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "variants": 4,
+      "sourceSummaryCenterAndEdges": true
+    },
+    "The same reference opens from the family medicine information dialog without changing the prescription or historical dose",
+    "Editing a note preserves the reference; changing the product concentration invalidates it instead of carrying old rules to another product",
+    "An existing prescription keeps its original strength and never displays a new-concentration reference just because the catalogue ID is the same",
+    "Reference sources, scope, unknown fields, identity and restrictions survive SQLite restart and v5 backup/restore without changing facts"
+  ]
+}
