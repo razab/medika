@@ -53,10 +53,10 @@ test('Дни, недели и календарные месяцы имеют я�
 });
 test('Проверки изолируют людей; известные, неизвестные и повтор вещества различаются',()=>{
   const state={people:[{id:'p1',allergies:'ибупрофен'}],prescriptions:[rx(),{...rx({ingredients:'варфарин'}),id:'rx2',personId:'p2'}],events:[]};
-  strict.equal(checkPerson(state,{personId:'p1'}).findings.filter(f=>f.id.startsWith('warfarin')).length,0);
-  const result=checkPerson(state,{personId:'p1',candidate:{name:'Новый препарат',ingredients:['warfarin']}});strict.ok(result.findings.some(f=>f.id.startsWith('warfarin')));strict.equal(result.status,'incomplete');
-  strict.ok(checkPerson(state,{personId:'p1',candidate:{name:'Копия',ingredients:['ibuprofen']}}).findings.some(f=>f.id.startsWith('duplicate')));
-  strict.ok(checkPerson(state,{personId:'p1',candidate:{name:'Неизвестное',ingredients:[]}}).unknown.length);
+  strict.equal(checkPerson(state,{at:'2026-11-09T10:00:00Z',personId:'p1'}).findings.filter(f=>f.id.startsWith('warfarin')).length,0);
+  const result=checkPerson(state,{at:'2026-11-09T10:00:00Z',personId:'p1',candidate:{name:'Новый препарат',ingredients:['warfarin']}});strict.ok(result.findings.some(f=>f.id.startsWith('warfarin')));strict.equal(result.status,'incomplete');
+  strict.ok(checkPerson(state,{at:'2026-11-09T10:00:00Z',personId:'p1',candidate:{name:'Копия',ingredients:['ibuprofen']}}).findings.some(f=>f.id.startsWith('duplicate')));
+  strict.ok(checkPerson(state,{at:'2026-11-09T10:00:00Z',personId:'p1',candidate:{name:'Неизвестное',ingredients:[]}}).unknown.length);
   strict.ok(result.findings.some(f=>f.id.startsWith('allergy')));
 });
 test('Число фактических приёмов за скользящие 24 часа и минимальный интервал',()=>{

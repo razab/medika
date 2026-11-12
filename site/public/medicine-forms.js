@@ -1,6 +1,6 @@
 export const medicineForms={powder:{name:'Порошок / саше',units:['пакет','г','мг']},tablet:{name:'Таблетки',units:['табл.','мг']},capsule:{name:'Капсулы',units:['капс.','мг']},drops:{name:'Капли',units:['кап.','мл']},spray:{name:'Спрей',units:['впрыскивание','доза']},liquid:{name:'Раствор / сироп',units:['мл','мг']},inhalation:{name:'Для ингаляций',units:['мл','мг']},suppository:{name:'Свечи',units:['свеча','мг']},topical:{name:'Наружно',units:['нанесение','г']}};
 export function inferMedicineForm(text=''){
-  if(/ингаляц|небулайзер|nebulis|respules|пульмикорт|pulmicort/iu.test(text))return 'inhalation';
+  if(/ингаляц|небулайзер|nebulis|inhalation|respules|пульмикорт|pulmicort/iu.test(text))return 'inhalation';
   if(/порошок|пакетик|саше|powder|sachet/iu.test(text))return 'powder';
   if(/спрей|впрыск|spray/iu.test(text))return 'spray';
   if(/капли|капель|капл[яи]|drops/iu.test(text))return 'drops';

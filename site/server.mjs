@@ -1,3 +1,4 @@
+import {createMedicineRecognition} from './lib/medicine-recognition.mjs';
 import {medicineInput,medicineKey} from './lib/medicines.mjs';
 import {familyView} from './lib/family-view.mjs';
 import {createLocalOCR} from './lib/local-ocr.mjs';
@@ -39,7 +40,7 @@ export function imageType(bytes) {
   if(bytes.toString('ascii',0,4)==='RIFF'&&bytes.toString('ascii',8,12)==='WEBP') return 'image/webp';
   return null;
 }
-export async function createApp({dataDir=join(root,'data'),port=4382,publicHost='medika.localhost',additionalHosts=[],entryParser=parseEntry,voiceLabOptions={}}={}) {
+export async function createApp({dataDir=join(root,'data'),port=4382,publicHost='medika.localhost',additionalHosts=[],entryParser=parseEntry,voiceLabOptions={},medicineRecognitionOptions={}}={}) {
   const store=openStore(dataDir), uploads=join(dataDir,'uploads');
   await mkdir(uploads,{recursive:true,mode:0o700});
   const voiceLab=await createVoiceLab(dataDir,{context:()=>({people:codexPeople(store.state()),medicines:store.state().medicines.filter(m=>!m.archived).map(m=>m.name)}),...voiceLabOptions});
@@ -47,6 +48,7 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
   let ocrReady=false,photoBusy=false;
   try { await access(ocrBinary);ocrReady=true; } catch {}
   const recognize=createLocalOCR(ocrBinary,dataDir),prescriptionLab=await createPrescriptionLab(dataDir,{recognize:async bytes=>{const hash=createHash('sha256').update(bytes).digest('hex'),saved=store.db.prepare('SELECT data FROM documents WHERE hash=?').all(hash).map(r=>JSON.parse(r.data)).filter(d=>d.mime);if(saved.length){const d=saved[0],reviewed=saved.every(x=>x.sourceKind==='doctor'&&x.text===d.text);return {text:d.ocrText??d.text,lines:d.lines||[],engine:'Apple Vision · сохранённый результат',...(reviewed&&d.text!==(d.ocrText??d.text)?{reviewedText:d.text}:{})};}assert(ocrReady,'OCR не настроен',503);return recognize(bytes);},imageType});
+  const medicineRecognition=await createMedicineRecognition(dataDir,{recognize,imageType,...medicineRecognitionOptions});
   function recordActivity(raw){
     const input=activityInput({...raw,clientKey:raw.clientKey===undefined?newId():raw.clientKey});assert(store.get('people',input.personId),'Выберите человека');
     if(input.relatedRxId)assert(store.get('prescriptions',input.relatedRxId)?.personId===input.personId,'Назначение принадлежит другому человеку');
@@ -173,11 +175,12 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       if(route==='/api/people'&&method==='POST') return send(201,store.insert('people',personInput(await body(req))));
       const personRoute=route.match(/^\/api\/people\/([a-f\d-]+)$/);
       if(personRoute&&method==='PUT') { const input=await body(req),person=personInput(input);for(const rx of store.state().prescriptions.filter(r=>r.personId===personRoute[1]&&!r.archived))validateRoutineBinding(rx,person);return send(200,store.update('people',personRoute[1],person,input.version)); }
+      if(route==='/api/medicines/recognize'&&method==='POST')return send(200,await medicineRecognition.recognize(await body(req,18*1024*1024)));
       if(route==='/api/medicines'&&method==='GET')return send(200,store.state().medicines);
       if(route==='/api/medicines'&&method==='POST'){
         const m=medicineInput(await body(req)),all=store.state().medicines,old=m.clientKey&&all.find(r=>r.clientKey===m.clientKey);
         if(old){assert(Object.keys(m).every(k=>JSON.stringify(m[k])===JSON.stringify(old[k])),'Этот ключ уже использован для другого лекарства',409);return send(200,old);}
-        assert(!all.some(r=>medicineKey(r)===medicineKey(m)),'Такое лекарство уже есть в списке или архиве',409);return send(201,store.insert('medicines',m));
+        assert(!all.some(r=>medicineKey(r)===medicineKey(m)),'Такое лекарство уже есть в списке или архиве',409);const recognized=m.recognitionKey?await medicineRecognition.get(m.recognitionKey):null;let status=201;const saved=store.transaction(()=>{const current=store.state().medicines,found=m.clientKey&&current.find(r=>r.clientKey===m.clientKey);if(found){assert(Object.keys(m).every(k=>JSON.stringify(m[k])===JSON.stringify(found[k])),'Этот ключ уже использован для другого лекарства',409);status=200;return found;}assert(!current.some(r=>medicineKey(r)===medicineKey(m)),'Такое лекарство уже есть',409);const result=store.insert('medicines',{...m,...(recognized?{sourceText:recognized.text,sourceModel:recognized.model}:{})});if(recognized&&!store.state().medicinePhotos.some(p=>p.key===medicinePhotoKey(m.name)))store.insert('medicinePhotos',medicinePhotoInput({name:m.name,photos:recognized.photos}));return result;});return send(status,saved);
       }
       const medicineRoute=route.match(/^\/api\/medicines\/([a-f\d-]+)$/);
       if(medicineRoute&&method==='PUT'){

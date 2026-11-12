@@ -64,16 +64,19 @@ export function validateCodexDraft(state,input,output){
 export async function parseWithCodex(state,input,{model=codexModel}={}){
   assert(comparisonModels.includes(model),'Неизвестная модель разбора');
   const text=string(input.text,'Фраза',4000,true),timeZone=zone(input.timeZone||'Europe/Chisinau'),recordedAt=occurrenceInput({personId:'reference',occurredAt:input.recordedAt||new Date().toISOString(),timeZone}).occurredAt;
+  const people=codexPeople(state),prompt=instructions+'\nINPUT\n'+JSON.stringify({text,people,knownMedicines:knownMedicinesFor(state),referenceLocalDate:localParts(recordedAt,timeZone).date,timeZone});
+  return validateCodexDraft(state,{...input,recordedAt},await runCodexJSON(prompt,schema,{model}));
+}
+export async function runCodexJSON(prompt,outputSchema,{model=codexModel}={}){
+  assert(comparisonModels.includes(model),'Неизвестная модель разбора');
   assert(!busy,'Codex уже разбирает запись. Дождитесь результата.',429);
   busy=true;
   let directory;
   try{
     assert((await codexStatus()).ready,'Codex для Медики не установлен',503);
     directory=await mkdtemp(join(tmpdir(),'medika-terra-'));
-    const people=codexPeople(state);
-    const prompt=instructions+'\nINPUT\n'+JSON.stringify({text,people,knownMedicines:knownMedicinesFor(state),referenceLocalDate:localParts(recordedAt,timeZone).date,timeZone});
     const output=join(directory,'result.json');
-    const args=['exec','--ignore-user-config','--ephemeral','--skip-git-repo-check','--sandbox','read-only','--model',model,'--config','forced_login_method="chatgpt"','--config','model_reasoning_effort="low"','--config','web_search="disabled"','--disable','shell_tool','--disable','multi_agent','--disable','apps','--json','--output-schema',schema,'--output-last-message',output,'-'];
+    const args=['exec','--ignore-user-config','--ephemeral','--skip-git-repo-check','--sandbox','read-only','--model',model,'--config','forced_login_method="chatgpt"','--config','model_reasoning_effort="low"','--config','web_search="disabled"','--disable','shell_tool','--disable','multi_agent','--disable','apps','--json','--output-schema',outputSchema,'--output-last-message',output,'-'];
     await new Promise((resolve,reject)=>{
       const env={...process.env};for(const key of ['OPENAI_API_KEY','CODEX_API_KEY','CODEX_ACCESS_TOKEN'])delete env[key];
       const child=spawn(binary,args,{cwd:directory,env,stdio:['pipe','pipe','pipe']});let diagnostic='',events='';
@@ -87,7 +90,7 @@ export async function parseWithCodex(state,input,{model=codexModel}={}){
       });
       child.stdin.on('error',()=>{});child.stdin.end(prompt);
     });
-    const result=JSON.parse(await readFile(output,'utf8'));return validateCodexDraft(state,{...input,recordedAt},result);
+    return JSON.parse(await readFile(output,'utf8'));
   }catch(error){if(error instanceof InputError)throw error;throw new InputError('Не удалось разобрать ответ модели. Запись не сохранена.',502);}
   finally{busy=false;if(directory)await rm(directory,{recursive:true,force:true});}
 }

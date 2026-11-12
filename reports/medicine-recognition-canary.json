@@ -1,0 +1,59 @@
+{
+  "status": "PASS",
+  "syntheticOnly": true,
+  "realOCR": true,
+  "realAI": false,
+  "modelCalls": 1,
+  "physicalDeviceTested": false,
+  "checks": [
+    "Real image selection → transparent PNG composited on white → canvas normalization → Apple Vision OCR → structured AI result; no blank form, no popup after closing during recognition",
+    "One confirmation adds medicine plus small private photo atomically; package strength remains literal; no prescription or intake is invented",
+    "Same photo reuses the durable OCR/AI result and opens the existing medicine without duplication",
+    {
+      "width": 320,
+      "height": 844,
+      "geometry": {
+        "width": 92.109375,
+        "height": 48,
+        "gap": 8,
+        "overflow": false
+      },
+      "touchCenterAndEdges": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "geometry": {
+        "width": 92.109375,
+        "height": 48,
+        "gap": 8,
+        "overflow": false
+      },
+      "touchCenterAndEdges": true
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "geometry": {
+        "width": 92.109375,
+        "height": 48,
+        "gap": 8,
+        "overflow": false
+      },
+      "touchCenterAndEdges": true
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "geometry": {
+        "width": 92.109375,
+        "height": 48,
+        "gap": 8,
+        "overflow": false
+      },
+      "touchCenterAndEdges": true
+    },
+    "Conflicting results require explicit correction/new photo and cannot be saved silently",
+    "Restart reuses OCR/AI cache; backup restore preserves source text, model, manufacturer and photos without duplication"
+  ]
+}

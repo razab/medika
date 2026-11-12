@@ -1,0 +1,14 @@
+{
+  "status": "PASS",
+  "syntheticOnly": true,
+  "realOCR": true,
+  "realAI": true,
+  "modelCalls": 1,
+  "physicalDeviceTested": false,
+  "checks": [
+    "Real image selection → canvas normalization → Apple Vision OCR → structured AI result; no blank form, no popup after closing during recognition",
+    "One confirmation adds medicine plus small private photo atomically; package strength remains literal; no prescription or intake is invented",
+    "Same photo reuses the durable OCR/AI result and opens the existing medicine without duplication",
+    "Restart reuses OCR/AI cache; backup restore preserves source text, model, manufacturer and photos without duplication"
+  ]
+}
