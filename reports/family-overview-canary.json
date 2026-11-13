@@ -5,66 +5,84 @@
   "physicalDeviceTested": false,
   "medicalPlanUnchanged": true,
   "checks": [
-    "13:38 → dinner for Alice, lunch for Danya; old/unknown measurement labels; closed overview; course warning; save/reload/void; all other slots and exact clock remain accessible",
+    "Unknown meal times and a completed 23:00 dose never displace breakfast/lunch/dinner; all day slots open without Other intakes; future plan stays separate; old/unknown measurement labels; save/reload/void preserve prescriptions",
     {
       "width": 320,
       "height": 844,
       "overflow": false,
-      "allCurrentDosesVisible": true,
-      "personHeadersVisible": true,
-      "allCardsVisible": true,
-      "topGap": 56,
+      "allCurrentDosesVisible": false,
+      "personHeadersVisible": false,
+      "allCardsVisible": false,
+      "topGap": 12,
       "minWidth": 48,
       "minHeight": 48,
-      "minGap": 8
+      "minGap": 8,
+      "allMealAndClockTouchEdges": true
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "overflow": false,
+      "allCurrentDosesVisible": false,
+      "personHeadersVisible": false,
+      "allCardsVisible": false,
+      "topGap": 12,
+      "minWidth": 48,
+      "minHeight": 48,
+      "minGap": 8,
+      "allMealAndClockTouchEdges": true
     },
     {
       "width": 390,
       "height": 844,
       "overflow": false,
-      "allCurrentDosesVisible": true,
-      "personHeadersVisible": true,
-      "allCardsVisible": true,
-      "topGap": 56,
+      "allCurrentDosesVisible": false,
+      "personHeadersVisible": false,
+      "allCardsVisible": false,
+      "topGap": 12,
       "minWidth": 48,
       "minHeight": 48,
-      "minGap": 8
+      "minGap": 8,
+      "allMealAndClockTouchEdges": true
     },
     {
       "width": 768,
       "height": 1024,
       "overflow": false,
-      "allCurrentDosesVisible": true,
-      "personHeadersVisible": true,
-      "allCardsVisible": true,
-      "topGap": 0,
+      "allCurrentDosesVisible": false,
+      "personHeadersVisible": false,
+      "allCardsVisible": false,
+      "topGap": 12,
       "minWidth": 48,
       "minHeight": 48,
-      "minGap": 8
+      "minGap": 8,
+      "allMealAndClockTouchEdges": true
     },
     {
       "width": 1024,
       "height": 768,
       "overflow": false,
-      "allCurrentDosesVisible": true,
-      "personHeadersVisible": true,
-      "allCardsVisible": true,
-      "topGap": 0,
+      "allCurrentDosesVisible": false,
+      "personHeadersVisible": false,
+      "allCardsVisible": false,
+      "topGap": 12,
       "minWidth": 48,
       "minHeight": 48,
-      "minGap": 8
+      "minGap": 8,
+      "allMealAndClockTouchEdges": true
     },
     {
       "width": 1280,
       "height": 752,
       "overflow": false,
-      "allCurrentDosesVisible": true,
-      "personHeadersVisible": true,
-      "allCardsVisible": true,
-      "topGap": 0,
+      "allCurrentDosesVisible": false,
+      "personHeadersVisible": false,
+      "allCardsVisible": false,
+      "topGap": 12,
       "minWidth": 48,
       "minHeight": 48,
-      "minGap": 8
+      "minGap": 8,
+      "allMealAndClockTouchEdges": true
     }
   ]
 }
