@@ -1,0 +1,1179 @@
+{
+  "version": 1,
+  "project": "Медика · карта интерфейса",
+  "generatedAt": "2026-11-13T21:44:45.268Z",
+  "revision": "590eaf3",
+  "scope": {
+    "kind": "pilot",
+    "summary": "Пилот: 3 связанных экрана из работающего приложения. Превью на синтетических данных; действия на карте только объясняются.",
+    "omitted": [
+      "Полный аудит всех страниц и состояний ещё не выполнен",
+      "Лечение, личные слоты, изменение назначения, справка препарата и исправление событий",
+      "Меню «Ещё» и карточка препарата описаны как промежуточные шаги переходов",
+      "OCR-импорт, добавление по фото, голосовая очередь и прежнее управление /manage",
+      "Все старые дизайн-демо; фактические медицинские данные семьи не использованы"
+    ]
+  },
+  "sources": [
+    {
+      "file": "site/public/family-workspace.js",
+      "sha256": "c3de5b12f859868452bcdb262336461d8f03afb25fc58c9574c950a54a09e280"
+    },
+    {
+      "file": "site/public/medicines.js",
+      "sha256": "5339946048b64c6e02bd0c3b00d8b8b41a27c442caae0d66eb57044097fa2fc6"
+    },
+    {
+      "file": "site/public/family-card.js",
+      "sha256": "e58c5fccc4526b25ea0f0d73ff9fee8916b0595cee6e8b401849da1edee17770"
+    },
+    {
+      "file": "site/lib/store.mjs",
+      "sha256": "682f647e018b259c75fbe1204ed9b92462a4fced377f1a63461b9ed01fbbc8c5"
+    },
+    {
+      "file": "site/lib/family-view.mjs",
+      "sha256": "136aa7c9790781263c66c62f2e98e511ee67a79a8428f551903b375f6a4a8fbc"
+    },
+    {
+      "file": "site/public/routine.js",
+      "sha256": "caed0ef24b841cd122a0bfa6e1566fdf681bf8b8f1ceba4dd93de6825497598a"
+    },
+    {
+      "file": "site/lib/domain.mjs",
+      "sha256": "d733dac14447ecad355a2f4424b3cf95c031a73d144f1c2a6a91f1feb0009bc9"
+    },
+    {
+      "file": "site/server.mjs",
+      "sha256": "5ddf481364493c473312d7baa6e7f11589dfbe320bfa8360c512bc42db2aa138"
+    },
+    {
+      "file": "site/public/medicines.html",
+      "sha256": "27d0b4962394a87d1f5c79b2f15d7e7eda68d961750915025dbc2e0a5a91b43c"
+    }
+  ],
+  "screens": [
+    {
+      "id": "family",
+      "title": "Семейное расписание",
+      "kind": "page",
+      "route": "/ · /family",
+      "description": "Открытые слоты дня, отдельные отметки, история и фильтр человека. План и факты разделены.",
+      "preview": {
+        "src": "images/family.png",
+        "width": 390,
+        "height": 1024
+      },
+      "evidence": [
+        {
+          "file": "site/public/family-workspace.js",
+          "symbol": "function render("
+        },
+        {
+          "file": "site/lib/family-view.mjs",
+          "symbol": "export function familyView"
+        }
+      ],
+      "reads": [
+        {
+          "name": "GET /api/family",
+          "source": "Люди, активные назначения, проекция дня, факты, справка и фотографии"
+        },
+        {
+          "name": "Фильтр человека",
+          "source": "localStorage medika-family-person; фильтрует обе панели"
+        }
+      ],
+      "componentIds": [
+        "medication-row",
+        "person-filter",
+        "day-slot"
+      ]
+    },
+    {
+      "id": "add",
+      "title": "Добавить лекарство",
+      "kind": "dialog",
+      "route": "/family · dialog",
+      "description": "Личная разовая доза и слоты либо конкретные часы. Каталожная концентрация не заполняет дозу.",
+      "preview": {
+        "src": "images/add-slots.png",
+        "width": 390,
+        "height": 1024
+      },
+      "evidence": [
+        {
+          "file": "site/public/family-workspace.js",
+          "symbol": "function addMedicine("
+        },
+        {
+          "file": "site/public/family-workspace.js",
+          "symbol": "async function saveSlotMedicine("
+        }
+      ],
+      "reads": [
+        {
+          "name": "Каталог и человек",
+          "source": "Текущий snapshot /api/family; medicineId также из URL при переходе из каталога"
+        },
+        {
+          "name": "Слоты",
+          "source": "availableMedicineSlots(person); точные часы вводит пользователь"
+        }
+      ],
+      "componentIds": [
+        "prescription-form",
+        "schedule-mode"
+      ]
+    },
+    {
+      "id": "catalog",
+      "title": "Каталог лекарств",
+      "kind": "page",
+      "route": "/medicines",
+      "description": "Препараты существуют отдельно от личных назначений. Поиск и фильтр по группе в текущем списке отсутствуют.",
+      "preview": {
+        "src": "images/catalog.png",
+        "width": 390,
+        "height": 1024
+      },
+      "evidence": [
+        {
+          "file": "site/public/medicines.js",
+          "symbol": "function render()"
+        },
+        {
+          "file": "site/public/medicines.js",
+          "symbol": "function detail(m)"
+        }
+      ],
+      "reads": [
+        {
+          "name": "GET /api/state",
+          "source": "medicines, prescriptions и medicinePhotos; активные/из назначений/архив вычисляются в render()"
+        }
+      ],
+      "componentIds": [
+        "catalog-list",
+        "catalog-item"
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "id": "add-from-slot",
+      "from": "family",
+      "to": "add",
+      "label": "+ Добавить в этот слот",
+      "selector": ".family-slot-heading button",
+      "kind": "dialog",
+      "status": "observed",
+      "evidence": [
+        {
+          "file": "site/public/family-workspace.js",
+          "symbol": "function addMedicine("
+        }
+      ],
+      "fields": [
+        {
+          "name": "personId",
+          "source": "data-add-medicine у заголовка слота",
+          "meaning": "Человек уже выбран",
+          "required": false
+        },
+        {
+          "name": "anchor",
+          "source": "data-anchor",
+          "meaning": "Изначально отмеченный слот",
+          "required": false
+        }
+      ],
+      "storage": [],
+      "affects": [
+        "family"
+      ],
+      "result": "Открывается форма: человек и слот заполнены из заголовка. Лекарство и разовая доза ещё не выбраны.",
+      "errors": [
+        "Просмотр сам по себе не создаёт запись"
+      ],
+      "bounds": {
+        "x": 315,
+        "y": 167.390625,
+        "width": 48,
+        "height": 48
+      }
+    },
+    {
+      "id": "take",
+      "from": "family",
+      "to": "family",
+      "label": "Отметить приём",
+      "selector": ".care-take",
+      "kind": "write",
+      "status": "observed",
+      "evidence": [
+        {
+          "file": "site/public/family-workspace.js",
+          "symbol": "async function record("
+        },
+        {
+          "file": "site/lib/store.mjs",
+          "symbol": "function insert("
+        }
+      ],
+      "fields": [
+        {
+          "name": "rxId / rxVersion",
+          "source": "Назначение выбранной строки",
+          "meaning": "ID и защита от устаревшей версии",
+          "required": true
+        },
+        {
+          "name": "key / date",
+          "source": "Проекция конкретного приёма",
+          "meaning": "Не другой слот и не вчерашний факт",
+          "required": true
+        },
+        {
+          "name": "dose",
+          "source": "Личная доза назначения",
+          "meaning": "Не концентрация упаковки",
+          "required": true
+        },
+        {
+          "name": "occurredAt",
+          "source": "Момент явного нажатия",
+          "meaning": "Фактическое время",
+          "required": true
+        }
+      ],
+      "storage": [
+        {
+          "name": "SQLite events + audit",
+          "operation": "insert"
+        }
+      ],
+      "affects": [
+        "family"
+      ],
+      "result": "POST создаёт факт приёма сейчас; после GET /api/family обновляются отметка, история и зависимый таймер. Повторная отметка снимается отдельной отменой.",
+      "errors": [
+        "Смена дня требует выбрать приём заново",
+        "Конфликт/ошибка не показываются как успешная запись",
+        "При потерянном ответе сначала обновляется журнал"
+      ],
+      "request": {
+        "method": "POST",
+        "path": "/api/events"
+      },
+      "bounds": {
+        "x": 315,
+        "y": 231.390625,
+        "width": 48,
+        "height": 48
+      }
+    },
+    {
+      "id": "undo-take",
+      "from": "family",
+      "to": "family",
+      "label": "Снять ошибочную отметку",
+      "selector": ".care-take input:checked",
+      "kind": "write",
+      "status": "source-only",
+      "evidence": [
+        {
+          "file": "site/public/family-workspace.js",
+          "symbol": "async function cancel("
+        },
+        {
+          "file": "site/lib/store.mjs",
+          "symbol": "function update("
+        }
+      ],
+      "fields": [
+        {
+          "name": "eventId / version",
+          "source": "Существующая отметка",
+          "meaning": "ID факта и контроль версии",
+          "required": true
+        },
+        {
+          "name": "reason",
+          "source": "Обработчик cancel",
+          "meaning": "Причина отмены",
+          "required": true
+        }
+      ],
+      "storage": [
+        {
+          "name": "SQLite events + audit",
+          "operation": "update"
+        }
+      ],
+      "affects": [
+        "family"
+      ],
+      "result": "Отменяет существующий факт с сохранением аудита; прошлое назначение не удаляется.",
+      "errors": [
+        "Конфликт версии требует обновления",
+        "Это отмена факта, а не удаление назначения"
+      ],
+      "request": {
+        "method": "POST",
+        "path": "/api/events/:id/void"
+      }
+    },
+    {
+      "id": "filter-person",
+      "from": "family",
+      "to": "family",
+      "label": "Выбрать человека",
+      "selector": ".care-family label",
+      "kind": "local",
+      "status": "observed",
+      "evidence": [
+        {
+          "file": "site/public/family-workspace.js",
+          "symbol": "event.target.name==='care-person'"
+        }
+      ],
+      "fields": [
+        {
+          "name": "personId",
+          "source": "Нажатый фильтр",
+          "meaning": "Все или один профиль",
+          "required": false
+        }
+      ],
+      "storage": [
+        {
+          "name": "localStorage medika-family-person",
+          "operation": "browser"
+        }
+      ],
+      "affects": [
+        "family"
+      ],
+      "result": "Фильтрует расписание и историю, сохраняет выбор в этом браузере; API-записи нет.",
+      "errors": [
+        "Просмотр сам по себе не создаёт запись"
+      ],
+      "bounds": {
+        "x": 14,
+        "y": 8,
+        "width": 52,
+        "height": 48
+      }
+    },
+    {
+      "id": "expand-row",
+      "from": "family",
+      "to": "family",
+      "label": "Раскрыть назначение",
+      "selector": ".care-med summary",
+      "kind": "local",
+      "status": "observed",
+      "evidence": [
+        {
+          "file": "site/public/family-card.js",
+          "symbol": "export function careDrug"
+        }
+      ],
+      "fields": [],
+      "storage": [],
+      "affects": [
+        "family"
+      ],
+      "result": "Раскрывает дозу, кратность, слот и курс; не меняет назначение или факт.",
+      "errors": [
+        "Просмотр сам по себе не создаёт запись"
+      ]
+    },
+    {
+      "id": "manual-event",
+      "from": "family",
+      "label": "Вручную: записать событие",
+      "selector": "[data-add-event]",
+      "kind": "dialog",
+      "status": "observed",
+      "evidence": [
+        {
+          "file": "site/public/family-workspace.js",
+          "symbol": "function eventForm("
+        }
+      ],
+      "fields": [],
+      "storage": [],
+      "affects": [
+        "family"
+      ],
+      "result": "Открывает форму события; до явного сохранения записи нет.",
+      "errors": [
+        "Просмотр сам по себе не создаёт запись"
+      ],
+      "outside": "Форма события — вне пилота",
+      "bounds": {
+        "x": 280,
+        "y": 938.40625,
+        "width": 96,
+        "height": 48
+      }
+    },
+    {
+      "id": "voice",
+      "from": "family",
+      "label": "Событие голосом",
+      "selector": "[data-voice]",
+      "kind": "local",
+      "status": "source-only",
+      "evidence": [
+        {
+          "file": "site/public/family-workspace.js",
+          "symbol": "async function voice("
+        }
+      ],
+      "fields": [],
+      "storage": [
+        {
+          "name": "IndexedDB незавершённой голосовой очереди",
+          "operation": "browser"
+        }
+      ],
+      "affects": [
+        "family"
+      ],
+      "result": "Запись и очередь распознавания; это отдельный сценарий. Модель в проверке атласа не вызывалась.",
+      "errors": [
+        "Просмотр сам по себе не создаёт запись"
+      ],
+      "outside": "Голосовая запись и очередь — вне пилота"
+    },
+    {
+      "id": "save-rx",
+      "from": "add",
+      "to": "family",
+      "label": "Добавить в расписание",
+      "selector": "#add-medicine-form button[type=submit]",
+      "kind": "write",
+      "status": "observed",
+      "evidence": [
+        {
+          "file": "site/public/family-workspace.js",
+          "symbol": "async function saveSlotMedicine("
+        },
+        {
+          "file": "site/lib/store.mjs",
+          "symbol": "function insert("
+        }
+      ],
+      "fields": [
+        {
+          "name": "personId",
+          "source": "Выбранный человек / заголовок слота",
+          "meaning": "",
+          "required": true
+        },
+        {
+          "name": "medicineId / medicineVersion",
+          "source": "Каталог: select medicineId",
+          "meaning": "ID и версия препарата",
+          "required": true
+        },
+        {
+          "name": "dose / unit",
+          "source": "Ввод пользователя / допустимые единицы формы",
+          "meaning": "Доза вводится отдельно от strength",
+          "required": true
+        },
+        {
+          "name": "strength / medicineForm",
+          "source": "Выбранный препарат",
+          "meaning": "Снимок упаковки",
+          "required": true
+        },
+        {
+          "name": "routineSlots",
+          "source": "Отмеченные слоты либо явные часы",
+          "meaning": "Часы обязательны только в режиме clock",
+          "required": true
+        },
+        {
+          "name": "manualKey",
+          "source": "Ключ открытой формы",
+          "meaning": "Защита повтора",
+          "required": true
+        },
+        {
+          "name": "carePhase / startDate / endDate",
+          "source": "Контекст человека и дополнительные параметры",
+          "meaning": "Фаза и курс",
+          "required": false
+        },
+        {
+          "name": "regimen.origin",
+          "source": "Система: manual",
+          "meaning": "Не приписывается врачу",
+          "required": false
+        }
+      ],
+      "storage": [
+        {
+          "name": "SQLite prescriptions + audit",
+          "operation": "insert"
+        }
+      ],
+      "affects": [
+        "family"
+      ],
+      "result": "Создаёт новое личное назначение и обновляет семейный экран. Самого факта приёма не создаёт.",
+      "errors": [
+        "Не заполнена доза/слот/часы — назначение не создаётся",
+        "Отмена формы ничего не записывает",
+        "Потерянный ответ: обновление журнала без автоматического повтора"
+      ],
+      "request": {
+        "method": "POST",
+        "path": "/api/prescriptions"
+      },
+      "bounds": {
+        "x": 36,
+        "y": 808.375,
+        "width": 318,
+        "height": 48
+      }
+    },
+    {
+      "id": "close-add",
+      "from": "add",
+      "to": "family",
+      "label": "Закрыть без сохранения",
+      "selector": "#family-info [data-close]",
+      "kind": "local",
+      "status": "observed",
+      "evidence": [
+        {
+          "file": "site/public/family-workspace.js",
+          "symbol": "target.hasAttribute('data-close')"
+        }
+      ],
+      "fields": [],
+      "storage": [],
+      "affects": [
+        "family"
+      ],
+      "result": "Закрывает окно. Ни назначение, ни факт не создаются.",
+      "errors": [
+        "Просмотр сам по себе не создаёт запись"
+      ],
+      "bounds": {
+        "x": 270.03125,
+        "y": 103.609375,
+        "width": 83.96875,
+        "height": 48
+      }
+    },
+    {
+      "id": "schedule-mode",
+      "from": "add",
+      "to": "add",
+      "label": "По слотам / Точное время",
+      "selector": "[name=scheduleMode]",
+      "kind": "local",
+      "status": "observed",
+      "evidence": [
+        {
+          "file": "site/public/family-workspace.js",
+          "symbol": "function updateMedicineSchedule("
+        }
+      ],
+      "fields": [
+        {
+          "name": "scheduleMode",
+          "source": "Выбор пользователя",
+          "meaning": "slots или clock",
+          "required": true
+        }
+      ],
+      "storage": [],
+      "affects": [
+        "add"
+      ],
+      "result": "Переключает поля формы: слоты и связь с едой либо обязательные точные часы. Записи в базу ещё нет.",
+      "errors": [
+        "Пустые часы в clock не сохраняются"
+      ]
+    },
+    {
+      "id": "select-drug",
+      "from": "add",
+      "to": "add",
+      "label": "Выбрать лекарство",
+      "selector": "[name=medicineId]",
+      "kind": "local",
+      "status": "observed",
+      "evidence": [
+        {
+          "file": "site/public/family-workspace.js",
+          "symbol": "function updateMedicineUnits("
+        }
+      ],
+      "fields": [
+        {
+          "name": "medicineId",
+          "source": "Каталог",
+          "meaning": "Определяет форму и допустимые единицы",
+          "required": true
+        }
+      ],
+      "storage": [],
+      "affects": [
+        "add"
+      ],
+      "result": "Меняет допустимые единицы по форме препарата; разовая доза остаётся отдельным вводом.",
+      "errors": [
+        "Просмотр сам по себе не создаёт запись"
+      ]
+    },
+    {
+      "id": "open-catalog",
+      "from": "family",
+      "to": "catalog",
+      "label": "Ещё → Лекарства",
+      "selector": "[data-tools] → a[href=\"/medicines\"]",
+      "kind": "navigate",
+      "status": "observed",
+      "evidence": [
+        {
+          "file": "site/public/family-workspace.js",
+          "symbol": "function tools()"
+        }
+      ],
+      "fields": [],
+      "storage": [],
+      "affects": [
+        "catalog"
+      ],
+      "result": "Сначала открывается меню «Ещё», затем ссылка загружает каталог. Меню — промежуточный шаг без отдельной миниатюры.",
+      "errors": [
+        "Просмотр сам по себе не создаёт запись"
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/api/state"
+      }
+    },
+    {
+      "id": "back-family",
+      "from": "catalog",
+      "to": "family",
+      "label": "К семье",
+      "selector": "a[href=\"/\"]",
+      "kind": "navigate",
+      "status": "observed",
+      "evidence": [
+        {
+          "file": "site/public/medicines.html",
+          "symbol": "← К семье"
+        }
+      ],
+      "fields": [],
+      "storage": [],
+      "affects": [
+        "family"
+      ],
+      "result": "Возвращает семейный экран; каталог и назначения не меняются.",
+      "errors": [
+        "Просмотр сам по себе не создаёт запись"
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/api/family"
+      }
+    },
+    {
+      "id": "catalog-details",
+      "from": "catalog",
+      "label": "Открыть карточку препарата",
+      "selector": ".medicine-row",
+      "kind": "dialog",
+      "status": "observed",
+      "evidence": [
+        {
+          "file": "site/public/medicines.js",
+          "symbol": "function detail(m)"
+        }
+      ],
+      "fields": [],
+      "storage": [],
+      "affects": [
+        "catalog"
+      ],
+      "result": "Открывает форму, концентрацию, справку и действия выбранного препарата.",
+      "errors": [
+        "Просмотр сам по себе не создаёт запись"
+      ],
+      "outside": "Карточка препарата — вне пилота"
+    },
+    {
+      "id": "catalog-prescribe",
+      "from": "catalog",
+      "to": "add",
+      "label": "Карточка → В расписание",
+      "selector": ".medicine-row → .medicine-to-slot",
+      "kind": "navigate",
+      "status": "observed",
+      "evidence": [
+        {
+          "file": "site/public/medicines.js",
+          "symbol": "medicine-to-slot"
+        },
+        {
+          "file": "site/public/family-workspace.js",
+          "symbol": "params.get('medicine')"
+        }
+      ],
+      "fields": [
+        {
+          "name": "medicineId",
+          "source": "Выбранный препарат → параметр medicine в URL",
+          "meaning": "Предзаполняет препарат, но не личную дозу",
+          "required": true
+        }
+      ],
+      "storage": [],
+      "affects": [
+        "add"
+      ],
+      "result": "Через карточку препарата переходит на /family?medicine=ID: препарат заполнен, человек и доза выбираются отдельно.",
+      "errors": [
+        "Просмотр сам по себе не создаёт запись"
+      ]
+    },
+    {
+      "id": "catalog-photo",
+      "from": "catalog",
+      "label": "Добавить по фото",
+      "selector": "[data-add]",
+      "kind": "dialog",
+      "status": "source-only",
+      "evidence": [
+        {
+          "file": "site/public/medicines.js",
+          "symbol": "function photoForm()"
+        }
+      ],
+      "fields": [],
+      "storage": [],
+      "affects": [
+        "catalog"
+      ],
+      "result": "Открывает выбор 1–2 фотографий; распознавание требует загрузки. В пилоте OCR/модель не запускались.",
+      "errors": [
+        "Просмотр сам по себе не создаёт запись"
+      ],
+      "outside": "Фото → OCR → сверка — вне пилота"
+    }
+  ],
+  "components": [
+    {
+      "id": "medication-row",
+      "title": "Строка лекарства в расписании",
+      "kind": "list-item",
+      "usedOn": [
+        "family"
+      ],
+      "description": "Одна плановая доза конкретного человека. Назначение и отметка — независимые действия.",
+      "evidence": [
+        {
+          "file": "site/public/family-card.js",
+          "symbol": "export function careDrug"
+        },
+        {
+          "file": "site/public/family-workspace.js",
+          "symbol": "function renderRow("
+        }
+      ],
+      "variants": [
+        {
+          "title": "Не отмечено",
+          "src": "images/medication-pending.png",
+          "screenId": "family",
+          "selector": ".family-day-slot [data-demo-row]"
+        },
+        {
+          "title": "Назначение раскрыто",
+          "src": "images/medication-expanded.png",
+          "screenId": "family",
+          "selector": ".care-med details[open]"
+        },
+        {
+          "title": "Приём записан",
+          "src": "images/medication-recorded.png",
+          "screenId": "family",
+          "selector": ".care-take input:checked"
+        }
+      ],
+      "fields": [
+        {
+          "name": "Название и доза",
+          "source": "Назначение; при факте — снимок события",
+          "meaning": "Не переименовываются из каталога задним числом",
+          "required": false
+        },
+        {
+          "name": "Группа",
+          "source": "Совпадающая справка препарата",
+          "meaning": "Без справки — «Группа не уточнена»",
+          "required": false
+        },
+        {
+          "name": "Отметка / фактическое время",
+          "source": "Журнал events",
+          "meaning": "Не плановое время",
+          "required": false
+        },
+        {
+          "name": "Порядок и таймер",
+          "source": "Связь назначения/препарата + фактический первый приём",
+          "meaning": "Не создаёт событие автоматически",
+          "required": false
+        }
+      ],
+      "states": [
+        "Свёрнута / раскрыта",
+        "Ожидается / принято",
+        "Непривязанное назначение: отметка недоступна"
+      ],
+      "filters": [
+        "Активная фаза, курс и текущий плановый день; исторические строки отделены",
+        "Показывается внутри слота выбранного человека"
+      ],
+      "actionIds": [
+        "take",
+        "undo-take",
+        "expand-row"
+      ]
+    },
+    {
+      "id": "person-filter",
+      "title": "Фильтр людей",
+      "kind": "filter",
+      "usedOn": [
+        "family"
+      ],
+      "description": "Один фильтр для расписания и истории, выбранное значение хранится в браузере.",
+      "evidence": [
+        {
+          "file": "site/public/family-card.js",
+          "symbol": "export function careFamily"
+        }
+      ],
+      "variants": [
+        {
+          "title": "Все / Алиса / Даня",
+          "src": "images/person-filter.png",
+          "screenId": "family",
+          "selector": ".care-family"
+        }
+      ],
+      "fields": [
+        {
+          "name": "Люди",
+          "source": "snapshot.model.cards",
+          "meaning": "Подписи и ID профилей",
+          "required": false
+        }
+      ],
+      "states": [
+        "Все",
+        "Один человек"
+      ],
+      "filters": [
+        "Ограничивает обе панели; не выбирает человека для общей диктовки"
+      ],
+      "actionIds": [
+        "filter-person"
+      ]
+    },
+    {
+      "id": "day-slot",
+      "title": "Группа приёма",
+      "kind": "list",
+      "usedOn": [
+        "family"
+      ],
+      "description": "Название еды либо точные часы, список лекарств и отдельный плюс.",
+      "evidence": [
+        {
+          "file": "site/public/family-workspace.js",
+          "symbol": "function group(g,p)"
+        }
+      ],
+      "variants": [
+        {
+          "title": "Завтрак",
+          "src": "images/day-slot.png",
+          "screenId": "family",
+          "selector": ".family-day-slot"
+        }
+      ],
+      "fields": [
+        {
+          "name": "Заголовок",
+          "source": "Личный распорядок / точные часы назначения",
+          "meaning": "Время еды не выдумывается",
+          "required": false
+        }
+      ],
+      "states": [
+        "С ожидающими/выполненными строками"
+      ],
+      "filters": [
+        "Все действующие слоты дня открыты; еда упорядочена, конкретные часы отдельно"
+      ],
+      "actionIds": [
+        "add-from-slot"
+      ]
+    },
+    {
+      "id": "prescription-form",
+      "title": "Добавление в расписание",
+      "kind": "form",
+      "usedOn": [
+        "add"
+      ],
+      "description": "Форма создаёт личное назначение; концентрация упаковки и разовая доза разделены.",
+      "evidence": [
+        {
+          "file": "site/public/family-workspace.js",
+          "symbol": "function addMedicine("
+        },
+        {
+          "file": "site/public/family-workspace.js",
+          "symbol": "async function saveSlotMedicine("
+        }
+      ],
+      "variants": [
+        {
+          "title": "По слотам",
+          "src": "images/prescription-form.png",
+          "screenId": "add",
+          "selector": "#add-medicine-form"
+        },
+        {
+          "title": "Точное время",
+          "src": "images/prescription-clock.png",
+          "screenId": "add",
+          "selector": "#add-medicine-form"
+        },
+        {
+          "title": "Невалидные часы: форма остаётся",
+          "src": "images/prescription-invalid.png",
+          "screenId": "add",
+          "selector": "#add-medicine-form"
+        }
+      ],
+      "fields": [
+        {
+          "name": "personId",
+          "source": "Выбранный человек / заголовок слота",
+          "meaning": "",
+          "required": true
+        },
+        {
+          "name": "medicineId / medicineVersion",
+          "source": "Каталог: select medicineId",
+          "meaning": "ID и версия препарата",
+          "required": true
+        },
+        {
+          "name": "dose / unit",
+          "source": "Ввод пользователя / допустимые единицы формы",
+          "meaning": "Доза вводится отдельно от strength",
+          "required": true
+        },
+        {
+          "name": "strength / medicineForm",
+          "source": "Выбранный препарат",
+          "meaning": "Снимок упаковки",
+          "required": true
+        },
+        {
+          "name": "routineSlots",
+          "source": "Отмеченные слоты либо явные часы",
+          "meaning": "Часы обязательны только в режиме clock",
+          "required": true
+        },
+        {
+          "name": "manualKey",
+          "source": "Ключ открытой формы",
+          "meaning": "Защита повтора",
+          "required": true
+        },
+        {
+          "name": "carePhase / startDate / endDate",
+          "source": "Контекст человека и дополнительные параметры",
+          "meaning": "Фаза и курс",
+          "required": false
+        },
+        {
+          "name": "regimen.origin",
+          "source": "Система: manual",
+          "meaning": "Не приписывается врачу",
+          "required": false
+        }
+      ],
+      "states": [
+        "По слотам",
+        "Точное время",
+        "Незаполненные обязательные поля",
+        "Курс и прочие параметры свёрнуты"
+      ],
+      "filters": [
+        "Препараты: только неархивные, сортировка по имени",
+        "Слоты выбранного человека; единицы ограничены формой препарата"
+      ],
+      "actionIds": [
+        "save-rx",
+        "close-add",
+        "select-drug",
+        "schedule-mode"
+      ]
+    },
+    {
+      "id": "schedule-mode",
+      "title": "Слоты или точное время",
+      "kind": "control",
+      "usedOn": [
+        "add"
+      ],
+      "description": "Переключатель показывает соответствующие поля одной формы.",
+      "evidence": [
+        {
+          "file": "site/public/family-workspace.js",
+          "symbol": "function updateMedicineSchedule("
+        }
+      ],
+      "variants": [
+        {
+          "title": "Режимы",
+          "src": "images/schedule-mode.png",
+          "screenId": "add",
+          "selector": ".family-schedule-mode"
+        }
+      ],
+      "fields": [],
+      "states": [
+        "slots: слоты видны, часы скрыты",
+        "clock: часы обязательны, слоты и связь с едой отключены"
+      ],
+      "filters": [
+        "Не делится на будни и выходные"
+      ],
+      "actionIds": [
+        "schedule-mode"
+      ]
+    },
+    {
+      "id": "catalog-list",
+      "title": "Список препаратов",
+      "kind": "list",
+      "usedOn": [
+        "catalog"
+      ],
+      "description": "Каталог отдельно от схем людей.",
+      "evidence": [
+        {
+          "file": "site/public/medicines.js",
+          "symbol": "function render()"
+        }
+      ],
+      "variants": [
+        {
+          "title": "Активные препараты",
+          "src": "images/catalog-list.png",
+          "screenId": "catalog",
+          "selector": "#library"
+        }
+      ],
+      "fields": [
+        {
+          "name": "Список",
+          "source": "state.medicines и unmatched() из prescriptions",
+          "meaning": "Каталог не требует пациента",
+          "required": false
+        }
+      ],
+      "states": [
+        "Активные",
+        "Из назначений без связанной карточки",
+        "Архив раскрывается отдельно",
+        "Пустой список"
+      ],
+      "filters": [
+        "Поиска и фильтра по группе нет",
+        "Активные: !archived; архив: archived; «Из назначений» вычисляется unmatched()",
+        "Алфавитная сортировка в render() не задана"
+      ],
+      "actionIds": [
+        "catalog-details",
+        "catalog-photo"
+      ]
+    },
+    {
+      "id": "catalog-item",
+      "title": "Препарат в каталоге",
+      "kind": "list-item",
+      "usedOn": [
+        "catalog"
+      ],
+      "description": "Название, форма, концентрация и группа; нажатие открывает отдельную карточку.",
+      "evidence": [
+        {
+          "file": "site/public/medicines.js",
+          "symbol": "const row="
+        }
+      ],
+      "variants": [
+        {
+          "title": "Без уточнённой справки",
+          "src": "images/catalog-item.png",
+          "screenId": "catalog",
+          "selector": ".medicine-row"
+        }
+      ],
+      "fields": [
+        {
+          "name": "Название / форма / strength",
+          "source": "medicine",
+          "meaning": "Данные препарата, не личная доза",
+          "required": false
+        },
+        {
+          "name": "Группа",
+          "source": "medicine.reference",
+          "meaning": "Не угадывается из названия",
+          "required": false
+        },
+        {
+          "name": "Миниатюра",
+          "source": "medicinePhotos",
+          "meaning": "При наличии подходящего фото",
+          "required": false
+        }
+      ],
+      "states": [
+        "Активный",
+        "Архивный: нет основного перехода в расписание"
+      ],
+      "filters": [
+        "Принадлежит одной из секций каталога; фильтра внутри строки нет"
+      ],
+      "actionIds": [
+        "catalog-details",
+        "catalog-prescribe"
+      ]
+    }
+  ]
+}

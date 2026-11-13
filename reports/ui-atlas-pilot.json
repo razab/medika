@@ -1,0 +1,72 @@
+{
+  "status": "PASS",
+  "canaryOnly": false,
+  "syntheticOnly": true,
+  "physicalDeviceTested": false,
+  "screens": 3,
+  "components": 7,
+  "actions": 16,
+  "checks": [
+    "Actual UI: open/cancel no writes; empty dose not inferred from strength; required exact time rejects invalid save; POST fields; saved Rx and intake survive reload and server restart; person filter is local",
+    "Actual route: Family → More → Catalog; row → medicine dialog → Add to schedule with catalog ID and blank personal dose; Back → Family",
+    "Manifest references, actual source anchors, fingerprints, local PNG dimensions validated",
+    "Validator rejects a dangling destination, stale source fingerprint and external preview URL",
+    "Published HTTP atlas survives app restart; map targets, API/data mode with fixed node positions, captured-control hotspot, separate component page/filter; zero clinical API calls or data changes",
+    {
+      "viewport": {
+        "width": 320,
+        "height": 844
+      },
+      "geometry": {
+        "overflow": false,
+        "width": 83.171875,
+        "height": 48,
+        "gap": 8
+      },
+      "touchCentersAndEdges": true,
+      "componentFiltersAndUsageLink": true
+    },
+    {
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "geometry": {
+        "overflow": false,
+        "width": 83.171875,
+        "height": 48,
+        "gap": 8
+      },
+      "touchCentersAndEdges": true,
+      "componentFiltersAndUsageLink": true
+    },
+    {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "geometry": {
+        "overflow": false,
+        "width": 83.171875,
+        "height": 48,
+        "gap": 8
+      },
+      "touchCentersAndEdges": true,
+      "componentFiltersAndUsageLink": true
+    },
+    {
+      "viewport": {
+        "width": 1024,
+        "height": 768
+      },
+      "geometry": {
+        "overflow": false,
+        "width": 83.171875,
+        "height": 48,
+        "gap": 8
+      },
+      "touchCentersAndEdges": true,
+      "componentFiltersAndUsageLink": true
+    }
+  ]
+}
