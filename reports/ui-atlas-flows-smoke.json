@@ -1,0 +1,10 @@
+{
+  "ok": true,
+  "scope": "Synthetic isolated flow definitions; no clinical API access",
+  "checks": [
+    "Actual word tag → searchable concrete object → tag-only diff v2 → reload persists; no modal",
+    "Save text v3 → persisted task with both snapshots/diff/impact → download exact JSON → historical version view → server restart/resume; clinical records unchanged"
+  ],
+  "clinicalCalls": [],
+  "browserErrors": []
+}

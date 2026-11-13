@@ -1,8 +1,8 @@
 {
   "version": 1,
   "project": "Медика · карта интерфейса",
-  "generatedAt": "2026-11-13T23:15:20.522Z",
-  "revision": "d1bd5f4",
+  "generatedAt": "2026-11-13T23:49:10.837Z",
+  "revision": "8c09f85",
   "scope": {
     "kind": "pilot",
     "summary": "Пилот: 3 связанных экрана из работающего приложения. Превью на синтетических данных; действия на карте только объясняются.",
@@ -44,8 +44,12 @@
       "sha256": "d733dac14447ecad355a2f4424b3cf95c031a73d144f1c2a6a91f1feb0009bc9"
     },
     {
+      "file": "site/lib/medicines.mjs",
+      "sha256": "4876869907a28c49ef3ea88e79adecade0c092e39334cc8cc10792a8bca0f993"
+    },
+    {
       "file": "site/server.mjs",
-      "sha256": "5ddf481364493c473312d7baa6e7f11589dfbe320bfa8360c512bc42db2aa138"
+      "sha256": "9863b04ca4a0e4c9c1321b1110b16ec9cd4738c5633d5270917f5091053c0807"
     },
     {
       "file": "site/public/medicines.html",

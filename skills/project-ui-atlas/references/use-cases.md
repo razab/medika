@@ -13,6 +13,8 @@ Review these against the description when changing the skill. They are routing e
 | «Стрелки непонятны: что откуда куда?» | One selected, action-labelled connection anchored at the exact source; self-actions and omissions explicit |
 | «Пересмотрим переходы через карту» | Load/update atlas; product edits only within requested scope |
 | «Кликаю компонент, а открывается попап» | Direct in-map action, no implicit modal or scroll jump; optional enlargement has backdrop/Escape dismissal and fixed close control |
+| «Покажи user flow текущих экранов и дай исправить слово с тегом» | Scope to mapped paths; editable definitions, searchable concrete references, automatic known-term tags, immutable versions and persisted diffs |
+| «По правкам сценария пересмотри интерфейс» | Read pending review packet, compare exact versions and tag changes; inspect candidate impact in code, implement authorized change, verify and acknowledge only completed work |
 | «Сделай кнопку синей» | Ordinary styling, no full atlas needed |
 | «Добавь endpoint CSV» | Ordinary feature work; update an affected existing map when relevant |
 | «Нарисуй постер / лендинг / логотип» | Other workflow |

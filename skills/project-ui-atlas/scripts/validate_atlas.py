@@ -81,6 +81,22 @@ def validate(path, project_root):
         for variant in component.get('variants', []):
             preview(variant)
             require(variant['screenId'] in screens and bool(variant['selector']), f'{component["id"]}: capture provenance required')
+    flow_file = path.parent / 'flows-seed.json'
+    if flow_file.is_file():
+        flows = json.loads(flow_file.read_text())
+        entities = flows.get('entities', [])
+        entity_ids = {entity['id'] for entity in entities}
+        require(len(entity_ids) == len(entities), 'Duplicate flow entity ID')
+        require(len({flow['id'] for flow in flows.get('flows', [])}) == len(flows.get('flows', [])), 'Duplicate flow ID')
+        for entity in entities:
+            evidence(entity)
+            require(set(entity.get('screenIds', [])) <= screens, f'{entity["id"]}: dangling flow screen')
+            require(set(entity.get('componentIds', [])) <= components, f'{entity["id"]}: dangling flow component')
+            require(set(entity.get('actionIds', [])) <= actions, f'{entity["id"]}: dangling flow action')
+            require(bool(entity.get('description')) and bool(entity.get('storage')), f'{entity["id"]}: object meaning and storage required')
+        for flow in flows.get('flows', []):
+            require(bool(flow.get('text')) and bool(flow.get('title')), f'{flow["id"]}: flow text required')
+            require(set(flow.get('actionIds', [])) <= actions, f'{flow["id"]}: dangling flow action')
     return errors
 
 

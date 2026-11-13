@@ -1,6 +1,6 @@
 ---
 name: project-ui-atlas
-description: Build and maintain a local, code-backed atlas of an existing project's screens, dialogs, navigation, UI components, actions, API calls and data storage. Use for «покажи все экраны», «карта переходов», «каталог компонентов», «что делает кнопка и откуда данные», or revising UX through that atlas. Ordinary feature implementation or visual styling alone does not need this workflow.
+description: Build and maintain a local, code-backed atlas of an existing project's screens, dialogs, navigation, UI components, actions, API calls, data storage and editable, object-linked user flows. Use for «покажи все экраны», «карта переходов», «каталог компонентов», «что делает кнопка и откуда данные», «редактируемые user flow с тегами и историей», or revising UX through that atlas. Ordinary feature implementation or visual styling alone does not need this workflow.
 ---
 
 # Project UI Atlas
@@ -36,7 +36,9 @@ Use source files/functions and browser observations as evidence. Mark source-onl
 1. **Screens:** previews and directed connections. Selecting a control highlights its destination and explains its effect. Primary clicks on illustrated controls select the action directly on the map, without an intermediate modal or surprise page scroll. Render measured controls at a scale that preserves real tap sizes and gaps; retain a labelled action list for unmapped/compound actions and keyboard access. An optional enlargement must be an explicit separate control, never the default image click. Show one selected connection from the concrete source control to its result, labelled with the action. Anchor at the representation actually clicked (screenshot control or action-list button), not a hidden duplicate. Do not draw an unlabelled bundle between whole screen headers. Local state changes and writes that stay on the screen have an explicit effect summary, not a navigation arrow; name out-of-scope targets instead of suggesting a mapped destination.
 2. **Components:** a separate local URL/view with captured real variants, fields, states, list/filter rules and links back to usage.
 
-One manifest drives both views. A **Design / API and data** switch changes content of the same nodes without moving them or resetting selection. Read [manifest.md](references/manifest.md) when building/updating that model. Bundled [viewer assets](assets/atlas.html) are a dependency-free starting point; reuse a suitable existing renderer instead when available.
+3. **User flows when requested:** a scoped list of actual paths, editable prose with concrete object/field/screen/component/action tags, revision history and persisted diffs. Use [flow-editing.md](references/flow-editing.md) for identity, storage and Codex handoff. Changes to a flow are proposed requirements until verified against changed code; keep those states visible.
+
+One manifest drives the screen and component views. A **Design / API and data** switch changes content of the same nodes without moving them or resetting selection. Read [manifest.md](references/manifest.md) when building/updating that model. Bundled [viewer assets](assets/atlas.html) are a dependency-free starting point; reuse a suitable existing renderer instead when available.
 
 Serve through the project's established server/launch procedure. Keep sources and assets local. Give a verified LAN URL for mobile review when appropriate.
 

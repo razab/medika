@@ -1,3 +1,5 @@
+import {readFileSync} from 'node:fs';
+import {openAtlasFlows} from './lib/atlas-flows.mjs';
 import {createMedicineRecognition} from './lib/medicine-recognition.mjs';
 import {medicineInput,medicineKey,validateMedicineSequence} from './lib/medicines.mjs';
 import {familyView} from './lib/family-view.mjs';
@@ -42,6 +44,8 @@ export function imageType(bytes) {
 }
 export async function createApp({dataDir=join(root,'data'),port=4382,publicHost='medika.localhost',additionalHosts=[],entryParser=parseEntry,voiceLabOptions={},medicineRecognitionOptions={}}={}) {
   const store=openStore(dataDir), uploads=join(dataDir,'uploads');
+  let atlasFlows;
+  const flows=()=>atlasFlows??=openAtlasFlows(dataDir,JSON.parse(readFileSync(join(root,'public/ui-atlas/flows-seed.json'),'utf8')),join(root,'public/ui-atlas/manifest.json'));
   await mkdir(uploads,{recursive:true,mode:0o700});
   const voiceLab=await createVoiceLab(dataDir,{context:()=>({people:codexPeople(store.state()),medicines:store.state().medicines.filter(m=>!m.archived).map(m=>m.name)}),...voiceLabOptions});
   const token=randomBytes(32).toString('hex'), ocrBinary=join(root,'scripts/medika-ocr');
@@ -83,7 +87,7 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       const url=new URL(req.url,`${scheme}://${req.headers.host}`), route=url.pathname, method=req.method;
       if(route==='/design-study/a1')res.setHeader('Content-Security-Policy',`default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src ${url.origin}/api/session ${url.origin}/api/design-study/a1-snapshot; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'`);
       // Links from chats may be cross-site; the shell and public CA contain no medical data.
-      const publicRead=['GET','HEAD'].includes(method)&&(['/','/manage','/family','/family/','/voice-lab','/voice-lab/','/ocr-lab','/ocr-lab/','/playground','/prescriptions/import','/medika-ca.cer','/medicines','/medicines/'].includes(route)||Object.hasOwn(designStudyAssets,route));
+      const publicRead=['GET','HEAD'].includes(method)&&(['/','/manage','/ui-atlas','/ui-atlas/components','/ui-atlas/flows','/family','/family/','/voice-lab','/voice-lab/','/ocr-lab','/ocr-lab/','/playground','/prescriptions/import','/medika-ca.cer','/medicines','/medicines/'].includes(route)||Object.hasOwn(designStudyAssets,route));
       if(!publicRead){
         assert(!req.headers.origin||req.headers.origin===url.origin,'Запрос с другого сайта отклонён',403);
         assert(req.headers['sec-fetch-site']!=='cross-site','Запрос с другого сайта отклонён',403);
@@ -96,6 +100,14 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       if(route.startsWith('/api/')) {
         if((imageRoute||ocrImageRoute)&&method==='GET'||labAudioRoute&&['GET','HEAD'].includes(method)) assert(req.headers.cookie?.split(';').some(s=>s.trim()===`medika_session=${token}`),'Откройте приложение перед просмотром',403);
         else assert(req.headers['x-medika-token']===token,'Сессия обновлена. Перезагрузите страницу.',403);
+      }
+      if(route==='/api/ui-atlas/flows'&&method==='GET')return send(200,flows().list());
+      const flowRoute=route.match(/^\/api\/ui-atlas\/flows\/([A-Z0-9-]+)(?:\/(history|review))?$/);
+      if(flowRoute){const [,id,operation]=flowRoute;
+        if(method==='GET'&&operation==='history')return send(200,{versions:flows().history(id)});
+        if(method==='GET'&&operation==='review')return send(200,flows().packet(id));
+        if(method==='PUT'&&!operation)return send(200,flows().save(id,await body(req,150000)));
+        if(method==='POST'&&operation==='review')return send(201,flows().request(id,await body(req,150000)));
       }
       if(route==='/api/design-study/a1-snapshot'){
         assert(method==='GET','Снимок доступен только для чтения',405);
@@ -291,7 +303,7 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       if(route==='/ocr-sample.png'){res.writeHead(200,{'Content-Type':'image/png'});return res.end(await readFile(join(root,'public/ocr-sample.png')));}
       const packageImage=route.match(/^\/medicine-images\/([a-z0-9-]+\.jpg)$/);if(packageImage){let bytes;try{bytes=await readFile(join(root,'public/medicine-images',packageImage[1]));}catch{throw new InputError('Фото не найдено',404);}res.writeHead(200,{'Content-Type':'image/jpeg','Cache-Control':'public, max-age=86400'});return res.end(method==='HEAD'?undefined:bytes);}
       const atlasImage=route.match(/^\/ui-atlas\/images\/([a-z0-9-]+\.png)$/);if(atlasImage){const bytes=await readFile(join(root,'public/ui-atlas/images',atlasImage[1]));res.writeHead(200,{'Content-Type':'image/png'});return res.end(method==='HEAD'?undefined:bytes);}
-      const assets={...designStudyAssets,'/ui-atlas':['../../skills/project-ui-atlas/assets/atlas.html','text/html'],'/ui-atlas/components':['../../skills/project-ui-atlas/assets/atlas.html','text/html'],'/ui-atlas/atlas.js':['../../skills/project-ui-atlas/assets/atlas.js','text/javascript'],'/ui-atlas/atlas.css':['../../skills/project-ui-atlas/assets/atlas.css','text/css'],'/ui-atlas/manifest.json':['ui-atlas/manifest.json','application/json'],'/medicines':['medicines.html','text/html'],'/medicines/':['medicines.html','text/html'],'/medicine-reference.js':['medicine-reference.js','text/javascript'],'/medicine-reference.css':['medicine-reference.css','text/css'],'/medicines.js':['medicines.js','text/javascript'],'/medicines.css':['medicines.css','text/css'],'/family':['family-preview.html','text/html'],'/family/':['family-preview.html','text/html'],'/family-preview-model.js':['family-preview-model.js','text/javascript'],'/family-card.js':['family-card.js','text/javascript'],'/ocr-lab':['ocr-lab.html','text/html'],'/ocr-lab/':['ocr-lab.html','text/html'],'/playground':['ocr-lab.html','text/html'],'/prescriptions/import':['ocr-lab.html','text/html'],'/ocr-lab.js':['ocr-lab.js','text/javascript'],'/prescription-workspace.js':['prescription-workspace.js','text/javascript'],'/prescription-workspace.css':['prescription-workspace.css','text/css'],'/medicine-forms.js':['medicine-forms.js','text/javascript'],'/routine.js':['routine.js','text/javascript'],'/':['family-preview.html','text/html'],'/manage':['index.html','text/html'],'/family-workspace.js':['family-workspace.js','text/javascript'],'/family-workspace.css':['family-workspace.css','text/css'],'/voice-lab':['voice-lab.html','text/html'],'/voice-lab/':['voice-lab.html','text/html'],'/voice-lab.js':['voice-lab.js','text/javascript'],'/voice-lab.css':['voice-lab.css','text/css'],'/prescription-summary.js':['prescription-summary.js','text/javascript'],'/medicine-images.js':['medicine-images.js','text/javascript'],'/app.js':['app.js','text/javascript'],'/style.css':['style.css','text/css'],'/icon.svg':['icon.svg','image/svg+xml'],'/voice-recorder.js':['voice-recorder.js','text/javascript'],'/voice-capture.js':['voice-capture.js','text/javascript'],'/voice-queue.js':['voice-queue.js','text/javascript']};
+      const assets={...designStudyAssets,'/ui-atlas/flows':['../../skills/project-ui-atlas/assets/atlas.html','text/html'],'/ui-atlas/flows.js':['../../skills/project-ui-atlas/assets/flows.js','text/javascript'],'/ui-atlas/flow-model.js':['../../skills/project-ui-atlas/assets/flow-model.js','text/javascript'],'/ui-atlas':['../../skills/project-ui-atlas/assets/atlas.html','text/html'],'/ui-atlas/components':['../../skills/project-ui-atlas/assets/atlas.html','text/html'],'/ui-atlas/atlas.js':['../../skills/project-ui-atlas/assets/atlas.js','text/javascript'],'/ui-atlas/atlas.css':['../../skills/project-ui-atlas/assets/atlas.css','text/css'],'/ui-atlas/manifest.json':['ui-atlas/manifest.json','application/json'],'/medicines':['medicines.html','text/html'],'/medicines/':['medicines.html','text/html'],'/medicine-reference.js':['medicine-reference.js','text/javascript'],'/medicine-reference.css':['medicine-reference.css','text/css'],'/medicines.js':['medicines.js','text/javascript'],'/medicines.css':['medicines.css','text/css'],'/family':['family-preview.html','text/html'],'/family/':['family-preview.html','text/html'],'/family-preview-model.js':['family-preview-model.js','text/javascript'],'/family-card.js':['family-card.js','text/javascript'],'/ocr-lab':['ocr-lab.html','text/html'],'/ocr-lab/':['ocr-lab.html','text/html'],'/playground':['ocr-lab.html','text/html'],'/prescriptions/import':['ocr-lab.html','text/html'],'/ocr-lab.js':['ocr-lab.js','text/javascript'],'/prescription-workspace.js':['prescription-workspace.js','text/javascript'],'/prescription-workspace.css':['prescription-workspace.css','text/css'],'/medicine-forms.js':['medicine-forms.js','text/javascript'],'/routine.js':['routine.js','text/javascript'],'/':['family-preview.html','text/html'],'/manage':['index.html','text/html'],'/family-workspace.js':['family-workspace.js','text/javascript'],'/family-workspace.css':['family-workspace.css','text/css'],'/voice-lab':['voice-lab.html','text/html'],'/voice-lab/':['voice-lab.html','text/html'],'/voice-lab.js':['voice-lab.js','text/javascript'],'/voice-lab.css':['voice-lab.css','text/css'],'/prescription-summary.js':['prescription-summary.js','text/javascript'],'/medicine-images.js':['medicine-images.js','text/javascript'],'/app.js':['app.js','text/javascript'],'/style.css':['style.css','text/css'],'/icon.svg':['icon.svg','image/svg+xml'],'/voice-recorder.js':['voice-recorder.js','text/javascript'],'/voice-capture.js':['voice-capture.js','text/javascript'],'/voice-queue.js':['voice-queue.js','text/javascript']};
       assert(assets[route],'Страница не найдена',404);
       const [file,mime]=assets[route];res.writeHead(200,{'Content-Type':`${mime}; charset=utf-8`});res.end(method==='HEAD'?undefined:await readFile(join(root,'public',file)));
     } catch(e) {
@@ -301,7 +313,7 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
     }
   });
   server.requestTimeout=60000;server.headersTimeout=15000;
-  return {server,store,close:()=>new Promise(resolve=>server.close(()=>{store.close();resolve();}))};
+  return {server,store,close:()=>new Promise(resolve=>server.close(()=>{atlasFlows?.close();store.close();resolve();}))};
 }
 
 if(process.argv[1]&&fileURLToPath(import.meta.url)===process.argv[1]) {
