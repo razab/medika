@@ -33,7 +33,7 @@ Use source files/functions and browser observations as evidence. Mark source-onl
 
 ## Local deliverable
 
-1. **Screens:** previews and directed connections. Selecting a control highlights its destination and explains its effect. A screen inspector can overlay measured hotspots; always retain an accessible labelled action list.
+1. **Screens:** previews and directed connections. Selecting a control highlights its destination and explains its effect. A screen inspector can overlay measured hotspots; always retain an accessible labelled action list. Show one selected connection from the concrete source control to its result, labelled with the action. Do not draw an unlabelled bundle between whole screen headers. Local state changes and writes that stay on the screen have an explicit effect summary, not a navigation arrow; name out-of-scope targets instead of suggesting a mapped destination.
 2. **Components:** a separate local URL/view with captured real variants, fields, states, list/filter rules and links back to usage.
 
 One manifest drives both views. A **Design / API and data** switch changes content of the same nodes without moving them or resetting selection. Read [manifest.md](references/manifest.md) when building/updating that model. Bundled [viewer assets](assets/atlas.html) are a dependency-free starting point; reuse a suitable existing renderer instead when available.

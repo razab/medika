@@ -10,6 +10,7 @@ Review these against the description when changing the skill. They are routing e
 | «Откуда заполняется карточка лекарства?» | Field provenance; plan/catalog/fact boundaries |
 | «Покажи компоненты, варианты строк и фильтры списков» | Actual DOM variants and existing list rules |
 | «Переключай дизайн и запросы на тех же местах» | One model, stable nodes and selection |
+| «Стрелки непонятны: что откуда куда?» | One selected, action-labelled connection anchored at the exact source; self-actions and omissions explicit |
 | «Пересмотрим переходы через карту» | Load/update atlas; product edits only within requested scope |
 | «Сделай кнопку синей» | Ordinary styling, no full atlas needed |
 | «Добавь endpoint CSV» | Ordinary feature work; update an affected existing map when relevant |

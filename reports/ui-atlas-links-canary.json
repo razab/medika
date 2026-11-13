@@ -1,0 +1,42 @@
+{
+  "status": "PASS",
+  "canaryOnly": false,
+  "syntheticOnly": true,
+  "physicalDeviceTested": false,
+  "clinicalApiRequests": 0,
+  "checks": [
+    "Initial map has no unlabelled bundle; one selected action has a labelled connection from its exact button to destination; local/write and out-of-scope actions are explicit without navigation arrows; reset, mode stability, HTTP reload and app restart",
+    {
+      "width": 320,
+      "height": 844,
+      "buttonCentersAndEdges": true,
+      "oneLabelledConnection": true,
+      "noUnrelatedCardCrossing": true,
+      "hotspotAndModeSwitch": true
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "buttonCentersAndEdges": true,
+      "oneLabelledConnection": true,
+      "noUnrelatedCardCrossing": true,
+      "hotspotAndModeSwitch": true
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "buttonCentersAndEdges": true,
+      "oneLabelledConnection": true,
+      "noUnrelatedCardCrossing": true,
+      "hotspotAndModeSwitch": true
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "buttonCentersAndEdges": true,
+      "oneLabelledConnection": true,
+      "noUnrelatedCardCrossing": true,
+      "hotspotAndModeSwitch": true
+    }
+  ]
+}
