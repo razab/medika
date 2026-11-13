@@ -11,17 +11,17 @@ try{
  await start();browser=await chromium.launch({headless:true});const page=await browser.newPage({viewport:{width:1280,height:900},hasTouch:true});page.setDefaultTimeout(12000);page.on('pageerror',e=>errors.push(e.message));
  await page.route('**/api/**',route=>{calls.push(route.request().url());return route.abort();});
  const load=async()=>{await page.goto(origin+'/ui-atlas');await page.locator('[data-screen]').first().waitFor();};
- const choose=async(id,edge='center')=>{const button=page.locator('.map [data-action="'+id+'"]');await button.scrollIntoViewIfNeeded();const r=await button.boundingBox();assert(r.width>=48&&r.height>=48);await page.touchscreen.tap(edge==='left'?r.x+1:edge==='right'?r.x+r.width-1:r.x+r.width/2,r.y+r.height/2);};
+ const choose=async(id,edge='center')=>{const button=page.locator('.map .action-list [data-action="'+id+'"]');await button.evaluate((n,edge)=>n.scrollIntoView({block:'center',inline:edge==='left'?'start':edge==='right'?'end':'center'}),edge);let r=await button.boundingBox();const cover=await page.locator('.flow-summary').boundingBox();if(r.y<cover.y+cover.height+8){await page.evaluate(d=>scrollBy(0,d),r.y-cover.y-cover.height-8);r=await button.boundingBox();}assert(r.width>=48&&r.height>=48);await page.touchscreen.tap(edge==='left'?r.x+1:edge==='right'?r.x+r.width-1:r.x+r.width/2,r.y+r.height/2);};
  async function connection(id,destination){
   assert.equal(await page.locator('.connections>path').count(),1);
   assert.equal(await page.locator('.connections>path').getAttribute('data-connection'),id);
-  const label=await page.locator('.map [data-action="'+id+'"]').evaluate(n=>n.firstChild.textContent);
+  const label=await page.locator('.map .action-list [data-action="'+id+'"]').evaluate(n=>n.firstChild.textContent);
   assert(await page.locator('[data-screen="'+destination+'"]').evaluate(n=>n.classList.contains('destination')));
   const geometry=await page.evaluate(({id,destination})=>{
-   const path=document.querySelector('.connections>path'),svg=document.querySelector('.connections').getBoundingClientRect(),button=document.querySelector('.map [data-action="'+id+'"]'),r=button.getBoundingClientRect(),first=path.getPointAtLength(0),last=path.getPointAtLength(path.getTotalLength()),target=document.querySelector('[data-screen="'+destination+'"]').getBoundingClientRect(),source=button.closest('[data-screen]');
+   const path=document.querySelector('.connections>path'),svg=document.querySelector('.connections').getBoundingClientRect(),button=document.querySelector(path.dataset.origin==='preview'?'.map .inline-hotspot[data-action="'+id+'"]':'.map .action-list [data-action="'+id+'"]'),r=button.getBoundingClientRect(),first=path.getPointAtLength(0),last=path.getPointAtLength(path.getTotalLength()),target=document.querySelector('[data-screen="'+destination+'"]').getBoundingClientRect(),source=button.closest('[data-screen]');
    let crossesOtherCard=false;const other=[...document.querySelectorAll('[data-screen]')].filter(n=>n!==source&&n.dataset.screen!==destination).map(n=>n.getBoundingClientRect());
    for(let length=0;length<=path.getTotalLength();length+=4){const p=path.getPointAtLength(length),x=p.x+svg.x,y=p.y+svg.y;if(other.some(n=>x>n.left+1&&x<n.right-1&&y>n.top+1&&y<n.bottom-1))crossesOtherCard=true;}
-   return {startsAtButton:Math.min(Math.abs(first.x+svg.x-r.left),Math.abs(first.x+svg.x-r.right))<1&&Math.abs(first.y+svg.y-(r.y+r.height/2))<1,endsAtTarget:Math.abs(last.x+svg.x-(target.x+target.width/2))<1&&Math.abs(last.y+svg.y-(target.top-2))<1,crossesOtherCard};
+   return {startsAtButton:Math.min(Math.abs(first.x+svg.x-r.left),Math.abs(first.x+svg.x-r.right))<1&&Math.abs(first.y+svg.y-(r.y+r.height/2))<1,endsAtTarget:Math.min(Math.abs(last.x+svg.x-(target.left-2)),Math.abs(last.x+svg.x-(target.right+2)))<1&&last.y+svg.y>target.top&&last.y+svg.y<target.bottom,crossesOtherCard};
   },{id,destination});
   assert(geometry.startsAtButton&&geometry.endsAtTarget&&!geometry.crossesOtherCard,JSON.stringify(geometry));assert.equal(await page.locator('.connection-label text').count(),1);assert.equal(await page.locator('.connection-label text').textContent(),label);return {label,...geometry};
  }

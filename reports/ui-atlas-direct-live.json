@@ -1,0 +1,12 @@
+{
+  "status": "PASS",
+  "origin": "http://192.168.0.38/ui-atlas",
+  "directClicks": true,
+  "noImplicitPopup": true,
+  "noScrollJump": true,
+  "optionalBackdropClose": true,
+  "selectionPreserved": true,
+  "clinicalApiRequests": 0,
+  "syntheticOnly": true,
+  "physicalDeviceTested": false
+}
