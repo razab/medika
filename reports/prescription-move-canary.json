@@ -7,6 +7,9 @@
     "Slot → required exact time, cancel and blank time write nothing; saved 17:15 immediately appears without altering a fact",
     "Exact time → meal; changing only second of multiple intakes preserves the first and its occurrence identity",
     "Legacy daily clock prescription moves to a meal with original time aliases, retaining old facts and duplicate protection",
+    "Same editor adds lunch to one breakfast intake; old occurrence and facts remain taken, new occurrence is pending, ID/count of prescriptions unchanged; blank slot, removal before save and cancel write nothing",
+    "Two-intake editor uses the same Add intake action to add a third exact clock; clock is required only for clock mode",
+    "Ordinary routine with second intake mapped to dinner still permits an explicit lunch; per-person auto-allocation context stays unchanged",
     {
       "width": 320,
       "height": 844,
@@ -16,7 +19,8 @@
         "minHeight": 48,
         "gap": 12,
         "overflow": false
-      }
+      },
+      "addRemoveCenterAndEdges": true
     },
     {
       "width": 320,
@@ -25,9 +29,10 @@
       "geometry": {
         "minWidth": 83.96875,
         "minHeight": 48,
-        "gap": 32,
+        "gap": 12,
         "overflow": false
-      }
+      },
+      "addRemoveCenterAndEdges": true
     },
     {
       "width": 844,
@@ -38,7 +43,8 @@
         "minHeight": 48,
         "gap": 12,
         "overflow": false
-      }
+      },
+      "addRemoveCenterAndEdges": true
     },
     {
       "width": 844,
@@ -49,7 +55,8 @@
         "minHeight": 48,
         "gap": 12,
         "overflow": false
-      }
+      },
+      "addRemoveCenterAndEdges": true
     },
     {
       "width": 768,
@@ -60,7 +67,8 @@
         "minHeight": 48,
         "gap": 12,
         "overflow": false
-      }
+      },
+      "addRemoveCenterAndEdges": true
     },
     {
       "width": 768,
@@ -71,7 +79,8 @@
         "minHeight": 48,
         "gap": 12,
         "overflow": false
-      }
+      },
+      "addRemoveCenterAndEdges": true
     },
     {
       "width": 1024,
@@ -82,7 +91,8 @@
         "minHeight": 48,
         "gap": 12,
         "overflow": false
-      }
+      },
+      "addRemoveCenterAndEdges": true
     },
     {
       "width": 1024,
@@ -93,7 +103,8 @@
         "minHeight": 48,
         "gap": 12,
         "overflow": false
-      }
+      },
+      "addRemoveCenterAndEdges": true
     },
     "Moved prescriptions and all facts survive service restart and backup/restore without duplicates"
   ]

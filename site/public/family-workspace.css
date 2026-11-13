@@ -98,3 +98,5 @@
 .family-timers{display:grid;gap:8px}.family-timers p{margin:0}.family-timers button:disabled{opacity:.6}
 .family-app .care-med-later:has(>.care-take){grid-template-columns:minmax(0,1fr) 48px}
 .family-timers[hidden]{display:none}
+
+.family-app [hidden]{display:none!important}[data-rx-occurrences]{display:grid;gap:0}
