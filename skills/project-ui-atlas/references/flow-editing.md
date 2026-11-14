@@ -11,6 +11,8 @@ Tag: `{start, end, ref, mode:"auto"|"manual"}`; offsets are UTF-16 indices into 
 
 Auto-tag known aliases using word boundaries and longest phrase first. Explicit manual assignments override automatic matches. An explicit `ref:null` suppresses automatic tagging for that range. Unknown wording stays unassigned. Offer a searchable inline picker and an explicit word-markup mode; normal inspection must not force a modal. Selection in the text field may tag a phrase. On text edits preserve manual tags outside the changed span, rebase offsets after it, and visibly report dropped tags touching edited text; do not silently attach them to unrelated words.
 
+If a flow change affects types, defaults, states, operations or persistence, also read [application-contracts.md](application-contracts.md). A stable tag ID alone does not define the referenced type or enforce its invariants. Review must follow the whole affected path through storage and UI before completion.
+
 ## Durable changes
 
 Persist immutable complete snapshots and structured before/after diffs, including tag-only edits. Optimistic revision checks must reject stale differing saves without overwriting newer work. Show history without replacing the current editable text. A lost-response retry of an identical snapshot must not add a revision. Keep user-authored definitions out of clinical tables, derived schedules and fact audits; follow existing session/origin protections. Do not store history only in browser memory or localStorage.

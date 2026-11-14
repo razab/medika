@@ -1,6 +1,6 @@
 ---
 name: project-ui-atlas
-description: Build and maintain a local, code-backed atlas of an existing project's screens, dialogs, navigation, UI components, actions, API calls, data storage and editable, object-linked user flows. Use for «покажи все экраны», «карта переходов», «каталог компонентов», «что делает кнопка и откуда данные», «редактируемые user flow с тегами и историей», or revising UX through that atlas. Ordinary feature implementation or visual styling alone does not need this workflow.
+description: Build and maintain a local, code-backed atlas of an existing project's screens, dialogs, navigation, UI components, actions, API calls, data storage and editable, object-linked user flows. Use for «покажи все экраны», «карта переходов», «каталог компонентов», «что делает кнопка и откуда данные», «редактируемые user flow с тегами и историей», «контракты данных/API/состояний через атлас», or revising UX through that atlas. Ordinary feature implementation or visual styling alone does not need this workflow.
 ---
 
 # Project UI Atlas
@@ -13,6 +13,10 @@ Give the user a browsable explanation of the actual application inside its exist
 - Distinguish aliases, pages, dialogs, expanded components and states. One URL can contain several screens; nine design alternatives are not nine production flows.
 - Respect scope: a pilot covers two or three connected surfaces and explicitly lists omissions. Do not present it as a complete inventory.
 - Preserve existing product behavior unless implementation changes were also requested. Record discovered gaps instead of silently fixing them while mapping.
+
+## Application architecture and completion
+
+When designing data, API operations or state transitions through the atlas, read [application-contracts.md](references/application-contracts.md) and the project's own contract/DoD. Require exact types/defaults/invariants and physical storage mapping, server-enforced transitions, typed operations/errors and links to UI projections. Trace both ways from flow revision to persisted data and visible result. An affected path is done only when those contracts agree with code and applicable synthetic positive/negative and end-to-end checks pass. Keep proposed requirements and known gaps separate from implemented behavior; a structural atlas validator is not a domain-contract validator. Do not trigger unrelated storage migrations for a visual-only edit.
 
 ## Trace actions
 

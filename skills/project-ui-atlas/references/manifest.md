@@ -29,3 +29,7 @@ Component: `{id,title,kind,description,usedOn,evidence,fields,states,filters,act
 - `variants:[{title,src,screenId,selector}]`: actual DOM captures with reproducible provenance, clearly presented as state images.
 
 Fingerprints cover the files relied upon. The validator checks structure and provenance, not whether the described business behavior is true. Browser checks must establish the latter.
+
+## Contract boundary
+
+This v1 manifest describes provenance and navigation. `fields` are descriptions, not executable schemas; `states` describe UI variants, not a complete domain transition graph. Successful validation does not certify request/response values, storage types or allowed transitions. When adding contract views, reference canonical type/field/operation/transition IDs and real storage mappings rather than copying an independent schema. See [application-contracts.md](application-contracts.md). Existing manifests must remain explicitly partial until that integration and its validation exist.

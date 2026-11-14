@@ -15,6 +15,7 @@ Review these against the description when changing the skill. They are routing e
 | «Кликаю компонент, а открывается попап» | Direct in-map action, no implicit modal or scroll jump; optional enlargement has backdrop/Escape dismissal and fixed close control |
 | «Покажи user flow текущих экранов и дай исправить слово с тегом» | Scope to mapped paths; editable definitions, searchable concrete references, automatic known-term tags, immutable versions and persisted diffs |
 | «По правкам сценария пересмотри интерфейс» | Read pending review packet, compare exact versions and tag changes; inspect candidate impact in code, implement authorized change, verify and acknowledge only completed work |
+| «Через атлас проектируем данные, API, state и Definition of Done» | Read application contracts; trace exact types/defaults/storage, server transitions, operations and UI projection. Separate proposed contracts from implemented ones; enforce scoped end-to-end and negative validation before completion |
 | «Сделай кнопку синей» | Ordinary styling, no full atlas needed |
 | «Добавь endpoint CSV» | Ordinary feature work; update an affected existing map when relevant |
 | «Нарисуй постер / лендинг / логотип» | Other workflow |
