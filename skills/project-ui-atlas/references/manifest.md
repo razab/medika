@@ -33,3 +33,5 @@ Fingerprints cover the files relied upon. The validator checks structure and pro
 ## Contract boundary
 
 This v1 manifest describes provenance and navigation. `fields` are descriptions, not executable schemas; `states` describe UI variants, not a complete domain transition graph. Successful validation does not certify request/response values, storage types or allowed transitions. When adding contract views, reference canonical type/field/operation/transition IDs and real storage mappings rather than copying an independent schema. See [application-contracts.md](application-contracts.md). Existing manifests must remain explicitly partial until that integration and its validation exist.
+
+Optional `contracts:{url,snapshot}` points to the local canonical contract document and its generated control copy. Validate type refs, operation/action refs, component/field bindings and source freshness. In Medika the document comes from `site/lib/pilot-contracts.mjs`; screenshots and private clinical values never enter it. The snapshot is generated with the pilot, not independently authored. Its structural validator still does not replace runtime/API/storage tests.

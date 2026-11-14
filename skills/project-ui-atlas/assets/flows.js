@@ -62,7 +62,7 @@ export async function flows(app,atlas){
   if(start===end)return message('Выделите слово или фразу в поле текста.',true);
   range={start,end};const tag=draft.tags.find(t=>t.start===start&&t.end===end),ent=entity(tag?.ref);
   app.querySelector('#tag-picker').hidden=false;app.querySelector('#tag-heading').textContent='«'+draft.text.slice(start,end)+'»';
-  app.querySelector('#tag-details').innerHTML=ent?`<p><strong>${e(ent.kind)} · ${e(ent.title)}</strong> <code>${e(ent.id)}</code></p><p>${e(ent.description)}</p><p>Хранение: ${e(ent.storage)}</p><p>Поля: ${ent.fields.map(e).join(', ')||'Нет собственных полей'}</p><ul>${ent.evidence.map(v=>`<li><code>${e(v.file)} · ${e(v.symbol)}</code></li>`).join('')}</ul>${ent.outside?`<p>${e(ent.outside)}</p>`:''}<div class="flow-links">${ent.actionIds.map(linkAction).join('')}</div>`:'<p>У слова пока нет привязки. Выберите конкретный объект, поле, экран, компонент или действие.</p>';
+  app.querySelector('#tag-details').innerHTML=ent?`<p><strong>${e(ent.kind)} · ${e(ent.title)}</strong> <code>${e(ent.id)}</code></p><p>${e(ent.description)}</p><div class="flow-links">${(ent.contractRefs||[]).map(id=>`<a href="/ui-atlas/contracts#${e(id)}">Контракт: ${e(id)}</a>`).join('')}</div><p>Хранение: ${e(ent.storage)}</p><p>Поля: ${ent.fields.map(e).join(', ')||'Нет собственных полей'}</p><ul>${ent.evidence.map(v=>`<li><code>${e(v.file)} · ${e(v.symbol)}</code></li>`).join('')}</ul>${ent.outside?`<p>${e(ent.outside)}</p>`:''}<div class="flow-links">${ent.actionIds.map(linkAction).join('')}</div>`:'<p>У слова пока нет привязки. Выберите конкретный объект, поле, экран, компонент или действие.</p>';
   app.querySelector('#tag-search').value='';options('');
  }
  function options(search){

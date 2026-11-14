@@ -1,3 +1,4 @@
+import {pilotContractDocument} from './pilot-contracts.mjs';
 import {DatabaseSync} from 'node:sqlite';
 import {readFileSync,chmodSync} from 'node:fs';
 import {join} from 'node:path';
@@ -7,6 +8,8 @@ import {autoTags,flowDiff,flowImpact,flowEntities} from '../../skills/project-ui
 
 export function openAtlasFlows(dataDir,seed,manifest){
  const atlas=()=>JSON.parse(readFileSync(manifest,'utf8')),entities=flowEntities(seed.entities,atlas());
+ const contracts=pilotContractDocument();
+ for(const entity of entities)entity.contractRefs=[...new Set([...(contracts.entities.some(e=>e.id===entity.id)?[entity.id]:[]),...contracts.operations.filter(op=>op.actionIds.some(id=>entity.actionIds.includes(id))).map(op=>op.id)])];
  const file=join(dataDir,'ui-atlas.sqlite'),db=new DatabaseSync(file);chmodSync(file,0o600);
  db.exec(`PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;
  CREATE TABLE IF NOT EXISTS versions(flow_id TEXT NOT NULL,revision INTEGER NOT NULL,data TEXT NOT NULL,PRIMARY KEY(flow_id,revision));

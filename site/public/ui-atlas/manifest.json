@@ -1,8 +1,12 @@
 {
+  "contracts": {
+    "url": "/ui-atlas/contracts.json",
+    "snapshot": "contracts.snapshot.json"
+  },
   "version": 1,
   "project": "Медика · карта интерфейса",
-  "generatedAt": "2026-11-13T23:49:10.837Z",
-  "revision": "8c09f85",
+  "generatedAt": "2026-11-14T12:05:58.528Z",
+  "revision": "f3db3aa",
   "scope": {
     "kind": "pilot",
     "summary": "Пилот: 3 связанных экрана из работающего приложения. Превью на синтетических данных; действия на карте только объясняются.",
@@ -29,7 +33,7 @@
     },
     {
       "file": "site/lib/store.mjs",
-      "sha256": "682f647e018b259c75fbe1204ed9b92462a4fced377f1a63461b9ed01fbbc8c5"
+      "sha256": "ae8358ea25ac2632b94833fd509df1cb20a0e39e04d61c86024b3d54e585d7e4"
     },
     {
       "file": "site/lib/family-view.mjs",
@@ -41,15 +45,43 @@
     },
     {
       "file": "site/lib/domain.mjs",
-      "sha256": "d733dac14447ecad355a2f4424b3cf95c031a73d144f1c2a6a91f1feb0009bc9"
+      "sha256": "a5258e334c1790580de96758cbd9f410e468b796cb2d389d032fbc7a28440fc9"
     },
     {
       "file": "site/lib/medicines.mjs",
-      "sha256": "4876869907a28c49ef3ea88e79adecade0c092e39334cc8cc10792a8bca0f993"
+      "sha256": "606afe1986c26c4a0a755620b62b86951f154e55349bd0c4cfd1970f53bb6a50"
+    },
+    {
+      "file": "site/lib/pilot-contracts.mjs",
+      "sha256": "388fb491ae45a61d0cef40a8996ac817ff015389c46ae7733fbb305bb78085c6"
+    },
+    {
+      "file": "site/lib/medicine-reference.mjs",
+      "sha256": "6640c3d311e35dd3d659a57f123460e558fbda74b85f47ae6361ced473b8daf0"
+    },
+    {
+      "file": "site/public/medicine-forms.js",
+      "sha256": "4ca3e633c3f2e577c6e7b299075683a57d6cfced553fda1e0f758f69dd979338"
+    },
+    {
+      "file": "site/lib/store.mjs",
+      "sha256": "ae8358ea25ac2632b94833fd509df1cb20a0e39e04d61c86024b3d54e585d7e4"
+    },
+    {
+      "file": "site/package.json",
+      "sha256": "e315f82fe3a4a1441fa4522b2a337c40fb7a6268d3251873fafd7270e95ab0de"
+    },
+    {
+      "file": "site/package-lock.json",
+      "sha256": "7ed745f17d4006e7dbb3939eb273180eb4567ba9e52d82642a69aadb887b47ea"
+    },
+    {
+      "file": "site/scripts/ui-atlas-pilot.mjs",
+      "sha256": "b1f14778990874aec70490c545bb45260eb054824d5ff8016f0e13a839fa40fd"
     },
     {
       "file": "site/server.mjs",
-      "sha256": "9863b04ca4a0e4c9c1321b1110b16ec9cd4738c5633d5270917f5091053c0807"
+      "sha256": "48b5d7b4087d29df7840706782f9e6d96755801a356eb19829e1aa108cfa6aac"
     },
     {
       "file": "site/public/medicines.html",
@@ -205,7 +237,10 @@
         "y": 167.390625,
         "width": 48,
         "height": 48
-      }
+      },
+      "contractRefs": [
+        "schema:Slot"
+      ]
     },
     {
       "id": "take",
@@ -275,7 +310,11 @@
         "y": 231.390625,
         "width": 48,
         "height": 48
-      }
+      },
+      "contractRefs": [
+        "event.create",
+        "schema:MedicationRow"
+      ]
     },
     {
       "id": "undo-take",
@@ -326,7 +365,11 @@
       "request": {
         "method": "POST",
         "path": "/api/events/:id/void"
-      }
+      },
+      "contractRefs": [
+        "event.void",
+        "schema:MedicationRow"
+      ]
     },
     {
       "id": "filter-person",
@@ -368,7 +411,11 @@
         "y": 8,
         "width": 52,
         "height": 48
-      }
+      },
+      "contractRefs": [
+        "family.read",
+        "schema:PersonRecord"
+      ]
     },
     {
       "id": "expand-row",
@@ -398,7 +445,11 @@
         "y": 231.390625,
         "width": 276,
         "height": 48
-      }
+      },
+      "contractRefs": [
+        "family.read",
+        "schema:MedicationRow"
+      ]
     },
     {
       "id": "manual-event",
@@ -428,7 +479,8 @@
         "y": 938.40625,
         "width": 96,
         "height": 48
-      }
+      },
+      "contractRefs": []
     },
     {
       "id": "voice",
@@ -457,7 +509,8 @@
       "errors": [
         "Просмотр сам по себе не создаёт запись"
       ],
-      "outside": "Голосовая запись и очередь — вне пилота"
+      "outside": "Голосовая запись и очередь — вне пилота",
+      "contractRefs": []
     },
     {
       "id": "save-rx",
@@ -551,7 +604,11 @@
         "y": 808.375,
         "width": 318,
         "height": 48
-      }
+      },
+      "contractRefs": [
+        "prescription.create",
+        "schema:PrescriptionCreate"
+      ]
     },
     {
       "id": "close-add",
@@ -581,7 +638,10 @@
         "y": 103.609375,
         "width": 83.96875,
         "height": 48
-      }
+      },
+      "contractRefs": [
+        "schema:PrescriptionCreate"
+      ]
     },
     {
       "id": "schedule-mode",
@@ -618,7 +678,11 @@
         "y": 475.578125,
         "width": 155,
         "height": 48
-      }
+      },
+      "contractRefs": [
+        "schema:PrescriptionCreate",
+        "schema:Slot"
+      ]
     },
     {
       "id": "select-drug",
@@ -655,7 +719,10 @@
         "y": 290.390625,
         "width": 318,
         "height": 48
-      }
+      },
+      "contractRefs": [
+        "schema:PrescriptionCreate"
+      ]
     },
     {
       "id": "open-catalog",
@@ -683,7 +750,10 @@
       "request": {
         "method": "GET",
         "path": "/api/state"
-      }
+      },
+      "contractRefs": [
+        "catalog.read"
+      ]
     },
     {
       "id": "back-family",
@@ -717,7 +787,10 @@
         "y": 16,
         "width": 63.84375,
         "height": 48
-      }
+      },
+      "contractRefs": [
+        "catalog.read"
+      ]
     },
     {
       "id": "catalog-details",
@@ -747,7 +820,11 @@
         "y": 168,
         "width": 358,
         "height": 86.5
-      }
+      },
+      "contractRefs": [
+        "catalog.read",
+        "schema:MedicineRecord"
+      ]
     },
     {
       "id": "catalog-prescribe",
@@ -782,6 +859,10 @@
       "result": "Через карточку препарата переходит на /family?medicine=ID: препарат заполнен, человек и доза выбираются отдельно.",
       "errors": [
         "Просмотр сам по себе не создаёт запись"
+      ],
+      "contractRefs": [
+        "catalog.read",
+        "schema:MedicineRecord"
       ]
     },
     {
@@ -812,7 +893,10 @@
         "y": 76,
         "width": 161.703125,
         "height": 48
-      }
+      },
+      "contractRefs": [
+        "schema:MedicineRecord"
+      ]
     }
   ],
   "components": [
@@ -893,6 +977,9 @@
         "take",
         "undo-take",
         "expand-row"
+      ],
+      "contractRefs": [
+        "schema:MedicationRow"
       ]
     },
     {
@@ -934,6 +1021,9 @@
       ],
       "actionIds": [
         "filter-person"
+      ],
+      "contractRefs": [
+        "schema:PersonRecord"
       ]
     },
     {
@@ -974,6 +1064,9 @@
       ],
       "actionIds": [
         "add-from-slot"
+      ],
+      "contractRefs": [
+        "schema:Slot"
       ]
     },
     {
@@ -1079,6 +1172,9 @@
         "close-add",
         "select-drug",
         "schedule-mode"
+      ],
+      "contractRefs": [
+        "schema:PrescriptionCreate"
       ]
     },
     {
@@ -1113,6 +1209,9 @@
       ],
       "actionIds": [
         "schedule-mode"
+      ],
+      "contractRefs": [
+        "schema:Slot"
       ]
     },
     {
@@ -1159,6 +1258,9 @@
       "actionIds": [
         "catalog-details",
         "catalog-photo"
+      ],
+      "contractRefs": [
+        "schema:MedicineRecord"
       ]
     },
     {
@@ -1213,6 +1315,9 @@
       "actionIds": [
         "catalog-details",
         "catalog-prescribe"
+      ],
+      "contractRefs": [
+        "schema:MedicineRecord"
       ]
     }
   ]

@@ -1,0 +1,4287 @@
+{
+  "version": 1,
+  "title": "Контракты трёх экранов Медики",
+  "scope": "Типы каталога, назначения и планового факта, профиль человека для чтения; реальные данные не входят в документ.",
+  "storage": "SQLite medika.sqlite; JSON data; схемы проверяются при записи covered-таблиц. Старые записи читаются без миграции.",
+  "schema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "urn:medika:pilot:v1",
+    "definitions": {
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "INVALID_INPUT",
+              "CONTRACT_VIOLATION",
+              "CONFLICT",
+              "ACCESS_DENIED",
+              "NOT_FOUND",
+              "INTERNAL_ERROR"
+            ]
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "maxLength": 2000
+                },
+                "rule": {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                "message": {
+                  "type": "string",
+                  "maxLength": 2000
+                }
+              },
+              "required": [
+                "path",
+                "rule",
+                "message"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "error",
+          "code"
+        ],
+        "additionalProperties": false
+      },
+      "Dose": {
+        "type": "string",
+        "maxLength": 30,
+        "pattern": "^\\d+(?:\\.\\d{1,6})?$",
+        "description": "Нормализованная десятичная строка; 0 < значение <= 1000000",
+        "format": "positive-decimal"
+      },
+      "Clock": {
+        "type": "string",
+        "maxLength": 5,
+        "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+      },
+      "Slot": {
+        "type": "object",
+        "properties": {
+          "anchor": {
+            "type": "string",
+            "maxLength": 50,
+            "pattern": "^(?:|first|second|third|clock|breakfast|lunch|dinner|secondDinner|bedtime|slot:[a-z][a-zA-Z0-9-]{0,39})$"
+          },
+          "relation": {
+            "type": "string",
+            "enum": [
+              "",
+              "before",
+              "with",
+              "after"
+            ],
+            "default": ""
+          },
+          "time": {
+            "type": "string",
+            "maxLength": 5,
+            "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+          },
+          "weekendAnchor": {
+            "type": "string",
+            "maxLength": 50,
+            "pattern": "^(?:|first|second|third|clock|breakfast|lunch|dinner|secondDinner|bedtime|slot:[a-z][a-zA-Z0-9-]{0,39})$"
+          }
+        },
+        "required": [
+          "anchor"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "anchor": {
+                  "const": "clock"
+                }
+              },
+              "required": [
+                "anchor"
+              ]
+            },
+            "then": {
+              "required": [
+                "time"
+              ],
+              "properties": {
+                "time": {
+                  "type": "string",
+                  "maxLength": 5,
+                  "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                },
+                "relation": {
+                  "const": ""
+                }
+              }
+            }
+          }
+        ]
+      },
+      "WireSlot": {
+        "type": "object",
+        "properties": {
+          "anchor": {
+            "type": "string",
+            "maxLength": 50,
+            "pattern": "^(?:|first|second|third|clock|breakfast|lunch|dinner|secondDinner|bedtime|slot:[a-z][a-zA-Z0-9-]{0,39})$"
+          },
+          "relation": {
+            "type": "string",
+            "enum": [
+              "",
+              "before",
+              "with",
+              "after"
+            ],
+            "default": ""
+          },
+          "time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5,
+                "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+              },
+              {
+                "const": ""
+              }
+            ]
+          },
+          "weekendAnchor": {
+            "type": "string",
+            "maxLength": 50,
+            "pattern": "^(?:|first|second|third|clock|breakfast|lunch|dinner|secondDinner|bedtime|slot:[a-z][a-zA-Z0-9-]{0,39})$"
+          }
+        },
+        "required": [
+          "anchor"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "anchor": {
+                  "const": "clock"
+                }
+              },
+              "required": [
+                "anchor"
+              ]
+            },
+            "then": {
+              "required": [
+                "time"
+              ],
+              "properties": {
+                "time": {
+                  "type": "string",
+                  "maxLength": 5,
+                  "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                },
+                "relation": {
+                  "const": ""
+                }
+              }
+            }
+          }
+        ]
+      },
+      "StoredSlot": {
+        "type": "object",
+        "properties": {
+          "anchor": {
+            "type": "string",
+            "maxLength": 50,
+            "pattern": "^(?:|first|second|third|clock|breakfast|lunch|dinner|secondDinner|bedtime|slot:[a-z][a-zA-Z0-9-]{0,39})$"
+          },
+          "relation": {
+            "type": "string",
+            "enum": [
+              "",
+              "before",
+              "with",
+              "after"
+            ],
+            "default": ""
+          },
+          "time": {
+            "type": "string",
+            "maxLength": 5,
+            "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+          },
+          "weekendAnchor": {
+            "type": "string",
+            "maxLength": 50,
+            "pattern": "^(?:|first|second|third|clock|breakfast|lunch|dinner|secondDinner|bedtime|slot:[a-z][a-zA-Z0-9-]{0,39})$"
+          },
+          "offsetMinutes": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 120,
+            "readOnly": true,
+            "description": "Legacy: старый сдвиг сохранён, scheduleFor его игнорирует; новые request/normalized слоты его не принимают"
+          }
+        },
+        "required": [
+          "anchor"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "anchor": {
+                  "const": "clock"
+                }
+              },
+              "required": [
+                "anchor"
+              ]
+            },
+            "then": {
+              "required": [
+                "time"
+              ],
+              "properties": {
+                "time": {
+                  "type": "string",
+                  "maxLength": 5,
+                  "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                },
+                "relation": {
+                  "const": ""
+                }
+              }
+            }
+          }
+        ]
+      },
+      "Routine": {
+        "type": "object",
+        "properties": {
+          "weekday": {
+            "type": "object",
+            "properties": {
+              "times": {
+                "type": "object",
+                "propertyNames": {
+                  "enum": [
+                    "breakfast",
+                    "lunch",
+                    "dinner",
+                    "secondDinner",
+                    "bedtime"
+                  ]
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "maxLength": 11
+                }
+              },
+              "intakes": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "",
+                    "breakfast",
+                    "lunch",
+                    "dinner",
+                    "secondDinner",
+                    "bedtime"
+                  ]
+                },
+                "minItems": 3,
+                "maxItems": 3
+              }
+            },
+            "required": [
+              "times",
+              "intakes"
+            ],
+            "additionalProperties": false
+          },
+          "weekend": {
+            "type": "object",
+            "properties": {
+              "times": {
+                "type": "object",
+                "propertyNames": {
+                  "enum": [
+                    "breakfast",
+                    "lunch",
+                    "dinner",
+                    "secondDinner",
+                    "bedtime"
+                  ]
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "maxLength": 11
+                }
+              },
+              "intakes": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "",
+                    "breakfast",
+                    "lunch",
+                    "dinner",
+                    "secondDinner",
+                    "bedtime"
+                  ]
+                },
+                "minItems": 3,
+                "maxItems": 3
+              }
+            },
+            "required": [
+              "times",
+              "intakes"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [],
+        "additionalProperties": false,
+        "minProperties": 1
+      },
+      "MedicineInput": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1
+          },
+          "medicineForm": {
+            "type": "string",
+            "enum": [
+              "injection",
+              "inhaler",
+              "suspension",
+              "powder",
+              "tablet",
+              "capsule",
+              "drops",
+              "spray",
+              "liquid",
+              "inhalation",
+              "suppository",
+              "topical"
+            ]
+          },
+          "strength": {
+            "type": "string",
+            "maxLength": 150,
+            "default": ""
+          },
+          "instructions": {
+            "type": "string",
+            "maxLength": 2000,
+            "default": ""
+          },
+          "archived": {
+            "type": "boolean",
+            "default": false
+          },
+          "clientKey": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "manufacturer": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "sourceText": {
+            "type": "string",
+            "maxLength": 22000
+          },
+          "sourceModel": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "recognitionKey": {
+            "type": "string",
+            "maxLength": 64,
+            "pattern": "^[a-f\\d]{64}$"
+          },
+          "reference": {
+            "type": "object",
+            "properties": {
+              "productKey": {
+                "type": "string",
+                "maxLength": 600
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "sourced",
+                  "partial"
+                ]
+              },
+              "checkedAt": {
+                "type": "string",
+                "maxLength": 10,
+                "format": "calendar-date"
+              },
+              "ingredients": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 300
+                },
+                "maxItems": 20
+              },
+              "foodRelation": {
+                "type": "string",
+                "enum": [
+                  "unknown",
+                  "independent",
+                  "before",
+                  "with",
+                  "after",
+                  "empty",
+                  "not-applicable"
+                ]
+              },
+              "group": {
+                "type": "string",
+                "maxLength": 1800
+              },
+              "purpose": {
+                "type": "string",
+                "maxLength": 1800
+              },
+              "foodText": {
+                "type": "string",
+                "maxLength": 1800
+              },
+              "timing": {
+                "type": "string",
+                "maxLength": 1800
+              },
+              "administration": {
+                "type": "string",
+                "maxLength": 1800
+              },
+              "storage": {
+                "type": "string",
+                "maxLength": 1800
+              },
+              "cautions": {
+                "type": "string",
+                "maxLength": 1800
+              },
+              "limitations": {
+                "type": "string",
+                "maxLength": 1800
+              },
+              "sources": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "maxLength": 300
+                    },
+                    "url": {
+                      "type": "string",
+                      "maxLength": 2000,
+                      "format": "http-url"
+                    },
+                    "scope": {
+                      "type": "string",
+                      "enum": [
+                        "product",
+                        "ingredient"
+                      ]
+                    },
+                    "excerpt": {
+                      "type": "string",
+                      "maxLength": 1000
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "url",
+                    "scope",
+                    "excerpt"
+                  ],
+                  "additionalProperties": false
+                },
+                "minItems": 1,
+                "maxItems": 8
+              }
+            },
+            "required": [
+              "productKey",
+              "status",
+              "checkedAt",
+              "ingredients",
+              "foodRelation",
+              "group",
+              "purpose",
+              "sources"
+            ],
+            "additionalProperties": false
+          },
+          "aftercare": {
+            "type": "string",
+            "maxLength": 1200
+          },
+          "afterMedicine": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "medicineId": {
+                    "type": "string",
+                    "maxLength": 120,
+                    "minLength": 1
+                  },
+                  "minMinutes": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 1440
+                  },
+                  "maxMinutes": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 1440
+                  },
+                  "source": {
+                    "const": "user"
+                  }
+                },
+                "required": [
+                  "medicineId",
+                  "minMinutes",
+                  "maxMinutes",
+                  "source"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "medicineForm",
+          "strength",
+          "instructions",
+          "archived"
+        ],
+        "additionalProperties": false
+      },
+      "MedicineRecord": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1
+          },
+          "medicineForm": {
+            "type": "string",
+            "enum": [
+              "injection",
+              "inhaler",
+              "suspension",
+              "powder",
+              "tablet",
+              "capsule",
+              "drops",
+              "spray",
+              "liquid",
+              "inhalation",
+              "suppository",
+              "topical"
+            ]
+          },
+          "strength": {
+            "type": "string",
+            "maxLength": 150,
+            "default": ""
+          },
+          "instructions": {
+            "type": "string",
+            "maxLength": 2000,
+            "default": ""
+          },
+          "archived": {
+            "type": "boolean",
+            "default": false
+          },
+          "clientKey": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "manufacturer": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "sourceText": {
+            "type": "string",
+            "maxLength": 22000
+          },
+          "sourceModel": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "recognitionKey": {
+            "type": "string",
+            "maxLength": 64,
+            "pattern": "^[a-f\\d]{64}$"
+          },
+          "reference": {
+            "type": "object",
+            "properties": {
+              "productKey": {
+                "type": "string",
+                "maxLength": 600
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "sourced",
+                  "partial"
+                ]
+              },
+              "checkedAt": {
+                "type": "string",
+                "maxLength": 10,
+                "format": "calendar-date"
+              },
+              "ingredients": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 300
+                },
+                "maxItems": 20
+              },
+              "foodRelation": {
+                "type": "string",
+                "enum": [
+                  "unknown",
+                  "independent",
+                  "before",
+                  "with",
+                  "after",
+                  "empty",
+                  "not-applicable"
+                ]
+              },
+              "group": {
+                "type": "string",
+                "maxLength": 1800
+              },
+              "purpose": {
+                "type": "string",
+                "maxLength": 1800
+              },
+              "foodText": {
+                "type": "string",
+                "maxLength": 1800
+              },
+              "timing": {
+                "type": "string",
+                "maxLength": 1800
+              },
+              "administration": {
+                "type": "string",
+                "maxLength": 1800
+              },
+              "storage": {
+                "type": "string",
+                "maxLength": 1800
+              },
+              "cautions": {
+                "type": "string",
+                "maxLength": 1800
+              },
+              "limitations": {
+                "type": "string",
+                "maxLength": 1800
+              },
+              "sources": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string",
+                      "maxLength": 300
+                    },
+                    "url": {
+                      "type": "string",
+                      "maxLength": 2000,
+                      "format": "http-url"
+                    },
+                    "scope": {
+                      "type": "string",
+                      "enum": [
+                        "product",
+                        "ingredient"
+                      ]
+                    },
+                    "excerpt": {
+                      "type": "string",
+                      "maxLength": 1000
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "url",
+                    "scope",
+                    "excerpt"
+                  ],
+                  "additionalProperties": false
+                },
+                "minItems": 1,
+                "maxItems": 8
+              }
+            },
+            "required": [
+              "productKey",
+              "status",
+              "checkedAt",
+              "ingredients",
+              "foodRelation",
+              "group",
+              "purpose",
+              "sources"
+            ],
+            "additionalProperties": false
+          },
+          "aftercare": {
+            "type": "string",
+            "maxLength": 1200
+          },
+          "afterMedicine": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "medicineId": {
+                    "type": "string",
+                    "maxLength": 120,
+                    "minLength": 1
+                  },
+                  "minMinutes": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 1440
+                  },
+                  "maxMinutes": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 1440
+                  },
+                  "source": {
+                    "const": "user"
+                  }
+                },
+                "required": [
+                  "medicineId",
+                  "minMinutes",
+                  "maxMinutes",
+                  "source"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "readOnly": true
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "readOnly": true
+          },
+          "createdAt": {
+            "type": "string",
+            "maxLength": 40,
+            "format": "instant",
+            "readOnly": true
+          },
+          "updatedAt": {
+            "type": "string",
+            "maxLength": 40,
+            "format": "instant",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "createdAt",
+          "name",
+          "medicineForm"
+        ],
+        "additionalProperties": false
+      },
+      "PersonRecord": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "displayName": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "birthday": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 10,
+                "format": "calendar-date"
+              },
+              {
+                "const": ""
+              }
+            ],
+            "default": ""
+          },
+          "weight": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 30,
+                "pattern": "^\\d+(?:\\.\\d{1,6})?$",
+                "description": "Нормализованная десятичная строка; 0 < значение <= 1000000",
+                "format": "positive-decimal"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "allergies": {
+            "type": "string",
+            "maxLength": 1000,
+            "default": ""
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 3000,
+            "default": ""
+          },
+          "color": {
+            "type": "string",
+            "enum": [
+              "mint",
+              "blue",
+              "peach",
+              "lilac"
+            ],
+            "default": "mint"
+          },
+          "carePhase": {
+            "type": "string",
+            "enum": [
+              "",
+              "acute",
+              "prevention"
+            ]
+          },
+          "ageYears": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 130
+          },
+          "ageAsOf": {
+            "type": "string",
+            "maxLength": 10,
+            "format": "calendar-date"
+          },
+          "routine": {
+            "type": "object",
+            "properties": {
+              "weekday": {
+                "type": "object",
+                "properties": {
+                  "times": {
+                    "type": "object",
+                    "propertyNames": {
+                      "enum": [
+                        "breakfast",
+                        "lunch",
+                        "dinner",
+                        "secondDinner",
+                        "bedtime"
+                      ]
+                    },
+                    "additionalProperties": {
+                      "type": "string",
+                      "maxLength": 11
+                    }
+                  },
+                  "intakes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "",
+                        "breakfast",
+                        "lunch",
+                        "dinner",
+                        "secondDinner",
+                        "bedtime"
+                      ]
+                    },
+                    "minItems": 3,
+                    "maxItems": 3
+                  }
+                },
+                "required": [
+                  "times",
+                  "intakes"
+                ],
+                "additionalProperties": false
+              },
+              "weekend": {
+                "type": "object",
+                "properties": {
+                  "times": {
+                    "type": "object",
+                    "propertyNames": {
+                      "enum": [
+                        "breakfast",
+                        "lunch",
+                        "dinner",
+                        "secondDinner",
+                        "bedtime"
+                      ]
+                    },
+                    "additionalProperties": {
+                      "type": "string",
+                      "maxLength": 11
+                    }
+                  },
+                  "intakes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "",
+                        "breakfast",
+                        "lunch",
+                        "dinner",
+                        "secondDinner",
+                        "bedtime"
+                      ]
+                    },
+                    "minItems": 3,
+                    "maxItems": 3
+                  }
+                },
+                "required": [
+                  "times",
+                  "intakes"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [],
+            "additionalProperties": false,
+            "minProperties": 1
+          },
+          "daySlots": {
+            "type": "object",
+            "properties": {
+              "weekday": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "maxLength": 40,
+                      "pattern": "^[a-z][a-zA-Z0-9-]{0,39}$"
+                    },
+                    "label": {
+                      "type": "string",
+                      "maxLength": 60,
+                      "minLength": 1
+                    },
+                    "time": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 5,
+                          "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                        },
+                        {
+                          "const": ""
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "label",
+                    "time"
+                  ],
+                  "additionalProperties": false
+                },
+                "minItems": 1,
+                "maxItems": 12
+              },
+              "weekend": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "maxLength": 40,
+                      "pattern": "^[a-z][a-zA-Z0-9-]{0,39}$"
+                    },
+                    "label": {
+                      "type": "string",
+                      "maxLength": 60,
+                      "minLength": 1
+                    },
+                    "time": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 5,
+                          "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                        },
+                        {
+                          "const": ""
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "label",
+                    "time"
+                  ],
+                  "additionalProperties": false
+                },
+                "minItems": 1,
+                "maxItems": 12
+              }
+            },
+            "required": [],
+            "additionalProperties": false,
+            "minProperties": 1
+          },
+          "id": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "readOnly": true
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "readOnly": true
+          },
+          "createdAt": {
+            "type": "string",
+            "maxLength": 40,
+            "format": "instant",
+            "readOnly": true
+          },
+          "updatedAt": {
+            "type": "string",
+            "maxLength": 40,
+            "format": "instant",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "createdAt",
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "PrescriptionInput": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1
+          },
+          "medicineId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120,
+                "minLength": 1
+              },
+              {
+                "const": ""
+              }
+            ]
+          },
+          "medicineForm": {
+            "type": "string",
+            "enum": [
+              "injection",
+              "inhaler",
+              "suspension",
+              "powder",
+              "tablet",
+              "capsule",
+              "drops",
+              "spray",
+              "liquid",
+              "inhalation",
+              "suppository",
+              "topical"
+            ]
+          },
+          "ingredients": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 600
+            },
+            "default": []
+          },
+          "form": {
+            "type": "string",
+            "maxLength": 150,
+            "default": ""
+          },
+          "strength": {
+            "type": "string",
+            "maxLength": 150,
+            "default": ""
+          },
+          "dose": {
+            "type": "string",
+            "maxLength": 30,
+            "pattern": "^\\d+(?:\\.\\d{1,6})?$",
+            "description": "Нормализованная десятичная строка; 0 < значение <= 1000000",
+            "format": "positive-decimal"
+          },
+          "unit": {
+            "type": "string",
+            "enum": [
+              "мл",
+              "мг",
+              "мкг",
+              "доза",
+              "пакет",
+              "г",
+              "табл.",
+              "капс.",
+              "кап.",
+              "впрыскивание",
+              "свеча",
+              "нанесение"
+            ]
+          },
+          "route": {
+            "type": "string",
+            "maxLength": 150,
+            "default": ""
+          },
+          "startDate": {
+            "type": "string",
+            "maxLength": 10,
+            "format": "calendar-date"
+          },
+          "endDate": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 10,
+                "format": "calendar-date"
+              },
+              {
+                "const": ""
+              }
+            ],
+            "default": ""
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "daily",
+              "routine",
+              "interval",
+              "prn",
+              "once"
+            ]
+          },
+          "times": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 5,
+              "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+            },
+            "maxItems": 12,
+            "uniqueItems": true
+          },
+          "timeZone": {
+            "type": "string",
+            "maxLength": 100,
+            "format": "time-zone",
+            "default": "Europe/Chisinau"
+          },
+          "intervalHours": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 720
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "anchorTime": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5,
+                "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+              },
+              {
+                "const": ""
+              }
+            ],
+            "default": ""
+          },
+          "anchor": {
+            "type": "string",
+            "maxLength": 40,
+            "default": ""
+          },
+          "minHours": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 30,
+                "pattern": "^\\d+(?:\\.\\d{1,6})?$",
+                "description": "Нормализованная десятичная строка; 0 < значение <= 1000000",
+                "format": "positive-decimal"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "maxPer24h": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 30,
+                "pattern": "^\\d+(?:\\.\\d{1,6})?$",
+                "description": "Нормализованная десятичная строка; 0 < значение <= 1000000",
+                "format": "positive-decimal"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "conditions": {
+            "type": "string",
+            "maxLength": 2000,
+            "default": ""
+          },
+          "sourceText": {
+            "type": "string",
+            "maxLength": 10000,
+            "default": ""
+          },
+          "documentId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120,
+                "minLength": 1
+              },
+              {
+                "const": ""
+              }
+            ],
+            "default": ""
+          },
+          "confirmed": {
+            "const": true
+          },
+          "routineSlots": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/Slot"
+            },
+            "minItems": 1,
+            "maxItems": 12
+          },
+          "legacyTimes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 5,
+              "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+            },
+            "maxItems": 12
+          },
+          "carePhase": {
+            "type": "string",
+            "enum": [
+              "",
+              "acute",
+              "prevention"
+            ]
+          },
+          "weekdays": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 6
+            },
+            "minItems": 1,
+            "maxItems": 7,
+            "uniqueItems": true
+          },
+          "doseScope": {
+            "type": "string",
+            "enum": [
+              "each-nostril",
+              "total"
+            ]
+          },
+          "purpose": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "manualKey": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "importKey": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "importFingerprint": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "regimen": {
+            "type": "object",
+            "properties": {
+              "minAgeYears": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 130
+              },
+              "ageSource": {
+                "type": "string",
+                "maxLength": 1000
+              },
+              "packageText": {
+                "type": "string",
+                "maxLength": 2000
+              },
+              "origin": {
+                "type": "string",
+                "maxLength": 30
+              },
+              "mixing": {
+                "type": "string",
+                "maxLength": 1000
+              },
+              "durationMinutes": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 3,
+                    "pattern": "^\\d{1,3}$",
+                    "format": "procedure-minutes"
+                  },
+                  {
+                    "const": ""
+                  }
+                ]
+              },
+              "choiceGroup": {
+                "type": "string",
+                "maxLength": 100
+              },
+              "manufacturer": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "parserVersion": {
+                "type": "string",
+                "maxLength": 80
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "name",
+          "dose",
+          "unit",
+          "startDate",
+          "endDate",
+          "type",
+          "times",
+          "timeZone",
+          "confirmed"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "routine"
+                }
+              },
+              "required": [
+                "type"
+              ]
+            },
+            "then": {
+              "properties": {
+                "routineSlots": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/Slot"
+                  },
+                  "minItems": 1,
+                  "maxItems": 12
+                }
+              },
+              "required": [
+                "routineSlots"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "enum": [
+                    "daily",
+                    "once"
+                  ]
+                }
+              },
+              "required": [
+                "type"
+              ]
+            },
+            "then": {
+              "properties": {
+                "times": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "maxLength": 5,
+                    "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                  },
+                  "minItems": 1,
+                  "maxItems": 12
+                }
+              }
+            }
+          }
+        ]
+      },
+      "PrescriptionRecord": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1
+          },
+          "personId": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1
+          },
+          "medicineId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120,
+                "minLength": 1
+              },
+              {
+                "const": ""
+              }
+            ]
+          },
+          "medicineForm": {
+            "type": "string",
+            "enum": [
+              "injection",
+              "inhaler",
+              "suspension",
+              "powder",
+              "tablet",
+              "capsule",
+              "drops",
+              "spray",
+              "liquid",
+              "inhalation",
+              "suppository",
+              "topical"
+            ]
+          },
+          "ingredients": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 600
+            },
+            "default": []
+          },
+          "form": {
+            "type": "string",
+            "maxLength": 150,
+            "default": ""
+          },
+          "strength": {
+            "type": "string",
+            "maxLength": 150,
+            "default": ""
+          },
+          "dose": {
+            "type": "string",
+            "maxLength": 30,
+            "pattern": "^\\d+(?:\\.\\d{1,6})?$",
+            "description": "Нормализованная десятичная строка; 0 < значение <= 1000000",
+            "format": "positive-decimal"
+          },
+          "unit": {
+            "type": "string",
+            "enum": [
+              "мл",
+              "мг",
+              "мкг",
+              "доза",
+              "пакет",
+              "г",
+              "табл.",
+              "капс.",
+              "кап.",
+              "впрыскивание",
+              "свеча",
+              "нанесение"
+            ]
+          },
+          "route": {
+            "type": "string",
+            "maxLength": 150,
+            "default": ""
+          },
+          "startDate": {
+            "type": "string",
+            "maxLength": 10,
+            "format": "calendar-date"
+          },
+          "endDate": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 10,
+                "format": "calendar-date"
+              },
+              {
+                "const": ""
+              }
+            ],
+            "default": ""
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "daily",
+              "routine",
+              "interval",
+              "prn",
+              "once"
+            ]
+          },
+          "times": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 5,
+              "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+            },
+            "maxItems": 12,
+            "uniqueItems": true
+          },
+          "timeZone": {
+            "type": "string",
+            "maxLength": 100,
+            "format": "time-zone",
+            "default": "Europe/Chisinau"
+          },
+          "intervalHours": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 720
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "anchorTime": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5,
+                "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+              },
+              {
+                "const": ""
+              }
+            ],
+            "default": ""
+          },
+          "anchor": {
+            "type": "string",
+            "maxLength": 40,
+            "default": ""
+          },
+          "minHours": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 30,
+                "pattern": "^\\d+(?:\\.\\d{1,6})?$",
+                "description": "Нормализованная десятичная строка; 0 < значение <= 1000000",
+                "format": "positive-decimal"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "maxPer24h": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 30,
+                "pattern": "^\\d+(?:\\.\\d{1,6})?$",
+                "description": "Нормализованная десятичная строка; 0 < значение <= 1000000",
+                "format": "positive-decimal"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "conditions": {
+            "type": "string",
+            "maxLength": 2000,
+            "default": ""
+          },
+          "sourceText": {
+            "type": "string",
+            "maxLength": 10000,
+            "default": ""
+          },
+          "documentId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120,
+                "minLength": 1
+              },
+              {
+                "const": ""
+              }
+            ],
+            "default": ""
+          },
+          "confirmed": {
+            "const": true
+          },
+          "routineSlots": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/StoredSlot"
+            },
+            "minItems": 1,
+            "maxItems": 12
+          },
+          "legacyTimes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 5,
+              "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+            },
+            "maxItems": 12
+          },
+          "carePhase": {
+            "type": "string",
+            "enum": [
+              "",
+              "acute",
+              "prevention"
+            ]
+          },
+          "weekdays": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 6
+            },
+            "minItems": 1,
+            "maxItems": 7,
+            "uniqueItems": true
+          },
+          "doseScope": {
+            "type": "string",
+            "enum": [
+              "each-nostril",
+              "total"
+            ]
+          },
+          "purpose": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "manualKey": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "importKey": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "importFingerprint": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "regimen": {
+            "type": "object",
+            "properties": {
+              "minAgeYears": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 130
+              },
+              "ageSource": {
+                "type": "string",
+                "maxLength": 1000
+              },
+              "packageText": {
+                "type": "string",
+                "maxLength": 2000
+              },
+              "origin": {
+                "type": "string",
+                "maxLength": 30
+              },
+              "mixing": {
+                "type": "string",
+                "maxLength": 1000
+              },
+              "durationMinutes": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 3,
+                    "pattern": "^\\d{1,3}$",
+                    "format": "procedure-minutes"
+                  },
+                  {
+                    "const": ""
+                  }
+                ]
+              },
+              "choiceGroup": {
+                "type": "string",
+                "maxLength": 100
+              },
+              "manufacturer": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "parserVersion": {
+                "type": "string",
+                "maxLength": 80
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          },
+          "archived": {
+            "type": "boolean",
+            "default": false
+          },
+          "id": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "readOnly": true
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "readOnly": true
+          },
+          "createdAt": {
+            "type": "string",
+            "maxLength": 40,
+            "format": "instant",
+            "readOnly": true
+          },
+          "updatedAt": {
+            "type": "string",
+            "maxLength": 40,
+            "format": "instant",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "createdAt",
+          "personId",
+          "name",
+          "dose",
+          "unit",
+          "type"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "routine"
+                }
+              },
+              "required": [
+                "type"
+              ]
+            },
+            "then": {
+              "properties": {
+                "routineSlots": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/StoredSlot"
+                  },
+                  "minItems": 1,
+                  "maxItems": 12
+                }
+              },
+              "required": [
+                "routineSlots"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "enum": [
+                    "daily",
+                    "once"
+                  ]
+                }
+              },
+              "required": [
+                "type"
+              ]
+            },
+            "then": {
+              "properties": {
+                "times": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "maxLength": 5,
+                    "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                  },
+                  "minItems": 1,
+                  "maxItems": 12
+                }
+              }
+            }
+          }
+        ]
+      },
+      "EventRecord": {
+        "type": "object",
+        "properties": {
+          "rxId": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1
+          },
+          "personId": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1
+          },
+          "key": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1
+          },
+          "date": {
+            "type": "string",
+            "maxLength": 10,
+            "format": "calendar-date"
+          },
+          "scheduledAt": {
+            "type": "string",
+            "maxLength": 40,
+            "format": "instant"
+          },
+          "time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5,
+                "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+              },
+              {
+                "const": ""
+              }
+            ]
+          },
+          "timeZone": {
+            "type": "string",
+            "maxLength": 100,
+            "format": "time-zone"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "dose": {
+            "type": "string",
+            "maxLength": 30,
+            "pattern": "^\\d+(?:\\.\\d{1,6})?$",
+            "description": "Нормализованная десятичная строка; 0 < значение <= 1000000",
+            "format": "positive-decimal"
+          },
+          "unit": {
+            "type": "string",
+            "enum": [
+              "мл",
+              "мг",
+              "мкг",
+              "доза",
+              "пакет",
+              "г",
+              "табл.",
+              "капс.",
+              "кап.",
+              "впрыскивание",
+              "свеча",
+              "нанесение"
+            ]
+          },
+          "ingredients": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 600
+            }
+          },
+          "conditions": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "doseScope": {
+            "type": "string",
+            "enum": [
+              "each-nostril",
+              "total"
+            ]
+          },
+          "purpose": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "carePhase": {
+            "type": "string",
+            "enum": [
+              "",
+              "acute",
+              "prevention"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "taken",
+              "skipped",
+              "deferred",
+              "void"
+            ]
+          },
+          "occurredAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40,
+                "format": "instant"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "timeUnknown": {
+            "type": "boolean"
+          },
+          "knownDate": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 10,
+                "format": "calendar-date"
+              },
+              {
+                "const": ""
+              }
+            ]
+          },
+          "actualDose": {
+            "type": "string",
+            "maxLength": 30,
+            "pattern": "^\\d+(?:\\.\\d{1,6})?$",
+            "description": "Нормализованная десятичная строка; 0 < значение <= 1000000",
+            "format": "positive-decimal"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "author": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "voidReason": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "manualClientKey": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "id": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "readOnly": true
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "readOnly": true
+          },
+          "createdAt": {
+            "type": "string",
+            "maxLength": 40,
+            "format": "instant",
+            "readOnly": true
+          },
+          "updatedAt": {
+            "type": "string",
+            "maxLength": 40,
+            "format": "instant",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "createdAt",
+          "rxId",
+          "personId",
+          "key",
+          "status"
+        ],
+        "additionalProperties": false
+      },
+      "MedicationRow": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "prescriptionId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120,
+                "minLength": 1
+              },
+              {
+                "const": ""
+              }
+            ]
+          },
+          "rxVersion": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "eventId": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1
+          },
+          "eventVersion": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "canTake": {
+            "type": "boolean"
+          },
+          "slotIndex": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "slotLabel": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "anchor": {
+            "type": "string",
+            "maxLength": 60
+          },
+          "relation": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "dose": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "amount": {
+            "type": "string",
+            "maxLength": 30
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "мл",
+                  "мг",
+                  "мкг",
+                  "доза",
+                  "пакет",
+                  "г",
+                  "табл.",
+                  "капс.",
+                  "кап.",
+                  "впрыскивание",
+                  "свеча",
+                  "нанесение"
+                ]
+              },
+              {
+                "const": ""
+              }
+            ]
+          },
+          "taken": {
+            "type": "boolean"
+          },
+          "takenAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40,
+                "format": "instant"
+              },
+              {
+                "const": ""
+              }
+            ]
+          },
+          "status": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "after": {
+            "type": "string",
+            "maxLength": 600
+          },
+          "aftercare": {
+            "type": "string",
+            "maxLength": 1200
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "string",
+                  "maxLength": 10000
+                }
+              ],
+              "minItems": 2,
+              "maxItems": 2,
+              "additionalItems": false
+            }
+          },
+          "info": {
+            "type": "object",
+            "properties": {
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": [
+                    {
+                      "type": "string",
+                      "maxLength": 200
+                    },
+                    {
+                      "type": "string",
+                      "maxLength": 22000
+                    }
+                  ],
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "additionalItems": false
+                }
+              },
+              "notes": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": [
+                    {
+                      "type": "string",
+                      "maxLength": 200
+                    },
+                    {
+                      "type": "string",
+                      "maxLength": 22000
+                    }
+                  ],
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "additionalItems": false
+                }
+              },
+              "source": {
+                "type": "string",
+                "maxLength": 22000
+              }
+            },
+            "required": [
+              "fields",
+              "notes",
+              "source"
+            ],
+            "additionalProperties": false
+          },
+          "dependency": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "prescriptionIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 120,
+                      "minLength": 1
+                    }
+                  },
+                  "prescriptionId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 120,
+                        "minLength": 1
+                      },
+                      {
+                        "const": ""
+                      }
+                    ]
+                  },
+                  "name": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "minMinutes": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 1440
+                  },
+                  "maxMinutes": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 1440
+                  },
+                  "matching": {
+                    "const": "anchor"
+                  },
+                  "source": {
+                    "const": "user"
+                  }
+                },
+                "required": [
+                  "name",
+                  "minMinutes",
+                  "maxMinutes"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 2000
+            }
+          },
+          "personId": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1
+          }
+        },
+        "required": [
+          "key",
+          "prescriptionId",
+          "name",
+          "dose",
+          "taken",
+          "takenAt",
+          "fields"
+        ],
+        "additionalProperties": false
+      },
+      "PrescriptionCreate": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1
+          },
+          "personId": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1
+          },
+          "medicineId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120,
+                "minLength": 1
+              },
+              {
+                "const": ""
+              }
+            ]
+          },
+          "medicineForm": {
+            "type": "string",
+            "enum": [
+              "injection",
+              "inhaler",
+              "suspension",
+              "powder",
+              "tablet",
+              "capsule",
+              "drops",
+              "spray",
+              "liquid",
+              "inhalation",
+              "suppository",
+              "topical"
+            ]
+          },
+          "ingredients": {
+            "type": "string",
+            "maxLength": 600
+          },
+          "form": {
+            "type": "string",
+            "maxLength": 150,
+            "default": ""
+          },
+          "strength": {
+            "type": "string",
+            "maxLength": 150,
+            "default": ""
+          },
+          "dose": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 30,
+                "pattern": "^\\d+(?:[.,]\\d{1,6})?$"
+              },
+              {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 1000000
+              }
+            ],
+            "description": "Совместимый вход: строка/число; positive() сохраняет только десятичную строку"
+          },
+          "unit": {
+            "type": "string",
+            "enum": [
+              "мл",
+              "мг",
+              "мкг",
+              "доза",
+              "пакет",
+              "г",
+              "табл.",
+              "капс.",
+              "кап.",
+              "впрыскивание",
+              "свеча",
+              "нанесение"
+            ]
+          },
+          "route": {
+            "type": "string",
+            "maxLength": 150,
+            "default": ""
+          },
+          "startDate": {
+            "type": "string",
+            "maxLength": 10,
+            "format": "calendar-date"
+          },
+          "endDate": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 10,
+                "format": "calendar-date"
+              },
+              {
+                "const": ""
+              }
+            ],
+            "default": ""
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "daily",
+              "routine",
+              "interval",
+              "prn",
+              "once"
+            ]
+          },
+          "times": {
+            "type": "string",
+            "maxLength": 150
+          },
+          "timeZone": {
+            "type": "string",
+            "maxLength": 100,
+            "format": "time-zone",
+            "default": "Europe/Chisinau"
+          },
+          "intervalHours": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 30,
+                    "pattern": "^\\d+(?:[.,]\\d{1,6})?$"
+                  },
+                  {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 1000000
+                  }
+                ],
+                "description": "Совместимый вход: строка/число; positive() сохраняет только десятичную строку"
+              },
+              {
+                "const": ""
+              }
+            ]
+          },
+          "anchorTime": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5,
+                "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+              },
+              {
+                "const": ""
+              }
+            ],
+            "default": ""
+          },
+          "anchor": {
+            "type": "string",
+            "maxLength": 40,
+            "default": ""
+          },
+          "minHours": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 30,
+                    "pattern": "^\\d+(?:[.,]\\d{1,6})?$"
+                  },
+                  {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 1000000
+                  }
+                ],
+                "description": "Совместимый вход: строка/число; positive() сохраняет только десятичную строку"
+              },
+              {
+                "const": ""
+              }
+            ]
+          },
+          "maxPer24h": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 30,
+                    "pattern": "^\\d+(?:[.,]\\d{1,6})?$"
+                  },
+                  {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 1000000
+                  }
+                ],
+                "description": "Совместимый вход: строка/число; positive() сохраняет только десятичную строку"
+              },
+              {
+                "const": ""
+              }
+            ]
+          },
+          "conditions": {
+            "type": "string",
+            "maxLength": 2000,
+            "default": ""
+          },
+          "sourceText": {
+            "type": "string",
+            "maxLength": 10000,
+            "default": ""
+          },
+          "documentId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120,
+                "minLength": 1
+              },
+              {
+                "const": ""
+              }
+            ],
+            "default": ""
+          },
+          "confirmed": {
+            "const": true
+          },
+          "routineSlots": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/WireSlot"
+            },
+            "minItems": 1,
+            "maxItems": 12
+          },
+          "legacyTimes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 5,
+              "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+            },
+            "maxItems": 12
+          },
+          "carePhase": {
+            "type": "string",
+            "enum": [
+              "",
+              "acute",
+              "prevention"
+            ]
+          },
+          "weekdays": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 6
+            },
+            "minItems": 1,
+            "maxItems": 7,
+            "uniqueItems": true
+          },
+          "doseScope": {
+            "type": "string",
+            "enum": [
+              "each-nostril",
+              "total"
+            ]
+          },
+          "purpose": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "manualKey": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "importKey": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "importFingerprint": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "regimen": {
+            "type": "object",
+            "properties": {
+              "minAgeYears": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 130
+              },
+              "ageSource": {
+                "type": "string",
+                "maxLength": 1000
+              },
+              "packageText": {
+                "type": "string",
+                "maxLength": 2000
+              },
+              "origin": {
+                "type": "string",
+                "maxLength": 30
+              },
+              "mixing": {
+                "type": "string",
+                "maxLength": 1000
+              },
+              "durationMinutes": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 3,
+                    "pattern": "^\\d{1,3}$",
+                    "format": "procedure-minutes"
+                  },
+                  {
+                    "const": ""
+                  }
+                ]
+              },
+              "choiceGroup": {
+                "type": "string",
+                "maxLength": 100
+              },
+              "manufacturer": {
+                "type": "string",
+                "maxLength": 200
+              },
+              "parserVersion": {
+                "type": "string",
+                "maxLength": 80
+              }
+            },
+            "required": [],
+            "additionalProperties": true
+          },
+          "archived": {
+            "type": "boolean",
+            "default": false
+          },
+          "requiresReview": {
+            "type": "boolean",
+            "description": "Совместимость с прежней формой OCR: аннотация не сохраняется"
+          },
+          "review": {
+            "type": "string",
+            "maxLength": 2000,
+            "description": "Совместимость с прежней формой OCR: аннотация не сохраняется"
+          },
+          "medicineVersion": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "personId",
+          "name",
+          "dose",
+          "unit",
+          "startDate",
+          "type",
+          "confirmed"
+        ],
+        "additionalProperties": false
+      },
+      "EventCreate": {
+        "type": "object",
+        "properties": {
+          "rxId": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1
+          },
+          "rxVersion": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "key": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "date": {
+            "type": "string",
+            "maxLength": 10,
+            "format": "calendar-date"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "taken",
+              "skipped",
+              "deferred"
+            ]
+          },
+          "dose": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 30,
+                "pattern": "^\\d+(?:[.,]\\d{1,6})?$"
+              },
+              {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 1000000
+              }
+            ],
+            "description": "Совместимый вход: строка/число; positive() сохраняет только десятичную строку"
+          },
+          "timeUnknown": {
+            "type": "boolean"
+          },
+          "knownDate": {
+            "type": "string",
+            "maxLength": 10,
+            "format": "calendar-date"
+          },
+          "occurredAt": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 40,
+                    "format": "instant"
+                  },
+                  {
+                    "const": ""
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "author": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "clientKey": {
+            "type": "string",
+            "maxLength": 120
+          }
+        },
+        "required": [
+          "rxId",
+          "status"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "timeUnknown": {
+                  "const": true
+                }
+              },
+              "required": [
+                "timeUnknown"
+              ]
+            },
+            "then": {
+              "properties": {
+                "occurredAt": {
+                  "enum": [
+                    null,
+                    ""
+                  ]
+                },
+                "knownDate": {
+                  "type": "string",
+                  "maxLength": 10,
+                  "format": "calendar-date"
+                }
+              },
+              "required": [
+                "occurredAt",
+                "knownDate"
+              ]
+            },
+            "else": {
+              "properties": {
+                "occurredAt": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 40,
+                      "format": "instant"
+                    },
+                    {
+                      "const": ""
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      },
+      "EventVoid": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1
+          }
+        },
+        "required": [
+          "version",
+          "reason"
+        ],
+        "additionalProperties": false
+      },
+      "FamilyView": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "const": 2
+          },
+          "plans": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/MedicationRow"
+            }
+          },
+          "revision": {
+            "type": "string",
+            "maxLength": 20
+          },
+          "copiedAt": {
+            "type": "string",
+            "maxLength": 40,
+            "format": "instant"
+          },
+          "contextAt": {
+            "type": "string",
+            "maxLength": 40,
+            "format": "instant"
+          },
+          "timeZone": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "prescriptions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "maxLength": 120,
+                  "minLength": 1
+                },
+                "personId": {
+                  "type": "string",
+                  "maxLength": 120,
+                  "minLength": 1
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "input": {
+                  "$ref": "#/definitions/PrescriptionRecord"
+                },
+                "name": {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                "dose": {
+                  "type": "string",
+                  "maxLength": 30
+                },
+                "unit": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "мл",
+                        "мг",
+                        "мкг",
+                        "доза",
+                        "пакет",
+                        "г",
+                        "табл.",
+                        "капс.",
+                        "кап.",
+                        "впрыскивание",
+                        "свеча",
+                        "нанесение"
+                      ]
+                    },
+                    {
+                      "const": ""
+                    }
+                  ]
+                },
+                "form": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "injection",
+                        "inhaler",
+                        "suspension",
+                        "powder",
+                        "tablet",
+                        "capsule",
+                        "drops",
+                        "spray",
+                        "liquid",
+                        "inhalation",
+                        "suppository",
+                        "topical"
+                      ]
+                    },
+                    {
+                      "const": ""
+                    }
+                  ]
+                },
+                "suggestedForm": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "injection",
+                        "inhaler",
+                        "suspension",
+                        "powder",
+                        "tablet",
+                        "capsule",
+                        "drops",
+                        "spray",
+                        "liquid",
+                        "inhalation",
+                        "suppository",
+                        "topical"
+                      ]
+                    },
+                    {
+                      "const": ""
+                    }
+                  ]
+                },
+                "source": {
+                  "type": "string",
+                  "maxLength": 22000
+                },
+                "durationText": {
+                  "type": "string",
+                  "maxLength": 600
+                },
+                "maxDays": {
+                  "anyOf": [
+                    {
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "missingThird": {
+                  "type": "boolean"
+                },
+                "strength": {
+                  "type": "string",
+                  "maxLength": 150
+                },
+                "phase": {
+                  "type": "string",
+                  "enum": [
+                    "",
+                    "acute",
+                    "prevention"
+                  ]
+                },
+                "confirmed": {
+                  "type": "boolean"
+                },
+                "routineSlots": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/StoredSlot"
+                  }
+                },
+                "startDate": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 10,
+                      "format": "calendar-date"
+                    },
+                    {
+                      "const": ""
+                    }
+                  ]
+                },
+                "endDate": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 10,
+                      "format": "calendar-date"
+                    },
+                    {
+                      "const": ""
+                    }
+                  ]
+                },
+                "warnings": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "maxLength": 2000
+                  }
+                },
+                "dependency": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "prescriptionIds": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "maxLength": 120,
+                            "minLength": 1
+                          }
+                        },
+                        "prescriptionId": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 120,
+                              "minLength": 1
+                            },
+                            {
+                              "const": ""
+                            }
+                          ]
+                        },
+                        "name": {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        "minMinutes": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 1440
+                        },
+                        "maxMinutes": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 1440
+                        },
+                        "matching": {
+                          "const": "anchor"
+                        },
+                        "source": {
+                          "const": "user"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "minMinutes",
+                        "maxMinutes"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "personId",
+                "name",
+                "dose",
+                "unit",
+                "form",
+                "suggestedForm",
+                "source",
+                "durationText",
+                "maxDays",
+                "missingThird",
+                "strength",
+                "phase",
+                "confirmed",
+                "routineSlots",
+                "startDate",
+                "endDate",
+                "warnings",
+                "dependency"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "model": {
+            "type": "object",
+            "properties": {
+              "date": {
+                "type": "string",
+                "maxLength": 10,
+                "format": "calendar-date"
+              },
+              "cards": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "maxLength": 120,
+                      "minLength": 1
+                    },
+                    "name": {
+                      "type": "string",
+                      "maxLength": 100
+                    },
+                    "phase": {
+                      "type": "string",
+                      "maxLength": 120
+                    },
+                    "phaseKey": {
+                      "type": "string",
+                      "enum": [
+                        "",
+                        "acute",
+                        "prevention"
+                      ]
+                    },
+                    "color": {
+                      "type": "string",
+                      "maxLength": 30
+                    },
+                    "routine": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/definitions/Routine"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "ageYears": {
+                      "anyOf": [
+                        {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 130
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "current": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "label": {
+                              "type": "string",
+                              "maxLength": 120
+                            },
+                            "time": {
+                              "type": "string",
+                              "maxLength": 100
+                            },
+                            "rows": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/definitions/MedicationRow"
+                              }
+                            }
+                          },
+                          "required": [
+                            "label",
+                            "time",
+                            "rows"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "later": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "label": {
+                            "type": "string",
+                            "maxLength": 120
+                          },
+                          "time": {
+                            "type": "string",
+                            "maxLength": 100
+                          },
+                          "rows": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/definitions/MedicationRow"
+                            }
+                          }
+                        },
+                        "required": [
+                          "label",
+                          "time",
+                          "rows"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "earlier": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "label": {
+                            "type": "string",
+                            "maxLength": 120
+                          },
+                          "time": {
+                            "type": "string",
+                            "maxLength": 100
+                          },
+                          "rows": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/definitions/MedicationRow"
+                            }
+                          }
+                        },
+                        "required": [
+                          "label",
+                          "time",
+                          "rows"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "prn": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/MedicationRow"
+                      }
+                    },
+                    "version": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "input": {
+                      "$ref": "#/definitions/PersonRecord"
+                    },
+                    "daySlots": {
+                      "type": "object",
+                      "properties": {
+                        "weekday": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "maxLength": 40,
+                                "pattern": "^[a-z][a-zA-Z0-9-]{0,39}$"
+                              },
+                              "label": {
+                                "type": "string",
+                                "maxLength": 60,
+                                "minLength": 1
+                              },
+                              "time": {
+                                "anyOf": [
+                                  {
+                                    "type": "string",
+                                    "maxLength": 5,
+                                    "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                                  },
+                                  {
+                                    "const": ""
+                                  }
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "label",
+                              "time"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "minItems": 1,
+                          "maxItems": 12
+                        },
+                        "weekend": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "maxLength": 40,
+                                "pattern": "^[a-z][a-zA-Z0-9-]{0,39}$"
+                              },
+                              "label": {
+                                "type": "string",
+                                "maxLength": 60,
+                                "minLength": 1
+                              },
+                              "time": {
+                                "anyOf": [
+                                  {
+                                    "type": "string",
+                                    "maxLength": 5,
+                                    "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+                                  },
+                                  {
+                                    "const": ""
+                                  }
+                                ]
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "label",
+                              "time"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "minItems": 1,
+                          "maxItems": 12
+                        }
+                      },
+                      "required": [],
+                      "additionalProperties": false,
+                      "minProperties": 1
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "phase",
+                    "phaseKey",
+                    "color",
+                    "routine",
+                    "ageYears",
+                    "current",
+                    "later",
+                    "earlier",
+                    "prn"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "history": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                },
+                "description": "Существующий read-only раздел вне типов записи пилота; не является write-контрактом"
+              }
+            },
+            "required": [
+              "date",
+              "cards",
+              "history"
+            ],
+            "additionalProperties": false
+          },
+          "medicinePhotos": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "Существующий read-only раздел вне типов записи пилота; не является write-контрактом"
+          },
+          "medicines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/MedicineRecord"
+            }
+          },
+          "capabilities": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "version",
+          "plans",
+          "revision",
+          "copiedAt",
+          "contextAt",
+          "timeZone",
+          "prescriptions",
+          "model",
+          "medicines",
+          "medicinePhotos",
+          "capabilities"
+        ],
+        "additionalProperties": false
+      },
+      "CatalogView": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer"
+          },
+          "people": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/PersonRecord"
+            }
+          },
+          "medicines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/MedicineRecord"
+            }
+          },
+          "prescriptions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/PrescriptionRecord"
+            }
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/EventRecord"
+            }
+          },
+          "documents": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "Существующий read-only раздел вне типов записи пилота; не является write-контрактом"
+          },
+          "temperatures": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "Существующий read-only раздел вне типов записи пилота; не является write-контрактом"
+          },
+          "activities": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "Существующий read-only раздел вне типов записи пилота; не является write-контрактом"
+          },
+          "medicinePhotos": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "Существующий read-only раздел вне типов записи пилота; не является write-контрактом"
+          },
+          "catalog": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "Существующий read-only раздел вне типов записи пилота; не является write-контрактом"
+          },
+          "rules": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "Существующий read-only раздел вне типов записи пилота; не является write-контрактом"
+          },
+          "reference": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+            "additionalProperties": true
+          },
+          "capabilities": {
+            "type": "object",
+            "properties": {},
+            "required": [],
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "version",
+          "people",
+          "medicines",
+          "prescriptions",
+          "events"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "entities": [
+    {
+      "id": "data:medicine",
+      "schema": "MedicineRecord",
+      "storage": {
+        "database": "medika.sqlite",
+        "table": "medicines",
+        "column": "data",
+        "path": "$",
+        "keys": [
+          "id PK"
+        ],
+        "links": []
+      },
+      "component": "catalog-item",
+      "relationships": [
+        {
+          "field": "afterMedicine.medicineId",
+          "to": "data:medicine",
+          "cardinality": "0..1",
+          "check": "server validateMedicineSequence: существует, не архив, нет цикла",
+          "onArchive": "Связь не удаляется автоматически; новые назначения архивного препарата запрещены"
+        }
+      ],
+      "transitions": {
+        "field": "archived",
+        "initial": false,
+        "rows": [
+          {
+            "from": "absent",
+            "command": "catalog create (вне экранного пилота)",
+            "to": false,
+            "guard": "medicineInput + уникальный medicineKey"
+          },
+          {
+            "from": false,
+            "command": "catalog edit (вне экранного пилота)",
+            "to": true,
+            "guard": "version, уникальность имени/формы/концентрации; прошлые назначения не меняются"
+          },
+          {
+            "from": true,
+            "command": "catalog edit (вне экранного пилота)",
+            "to": false,
+            "guard": "version"
+          }
+        ]
+      },
+      "defaults": {
+        "archived": "medicineInput: false; strength/instructions: пустая строка"
+      },
+      "invariants": [
+        "Имя/форма/концентрация уникальны по medicineKey (server)",
+        "afterMedicine: maxMinutes >= minMinutes, существование, отсутствие циклов (server)",
+        "Архив не удаляет справку и прошлые назначения"
+      ]
+    },
+    {
+      "id": "data:prescription",
+      "schema": "PrescriptionRecord",
+      "storage": {
+        "database": "medika.sqlite",
+        "table": "prescriptions",
+        "column": "data",
+        "path": "$",
+        "keys": [
+          "id PK",
+          "person_id FK people(id)"
+        ],
+        "links": [
+          "personId → people.id (SQL FK + server)",
+          "medicineId → medicines.id (server check, JSON)"
+        ]
+      },
+      "component": "prescription-form",
+      "relationships": [
+        {
+          "field": "personId",
+          "to": "data:person",
+          "cardinality": "N:1, обязательно",
+          "check": "SQL FK person_id + JSON consistency in writer",
+          "onArchive": "План и факты сохраняют принадлежность"
+        },
+        {
+          "field": "medicineId",
+          "to": "data:medicine",
+          "cardinality": "N:0..1 (legacy без каталога допустим)",
+          "check": "server + transaction writer; при create проверяется medicineVersion",
+          "onArchive": "Назначение сохраняет снимок имени/формы/концентрации; новые привязки к архивному запрещены"
+        }
+      ],
+      "transitions": {
+        "field": "archived",
+        "initial": false,
+        "rows": [
+          {
+            "from": "absent",
+            "command": "prescription.create",
+            "to": false,
+            "guard": "подтверждено, связи, форма/доза и версия препарата проверены"
+          }
+        ],
+        "outside": "Изменение/архивирование существующего назначения — вне экранного пилота; существующие маршруты продолжают работать"
+      },
+      "defaults": {
+        "archived": "POST: false",
+        "timeZone": "rxInput: Europe/Chisinau; дозы/время не достраиваются"
+      },
+      "invariants": [
+        "Доза отдельно от концентрации; строка положительного числа до 1000000",
+        "Единицы соответствуют medicineForm; капли/пшики целые",
+        "Конец курса не раньше начала; от 1 до 12 routineSlots; clock требует часы",
+        "Связи и версия препарата проверяются сервером; JSON medicineId также проверяет writer в транзакции",
+        "План не создаёт фактического приёма"
+      ]
+    },
+    {
+      "id": "data:person",
+      "schema": "PersonRecord",
+      "storage": {
+        "database": "medika.sqlite",
+        "table": "people",
+        "column": "data",
+        "path": "$",
+        "keys": [
+          "id PK"
+        ],
+        "links": []
+      },
+      "component": "person-filter",
+      "relationships": [],
+      "transitions": {
+        "field": null,
+        "initial": "Существующий профиль; фильтрация не меняет профиль",
+        "rows": []
+      },
+      "defaults": {
+        "birthday": "personInput: пустая строка, если не указана",
+        "weight": "personInput: null, если не указан",
+        "allergies": "personInput: пустая строка",
+        "notes": "personInput: пустая строка",
+        "color": "personInput: mint при отсутствии допустимого значения",
+        "ageYears": "Нет default; не выводится из фотографии/имени",
+        "ageAsOf": "Только при переданном возрасте: дата ввода либо сегодня"
+      },
+      "invariants": []
+    },
+    {
+      "id": "data:event",
+      "schema": "EventRecord",
+      "storage": {
+        "database": "medika.sqlite",
+        "table": "events",
+        "column": "data",
+        "path": "$",
+        "keys": [
+          "id PK",
+          "rx_id FK prescriptions(id)",
+          "event_key UNIQUE"
+        ],
+        "links": [
+          "rxId → prescriptions.id (SQL FK)"
+        ]
+      },
+      "component": "medication-row",
+      "relationships": [
+        {
+          "field": "rxId",
+          "to": "data:prescription",
+          "cardinality": "N:1, обязательно",
+          "check": "SQL FK rx_id + API schedule/phase guard",
+          "onArchive": "Прошлый факт сохраняется"
+        },
+        {
+          "field": "personId",
+          "to": "data:person",
+          "cardinality": "N:1, обязательно",
+          "check": "writer сверяет с prescription.personId; смена связи запрещена",
+          "onArchive": "История сохраняется"
+        }
+      ],
+      "transitions": {
+        "field": "status",
+        "initial": "Отсутствие записи; planned не хранится",
+        "rows": [
+          {
+            "from": "absent",
+            "command": "event.create",
+            "to": "taken",
+            "guard": "План существует, фаза и версия соответствуют; PRN только taken"
+          },
+          {
+            "from": "absent",
+            "command": "event.create",
+            "to": "skipped",
+            "guard": "План существует, фаза и версия соответствуют; PRN только taken"
+          },
+          {
+            "from": "absent",
+            "command": "event.create",
+            "to": "deferred",
+            "guard": "План существует, фаза и версия соответствуют; PRN только taken"
+          },
+          {
+            "from": "taken",
+            "command": "event.void",
+            "to": "void",
+            "guard": "Актуальная version и причина; void→void разрешён с новой версией и аудитом"
+          },
+          {
+            "from": "skipped",
+            "command": "event.void",
+            "to": "void",
+            "guard": "Актуальная version и причина; void→void разрешён с новой версией и аудитом"
+          },
+          {
+            "from": "deferred",
+            "command": "event.void",
+            "to": "void",
+            "guard": "Актуальная version и причина; void→void разрешён с новой версией и аудитом"
+          },
+          {
+            "from": "void",
+            "command": "event.void",
+            "to": "void",
+            "guard": "Актуальная version и причина; void→void разрешён с новой версией и аудитом"
+          },
+          {
+            "from": "void",
+            "command": "event.create",
+            "to": "taken",
+            "guard": "Плановый ключ тот же, расписание допустимо; id сохраняется"
+          },
+          {
+            "from": "void",
+            "command": "event.create",
+            "to": "skipped",
+            "guard": "Плановый ключ тот же, расписание допустимо; id сохраняется"
+          },
+          {
+            "from": "void",
+            "command": "event.create",
+            "to": "deferred",
+            "guard": "Плановый ключ тот же, расписание допустимо; id сохраняется"
+          }
+        ],
+        "outside": "correct: только taken→taken; исправление факта вне экранного пилота"
+      },
+      "defaults": {
+        "status": "Обязателен во входе, default нет",
+        "occurredAt": "POST: серверное сейчас при отсутствии; timeUnknown=true требует null/пустое + knownDate",
+        "actualDose": "POST: явная dose либо доза Rx; нормализованная строка",
+        "author": "POST: Я, если не указан",
+        "note": "POST: явное примечание либо procedureNote назначения"
+      },
+      "invariants": [
+        "Уникальный плановый ключ event_key (SQL UNIQUE)",
+        "personId соответствует Rx; связи и ключ неизменяемы в writer",
+        "Отмена сохраняет аудит; восстановление не меняет id",
+        "Неизвестное время: occurredAt=null + knownDate; известное: ISO instant, не дальше минуты в будущем",
+        "Истечение таймера не запрещает запись факта"
+      ]
+    },
+    {
+      "id": "data:slot",
+      "schema": "Slot",
+      "storage": {
+        "database": "medika.sqlite",
+        "table": "prescriptions",
+        "column": "data",
+        "path": "routineSlots[]",
+        "keys": [
+          "id PK",
+          "person_id FK people(id)"
+        ],
+        "links": []
+      },
+      "component": "schedule-mode",
+      "relationships": [
+        {
+          "field": "anchor",
+          "to": "data:person",
+          "cardinality": "контекст слота N:1",
+          "check": "slotDetails + validateRoutineBinding; порядок routineSlots сохраняется",
+          "onArchive": "Отсутствующий личный слот показывается непривязанным, факты не создаются"
+        }
+      ],
+      "transitions": null,
+      "defaults": {},
+      "invariants": []
+    },
+    {
+      "id": "data:dose",
+      "schema": "Dose",
+      "storage": {
+        "database": "medika.sqlite",
+        "table": "prescriptions",
+        "column": "data",
+        "path": "dose (unit хранится отдельно)",
+        "keys": [
+          "id PK",
+          "person_id FK people(id)"
+        ],
+        "links": []
+      },
+      "component": "medication-row",
+      "relationships": [],
+      "transitions": null,
+      "defaults": {},
+      "invariants": []
+    },
+    {
+      "id": "data:clock",
+      "schema": "Clock",
+      "storage": {
+        "database": "medika.sqlite",
+        "table": "prescriptions",
+        "column": "data",
+        "path": "routineSlots[].time / times[]",
+        "keys": [
+          "id PK",
+          "person_id FK people(id)"
+        ],
+        "links": []
+      },
+      "component": "schedule-mode",
+      "relationships": [],
+      "transitions": null,
+      "defaults": {},
+      "invariants": []
+    }
+  ],
+  "operations": [
+    {
+      "id": "family.read",
+      "method": "GET",
+      "path": "/api/family",
+      "response": "FamilyView",
+      "actionIds": [
+        "filter-person",
+        "expand-row"
+      ],
+      "reads": [
+        "people",
+        "prescriptions",
+        "events",
+        "medicines"
+      ],
+      "writes": [],
+      "result": "Перечитать model.cards и model.history; не меняет записи",
+      "errors": [
+        403,
+        500
+      ],
+      "repeat": "Чтение; revision проекции меняется при пересчёте",
+      "transaction": "Синхронное чтение state, scheduleView → familyView",
+      "ui": [
+        "person-filter",
+        "day-slot",
+        "medication-row"
+      ],
+      "error": "ErrorResponse"
+    },
+    {
+      "id": "catalog.read",
+      "method": "GET",
+      "path": "/api/state",
+      "response": "CatalogView",
+      "actionIds": [
+        "open-catalog",
+        "catalog-details",
+        "catalog-prescribe",
+        "back-family"
+      ],
+      "reads": [
+        "people",
+        "medicines",
+        "prescriptions"
+      ],
+      "writes": [],
+      "result": "Каталог фильтрует active/archive и unmatched из назначений; сортировка — порядок записей без пагинации",
+      "errors": [
+        403,
+        500
+      ],
+      "repeat": "Чтение",
+      "transaction": "state()",
+      "ui": [
+        "catalog-list",
+        "catalog-item"
+      ],
+      "error": "ErrorResponse"
+    },
+    {
+      "id": "prescription.create",
+      "method": "POST",
+      "path": "/api/prescriptions",
+      "request": "PrescriptionCreate",
+      "response": "PrescriptionRecord",
+      "actionIds": [
+        "save-rx"
+      ],
+      "reads": [
+        "people",
+        "medicines",
+        "documents"
+      ],
+      "writes": [
+        "prescriptions",
+        "audit"
+      ],
+      "result": "Вернуть запись с id/version; refresh GET /api/family показывает строку; факт не создаётся",
+      "errors": [
+        400,
+        403,
+        409,
+        500
+      ],
+      "repeat": "manualKey: одинаковый нормализованный payload → та же запись; иной → 409. Без ключа каждый вызов новый.",
+      "transaction": "Проверки связей/версии → insert + audit; без await между проверками и insert",
+      "ui": [
+        "prescription-form",
+        "day-slot",
+        "medication-row"
+      ],
+      "preconditions": [
+        "Существующий человек",
+        "Препарат существует, не в архиве, medicineVersion совпадает",
+        "Форма/концентрация/имя совпадают со справочником",
+        "Единица подходит форме; назначение подтверждено",
+        "Документ, если указан, принадлежит человеку"
+      ],
+      "error": "ErrorResponse"
+    },
+    {
+      "id": "event.create",
+      "method": "POST",
+      "path": "/api/events",
+      "request": "EventCreate",
+      "response": "EventRecord",
+      "actionIds": [
+        "take"
+      ],
+      "reads": [
+        "people",
+        "prescriptions",
+        "events"
+      ],
+      "writes": [
+        "events",
+        "audit"
+      ],
+      "result": "Факт конкретного планового ключа; перечитать GET /api/family; галочка и история отражают факт",
+      "errors": [
+        400,
+        403,
+        404,
+        409,
+        500
+      ],
+      "repeat": "Плановый ключ уникален; повтор занятого ключа → 409 и перечитывание. PRN clientKey (вне UI-пилота): сопоставляются статус и доза; остальные поля не являются ключом повтора. Отменённая запись может быть восстановлена с тем же id.",
+      "transaction": "Проверки плана/фазы/версии → insert либо update void + audit",
+      "preconditions": [
+        "Плановый ключ существует в действующем расписании; текущая фаза совпадает",
+        "rxVersion проверяется, если передана; рабочий UI передаёт её, legacy API допускает отсутствие",
+        "PRN допускает только taken; фактические время и доза проходят occurrenceInput/positive",
+        "Ранее taken/skipped/deferred для того же ключа → 409; после void сохраняется прежний id"
+      ],
+      "ui": [
+        "medication-row"
+      ],
+      "error": "ErrorResponse"
+    },
+    {
+      "id": "event.void",
+      "method": "POST",
+      "path": "/api/events/:id/void",
+      "request": "EventVoid",
+      "response": "EventRecord",
+      "actionIds": [
+        "undo-take"
+      ],
+      "reads": [
+        "events"
+      ],
+      "writes": [
+        "events",
+        "audit"
+      ],
+      "result": "status=void с причиной, история сохранена; перечитать семейный экран",
+      "errors": [
+        400,
+        403,
+        404,
+        409,
+        500
+      ],
+      "repeat": "Требует актуальную version; повтор прежней версии → 409",
+      "transaction": "store.update + audit с optimistic version",
+      "ui": [
+        "medication-row"
+      ],
+      "error": "ErrorResponse"
+    }
+  ],
+  "bindings": [
+    {
+      "component": "catalog-item",
+      "field": "name / form / strength / group",
+      "type": "MedicineRecord",
+      "paths": [
+        "name",
+        "medicineForm",
+        "strength",
+        "reference"
+      ],
+      "read": "catalog.read",
+      "projection": "state.medicines → render()/row(m)",
+      "write": null
+    },
+    {
+      "component": "prescription-form",
+      "field": "medicineId / personId / dose / unit / slots",
+      "type": "PrescriptionCreate",
+      "paths": [
+        "medicineId",
+        "personId",
+        "dose",
+        "unit",
+        "routineSlots"
+      ],
+      "read": "family.read",
+      "projection": "snapshot.medicines + model.cards → addMedicine()/readAddedMedicine()",
+      "write": "prescription.create"
+    },
+    {
+      "component": "medication-row",
+      "field": "name / dose / taken / eventVersion",
+      "type": "MedicationRow",
+      "paths": [
+        "name",
+        "dose",
+        "taken",
+        "eventVersion"
+      ],
+      "read": "family.read",
+      "projection": "scheduleFor → familyView.row → careDrug",
+      "write": "event.create",
+      "undo": "event.void"
+    },
+    {
+      "component": "person-filter",
+      "field": "id / name",
+      "type": "PersonRecord",
+      "paths": [
+        "id",
+        "name",
+        "displayName"
+      ],
+      "read": "family.read",
+      "projection": "model.cards → careFamily; localStorage medika-family-person",
+      "write": null
+    },
+    {
+      "component": "day-slot",
+      "field": "label / rows",
+      "type": "Slot",
+      "paths": [
+        "anchor",
+        "time",
+        "relation"
+      ],
+      "read": "family.read",
+      "projection": "routineSlots + person.routine/daySlots → slotDetails → group",
+      "write": null
+    },
+    {
+      "component": "schedule-mode",
+      "field": "slot / clock",
+      "type": "Slot",
+      "paths": [
+        "anchor",
+        "time",
+        "relation"
+      ],
+      "read": "family.read",
+      "projection": "Локальный mode формы; clock требует явное time, состояние формы не запись БД",
+      "write": "prescription.create"
+    },
+    {
+      "component": "catalog-list",
+      "field": "active / archived / unmatched",
+      "type": "MedicineRecord",
+      "paths": [
+        "archived",
+        "name",
+        "medicineForm",
+        "strength"
+      ],
+      "read": "catalog.read",
+      "projection": "filter archived; unmatched medicineKey; без поиска/пагинации; порядок state",
+      "write": null
+    }
+  ],
+  "boundaries": [
+    "Фото/OCR, голос, редактирование/архивирование назначения и исправление факта — вне UI-пилота; их существующие операции не удалены",
+    "History activities/temperatures, capability metadata и справочные UI-проекции остаются явно read-only внешними типами; это не их полный write-контракт",
+    "Физическая миграция JSON в SQL-столбцы не выполнялась; связи внутри JSON защищаются сервером, не SQL FK",
+    "Legacy offsetMinutes 0–120 допускается только в StoredSlot для чтения/совместимости; расчёт его игнорирует, новый API-слот запрещает",
+    "До записи проверяются covered записи; старые частичные записи не дополняются guessed defaults и не переписываются при чтении"
+  ]
+}

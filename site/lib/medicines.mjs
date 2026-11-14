@@ -1,3 +1,4 @@
+import {assertContract} from './pilot-contracts.mjs';
 import {assert,string} from './domain.mjs';
 import {medicineReferenceInput} from './medicine-reference.mjs';
 import {medicineForms} from '../public/medicine-forms.js';
@@ -14,7 +15,7 @@ export function medicineInput(input){
   }
   if(input.reference!==undefined)extra.reference=medicineReferenceInput(input.reference,medicineKey(input));
   if(input.recognitionKey!==undefined){extra.recognitionKey=string(input.recognitionKey,'Ключ распознавания',64);assert(/^[a-f\d]{64}$/.test(extra.recognitionKey),'Некорректный ключ распознавания');}
-  return {name:string(input.name,'Название лекарства',200,true),medicineForm:input.medicineForm,strength:string(input.strength,'Дозировка на упаковке',150),instructions:string(input.instructions,'Как применять',2000),archived:input.archived===true,...extra};
+  return assertContract('MedicineInput',{name:string(input.name,'Название лекарства',200,true),medicineForm:input.medicineForm,strength:string(input.strength,'Дозировка на упаковке',150),instructions:string(input.instructions,'Как применять',2000),archived:input.archived===true,...extra});
 }
 export const medicineKey=m=>[m.name,m.medicineForm,m.strength].map(s=>String(s||'').trim().toLocaleLowerCase()).join('|');
 

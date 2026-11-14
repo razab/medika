@@ -81,6 +81,43 @@ def validate(path, project_root):
         for variant in component.get('variants', []):
             preview(variant)
             require(variant['screenId'] in screens and bool(variant['selector']), f'{component["id"]}: capture provenance required')
+    contract = data.get('contracts')
+    if contract:
+        require(contract.get('url') == '/ui-atlas/contracts.json', 'Unexpected contract publication route')
+        name = contract.get('snapshot', '')
+        require(bool(name) and Path(name).name == name, 'Contract snapshot must be local')
+        if name and Path(name).name == name:
+            document = json.loads((path.parent / name).read_text())
+            definitions = document['schema']['definitions']
+            operations = {op['id']: op for op in document['operations']}
+            require(len(operations) == len(document['operations']), 'Duplicate operation ID')
+            def schema_refs(value):
+                if isinstance(value, dict):
+                    if '$ref' in value:
+                        ref = value['$ref']
+                        require(ref.startswith('#/definitions/') and ref.split('/')[-1] in definitions, f'Dangling schema reference: {ref}')
+                    for child in value.values():
+                        schema_refs(child)
+                elif isinstance(value, list):
+                    for child in value:
+                        schema_refs(child)
+            schema_refs(document['schema'])
+            for entity in document['entities']:
+                require(entity['schema'] in definitions, f'{entity["id"]}: missing executable type')
+                require(entity['component'] in components, f'{entity["id"]}: missing component')
+                require(bool(entity.get('storage', {}).get('table')), f'{entity["id"]}: storage mapping required')
+            valid_refs = set(operations) | {e['id'] for e in document['entities']} | {'schema:' + name for name in definitions}
+            for row in data['actions'] + data['components']:
+                require(set(row.get('contractRefs', [])) <= valid_refs, f'{row["id"]}: missing contextual contract')
+            for op in operations.values():
+                require(op['response'] in definitions and (not op.get('request') or op['request'] in definitions), f'{op["id"]}: missing request/response type')
+                require(set(op['actionIds']) <= actions, f'{op["id"]}: missing mapped action')
+            for binding in document['bindings']:
+                require(binding['component'] in components, f'{binding["component"]}: missing UI consumer')
+                require(binding['type'] in definitions, f'{binding["component"]}: missing binding type')
+                props = definitions.get(binding['type'], {}).get('properties', {})
+                require(set(binding['paths']) <= set(props), f'{binding["component"]}: missing typed field path')
+                require(all(binding.get(key) in operations for key in ('read', 'write', 'undo') if binding.get(key)), f'{binding["component"]}: missing operation')
     flow_file = path.parent / 'flows-seed.json'
     if flow_file.is_file():
         flows = json.loads(flow_file.read_text())

@@ -1,3 +1,4 @@
+import {assertContract} from './pilot-contracts.mjs';
 import {medicineForms,allowedMedicineUnits} from '../public/medicine-forms.js';
 import { randomUUID } from 'node:crypto';
 import {anchors,dailyRoutine,profileSlots,slotDetails} from '../public/routine.js';
@@ -171,7 +172,7 @@ export function rxInput(input) {
   if(input.medicineId!==undefined)extra.medicineId=string(input.medicineId,'Лекарство',80);
   if(input.manualKey!==undefined){extra.manualKey=string(input.manualKey,'Ключ назначения',120,true);assert(/^[a-zA-Z0-9_-]{8,120}$/.test(extra.manualKey),'Некорректный ключ назначения');}
   if(input.purpose!==undefined)extra.purpose=string(input.purpose,'Зачем назначено',1000);
-  return { name: string(input.name, 'Название препарата', 200, true), ingredients, form: string(input.form, 'Форма', 150), strength: string(input.strength, 'Концентрация', 150), dose: positive(input.dose, 'Доза на приём'), unit: input.unit, route: string(input.route, 'Способ применения', 150), startDate, endDate, type, times, timeZone, intervalHours, anchorTime, anchor, minHours: positive(input.minHours, 'Минимальный интервал', true), maxPer24h: positive(input.maxPer24h, 'Максимум приёмов за 24 часа', true), conditions: string(input.conditions, 'Условия приёма', 2000), sourceText: string(input.sourceText, 'Текст назначения', 10000), documentId: string(input.documentId, 'Документ', 80), confirmed: true,...extra };
+  return assertContract('PrescriptionInput',{ name: string(input.name, 'Название препарата', 200, true), ingredients, form: string(input.form, 'Форма', 150), strength: string(input.strength, 'Концентрация', 150), dose: positive(input.dose, 'Доза на приём'), unit: input.unit, route: string(input.route, 'Способ применения', 150), startDate, endDate, type, times, timeZone, intervalHours, anchorTime, anchor, minHours: positive(input.minHours, 'Минимальный интервал', true), maxPer24h: positive(input.maxPer24h, 'Максимум приёмов за 24 часа', true), conditions: string(input.conditions, 'Условия приёма', 2000), sourceText: string(input.sourceText, 'Текст назначения', 10000), documentId: string(input.documentId, 'Документ', 80), confirmed: true,...extra });
 }
 export function scheduleFor(rx, date, person) {
   day(date);
