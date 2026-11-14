@@ -1,4 +1,3 @@
-import {assertContract,recordContracts} from './pilot-contracts.mjs';
 import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync, chmodSync } from 'node:fs';
 import { join } from 'node:path';
@@ -23,22 +22,11 @@ export function openStore(directory) {
   function state() { return {version:1,people:rows('people'),documents:rows('documents'),prescriptions:rows('prescriptions'),events:rows('events'),temperatures:rows('temperatures'),activities:rows('activities'),medicinePhotos:rows('medicinePhotos'),medicines:rows('medicines')}; }
   function get(table,id) { const row=db.prepare(`SELECT data FROM ${table} WHERE id=?`).get(id); return row?JSON.parse(row.data):null; }
   function audit(action,record) { const id=newId(),createdAt=new Date().toISOString();db.prepare('INSERT INTO audit VALUES(?,?,?)').run(id,createdAt,JSON.stringify({id,createdAt,action,record})); }
-  function validateRecord(table,record,old=null){
-    if(!recordContracts[table])return;
-    assertContract(recordContracts[table],JSON.parse(JSON.stringify(record)));
-    if(old)for(const field of table==='events'?['rxId','personId','key']:table==='prescriptions'?['personId']:[])assert(old[field]===record[field],'Нельзя изменить связь существующей записи: '+field,409);
-    if(table==='prescriptions'){
-      assert(get('people',record.personId),'Человек не найден');
-      if(record.medicineId)assert(get('medicines',record.medicineId),'Лекарство не найдено');
-    }
-    if(table==='events'){const rx=get('prescriptions',record.rxId);assert(rx&&rx.personId===record.personId,'Факт относится к другому человеку или отсутствующему назначению');}
-  }
   let inTransaction=false;
   function transaction(fn) { if(inTransaction)return fn();db.exec('BEGIN IMMEDIATE');inTransaction=true;try{const result=fn();db.exec('COMMIT');return result;}catch(e){db.exec('ROLLBACK');throw e;}finally{inTransaction=false;} }
   function insert(table,data) {
     const record={...data,id:data.id||newId(),version:1,createdAt:new Date().toISOString()};
     return transaction(()=>{
-      validateRecord(table,record);
       const columns=table==='documents'?['person_id','hash']:table==='activities'?['person_id','client_key']:['prescriptions','temperatures'].includes(table)?['person_id']:table==='events'?['rx_id','event_key']:[];
       const extra=table==='documents'?[record.personId,record.hash]:table==='activities'?[record.personId,record.clientKey]:['prescriptions','temperatures'].includes(table)?[record.personId]:table==='events'?[record.rxId,record.key]:[];
       db.prepare(`INSERT INTO ${table}(id,data${columns.map(c=>','+c).join('')}) VALUES(${['?','?',...extra.map(()=>'?')].join(',')})`).run(record.id,JSON.stringify(record),...extra);
@@ -49,7 +37,6 @@ export function openStore(directory) {
     return transaction(()=>{
       const old=get(table,id);assert(old,'Запись не найдена',404);assert(old.version===version,'Запись уже изменена. Обновите страницу.',409);
       const record={...old,...input,id:old.id,version:old.version+1,updatedAt:new Date().toISOString()};
-      validateRecord(table,record,old);
       db.prepare(`UPDATE ${table} SET data=? WHERE id=?`).run(JSON.stringify(record),id);audit('update:'+table,{before:old,after:record});return record;
     });
   }
