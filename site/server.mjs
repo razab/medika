@@ -6,12 +6,13 @@ import {createPrescriptionLab} from './lib/prescription-lab.mjs';
 import {applyPrescriptionPlan} from './lib/prescription-import.mjs';
 import {availableSlots} from './lib/prescription-plan.mjs';
 import http from 'node:http';
+import {isIP} from 'node:net';
 import { readFile, writeFile, mkdir, access } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomBytes, createHash } from 'node:crypto';
 import { openStore } from './lib/store.mjs';
-import { assert, InputError, occurrenceInput, validateRoutineBinding, personInput, rxInput, temperatureInput, activityInput, procedureNote, day, newId, string, positive, scheduleFor, parseSuggestions, localParts,courseEnd } from './lib/domain.mjs';
+import { assert, InputError, occurrenceInput, validateRoutineBinding, personInput, rxInput, temperatureInput, activityInput, procedureNote, day, newId, string, positive, scheduleFor, parseSuggestions, localParts, nextDay, zonedInstant, courseEnd } from './lib/domain.mjs';
 import { catalog, rules, referenceInfo, checkPerson, intakeWarnings } from './lib/reference.mjs';
 import { parseEntry } from './lib/entry-parser.mjs';
 import { parseWithCodex,codexStatus,codexPeople } from './lib/codex-parser.mjs';
@@ -20,8 +21,13 @@ import { restoreBackup } from './lib/backup.mjs';
 import { createVoiceLab } from './lib/voice-lab.mjs';
 import {prepareMedicinePhotos,medicinePhotoInput} from './lib/medicine-photos.mjs';
 import {medicinePhotoKey} from './public/medicine-images.js';
+import {openAuth,sameToken,sessionCookie} from './lib/auth.mjs';
+import {isLinux} from './lib/linux-media.mjs';
 
 const root=dirname(fileURLToPath(import.meta.url));
+const familyDayStart='06:00';
+const accountPages=new Set(['/login','/register','/account']);
+const accountAssets=new Set(['/account.js','/account.css','/icon.svg']);
 // Public design shells and synthetic specimens; copied medical data stays behind the API.
 const designStudyAssets=Object.fromEntries([
   ['/design-study',['design-study/index.html','text/html']],
@@ -40,11 +46,12 @@ export function imageType(bytes) {
   if(bytes.toString('ascii',0,4)==='RIFF'&&bytes.toString('ascii',8,12)==='WEBP') return 'image/webp';
   return null;
 }
-export async function createApp({dataDir=join(root,'data'),port=4382,publicHost='medika.localhost',additionalHosts=[],entryParser=parseEntry,voiceLabOptions={},medicineRecognitionOptions={}}={}) {
+export async function createApp({dataDir=join(root,'data'),port=4382,publicHost='medika.localhost',additionalHosts=[],requireAccount=false,entryParser=parseEntry,voiceLabOptions={},medicineRecognitionOptions={}}={}) {
   const store=openStore(dataDir), uploads=join(dataDir,'uploads');
+  const auth=requireAccount?openAuth(store.db):null;
   await mkdir(uploads,{recursive:true,mode:0o700});
   const voiceLab=await createVoiceLab(dataDir,{context:()=>({people:codexPeople(store.state()),medicines:store.state().medicines.filter(m=>!m.archived).map(m=>m.name)}),...voiceLabOptions});
-  const token=randomBytes(32).toString('hex'), ocrBinary=join(root,'scripts/medika-ocr');
+  const token=randomBytes(32).toString('hex'),ocrBinary=isLinux?'/usr/bin/tesseract':join(root,'scripts/medika-ocr');
   let ocrReady=false,photoBusy=false;
   try { await access(ocrBinary);ocrReady=true; } catch {}
   const recognize=createLocalOCR(ocrBinary,dataDir),prescriptionLab=await createPrescriptionLab(dataDir,{recognize:async bytes=>{const hash=createHash('sha256').update(bytes).digest('hex'),saved=store.db.prepare('SELECT data FROM documents WHERE hash=?').all(hash).map(r=>JSON.parse(r.data)).filter(d=>d.mime);if(saved.length){const d=saved[0],reviewed=saved.every(x=>x.sourceKind==='doctor'&&x.text===d.text);return {text:d.ocrText??d.text,lines:d.lines||[],engine:'Apple Vision · сохранённый результат',...(reviewed&&d.text!==(d.ocrText??d.text)?{reviewedText:d.text}:{})};}assert(ocrReady,'OCR не настроен',503);return recognize(bytes);},imageType});
@@ -56,9 +63,17 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
     if(found){const old=JSON.parse(found.data);assert(old.status!=='void'&&Object.entries(input).every(([k,v])=>old[k]===v),'Ключ относится к другой или отменённой записи. Проверьте журнал.',409);return {status:200,record:old};}
     return {status:201,record:store.insert('activities',{...input,status:'recorded'})};
   }
-  function scheduleView(state,date,personId=''){
+  function scheduleView(state,date,personId='',familyDay=false){
         const prescriptions=state.prescriptions.filter(r=>!personId||r.personId===personId);
-        const planned=prescriptions.filter(r=>!r.carePhase||r.carePhase===(state.people.find(p=>p.id===r.personId)?.carePhase||'prevention')).flatMap(r=>scheduleFor(r,date,state.people.find(p=>p.id===r.personId)));
+        const planned=prescriptions.flatMap(rx=>{
+          const person=state.people.find(p=>p.id===rx.personId);
+          if(rx.carePhase&&rx.carePhase!==(person?.carePhase||'prevention'))return [];
+          const items=scheduleFor(rx,date,person);
+          if(!familyDay)return items;
+          // Named slots follow the plan day. Exact times keep their calendar dates and keys.
+          const overnight=item=>(!item.anchor||item.anchor==='clock')&&item.time<familyDayStart;
+          return [...items.filter(item=>!overnight(item)),...scheduleFor(rx,nextDay(date),person).filter(overnight)];
+        });
         const items=planned.map(e=>({...e,event:state.events.find(x=>(x.key===e.key||x.key===e.legacyKey)&&x.status!=='void')||null}));
         const recorded=state.events.filter(e=>e.date===date&&e.status!=='void'&&(!personId||e.personId===personId)&&!items.some(p=>p.event?.id===e.id)).map(event=>({...event,event,historical:true}));
         const prn=prescriptions.filter(r=>(!r.carePhase||r.carePhase===(state.people.find(p=>p.id===r.personId)?.carePhase||'prevention'))&&r.type==='prn'&&!r.archived&&r.startDate<=date&&(!r.endDate||r.endDate>=date));
@@ -66,7 +81,8 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
   }
   const allowedHosts=new Set([publicHost,...additionalHosts,`medika.localhost:${port}`,`127.0.0.1:${port}`,`localhost:${port}`].flatMap(host=>host.includes(':')?[host.toLowerCase()]:[host.toLowerCase(),`${host.toLowerCase()}:80`,`${host.toLowerCase()}:443`]));
   async function body(req,limit=18*1024*1024) {
-    assert(req.headers['content-type']?.startsWith('application/json'),'Ожидается JSON',415);
+    assert(req.headers['content-type']?.split(';')[0].trim().toLowerCase()==='application/json','Ожидается JSON',415);
+    assert(!req.headers['content-length']||Number(req.headers['content-length'])<=limit,'Файл или запрос слишком большой',413);
     const chunks=[];let length=0;
     for await(const chunk of req) { length+=chunk.length;assert(length<=limit,'Файл или запрос слишком большой',413);chunks.push(chunk); }
     try { const value=JSON.parse(Buffer.concat(chunks).toString('utf8'));assert(value&&typeof value==='object'&&!Array.isArray(value),'Ожидается объект JSON');return value; } catch(e) { if(e instanceof InputError) throw e;throw new InputError('Некорректный JSON'); }
@@ -79,23 +95,62 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
     res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
     try {
       assert(allowedHosts.has(req.headers.host?.toLowerCase()),'Этот адрес не разрешён',403);
-      const scheme=req.headers['x-forwarded-proto']==='https'&&['127.0.0.1','::1'].includes(req.socket.remoteAddress)?'https':'http';
-      const url=new URL(req.url,`${scheme}://${req.headers.host}`), route=url.pathname, method=req.method;
+      const loopback=['127.0.0.1','::1'].includes(req.socket.remoteAddress);
+      const scheme=req.headers['x-forwarded-proto']==='https'&&loopback?'https':'http';
+      assert(req.url.startsWith('/'),'Некорректный адрес');
+      const base=new URL(`${scheme}://${req.headers.host}`),url=new URL(req.url,base),route=url.pathname,method=req.method;
+      assert(url.origin===base.origin,'Некорректный адрес');
+      const redirect=location=>{res.writeHead(303,{Location:location});res.end();};
+      if(auth){
+        res.setHeader('X-Robots-Tag','noindex, nofollow, noarchive');
+        res.setHeader('X-Frame-Options','DENY');
+        res.setHeader('Cross-Origin-Resource-Policy','same-origin');
+        res.setHeader('Permissions-Policy','microphone=(self), camera=(self), geolocation=()');
+        assert(scheme==='https'&&base.host===publicHost,'Требуется HTTPS на адресе Медики',403);
+        res.setHeader('Strict-Transport-Security','max-age=31536000');
+      }
       if(route==='/design-study/a1')res.setHeader('Content-Security-Policy',`default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src ${url.origin}/api/session ${url.origin}/api/design-study/a1-snapshot; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'`);
       // Links from chats may be cross-site; the shell and public CA contain no medical data.
-      const publicRead=['GET','HEAD'].includes(method)&&(['/','/manage','/family','/family/','/voice-lab','/voice-lab/','/ocr-lab','/ocr-lab/','/playground','/prescriptions/import','/medika-ca.cer','/medicines','/medicines/'].includes(route)||Object.hasOwn(designStudyAssets,route));
+      const publicRead=['GET','HEAD'].includes(method)&&(['/','/manage','/family','/family/','/voice-lab','/voice-lab/','/ocr-lab','/ocr-lab/','/playground','/prescriptions/import','/medika-ca.cer','/medicines','/medicines/'].includes(route)||Object.hasOwn(designStudyAssets,route)||auth&&accountPages.has(route));
       if(!publicRead){
         assert(!req.headers.origin||req.headers.origin===url.origin,'Запрос с другого сайта отклонён',403);
         assert(req.headers['sec-fetch-site']!=='cross-site','Запрос с другого сайта отклонён',403);
       }
-      if(route==='/api/health'&&method==='GET') return send(200,{ok:true,app:'medika',version:'0.1.0',ocr:ocrReady});
-      if(route==='/api/session'&&method==='GET') return send(200,{token},{'Set-Cookie':`medika_session=${token}; HttpOnly; SameSite=Strict; Path=/`});
+      if(route==='/api/health'&&method==='GET') return send(200,auth?{ok:true}:{ok:true,app:'medika',version:'0.1.0',ocr:ocrReady});
+      const session=auth?.session(req.headers.cookie);
+      if(auth){
+        if(['/api/account/login','/api/account/register'].includes(route)&&method==='POST'){
+          assert(req.headers.origin===url.origin,'Запрос с другого сайта отклонён',403);
+          const suppliedIp=req.headers['x-medika-client-ip'],ip=isIP(suppliedIp||'')?suppliedIp:req.socket.remoteAddress;
+          const input=await body(req,4096);
+          const login=route.endsWith('/login');
+          const secret=await (login?auth.login(input,ip):auth.register(input,ip));
+          if(session)auth.logout(session.id);
+          return send(login?200:201,{ok:true},{'Set-Cookie':sessionCookie(secret)});
+        }
+        if(!session){
+          if(!['GET','HEAD'].includes(method)||route.startsWith('/api/'))throw new InputError('Войдите в Медику',401);
+          if(!accountAssets.has(route)&&route!=='/login'&&route!=='/register')return redirect('/login');
+        }
+        if(session&&(route==='/login'||route==='/register'))return redirect('/family');
+        if(route==='/api/account/logout'&&method==='POST'){
+          assert(req.headers.origin===url.origin&&sameToken(session.csrf,req.headers['x-medika-token']),'Запрос с другого сайта отклонён',403);
+          auth.logout(session.id);
+          return send(200,{ok:true},{'Set-Cookie':sessionCookie('',0)});
+        }
+      }
+      if(route==='/api/session'&&method==='GET') return session?send(200,{token:session.csrf,username:session.username}):send(200,{token},{'Set-Cookie':`medika_session=${token}; HttpOnly; SameSite=Strict; Path=/`});
       const ocrImageRoute=route.match(/^\/api\/ocr-lab\/cases\/([a-f\d-]+)\/(?:image|package-image\/m\d+-[a-f\d]{16})$/);
       const imageRoute=route.match(/^\/api\/documents\/([a-f\d-]+)\/image$/);
       const labAudioRoute=route.match(/^\/api\/voice-lab\/recordings\/([a-f\d-]+)\/audio$/);
       if(route.startsWith('/api/')) {
-        if((imageRoute||ocrImageRoute)&&method==='GET'||labAudioRoute&&['GET','HEAD'].includes(method)) assert(req.headers.cookie?.split(';').some(s=>s.trim()===`medika_session=${token}`),'Откройте приложение перед просмотром',403);
-        else assert(req.headers['x-medika-token']===token,'Сессия обновлена. Перезагрузите страницу.',403);
+        const media=(imageRoute||ocrImageRoute||labAudioRoute)&&['GET','HEAD'].includes(method);
+        const supplied=req.headers['x-medika-token'];
+        if(auth){
+          if(!['GET','HEAD'].includes(method))assert(req.headers.origin===url.origin,'Запрос с другого сайта отклонён',403);
+          assert(media||sameToken(session.csrf,supplied),'Сессия обновлена. Перезагрузите страницу.',403);
+        }else if(media)assert(req.headers.cookie?.split(';').some(s=>s.trim()===`medika_session=${token}`),'Откройте приложение перед просмотром',403);
+        else assert(supplied===token,'Сессия обновлена. Перезагрузите страницу.',403);
       }
       if(route==='/api/design-study/a1-snapshot'){
         assert(method==='GET','Снимок доступен только для чтения',405);
@@ -207,7 +262,13 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       const archiveRoute=route.match(/^\/api\/prescriptions\/([a-f\d-]+)\/archive$/);
       if(archiveRoute&&method==='POST') { const input=await body(req);return send(200,store.update('prescriptions',archiveRoute[1],{archived:input.archived!==false},input.version)); }
       if(route==='/api/schedule'&&method==='GET'){const date=day(url.searchParams.get('date'));return send(200,scheduleView(store.state(),date,url.searchParams.get('personId')));}
-      if(route==='/api/family'&&method==='GET'){const now=new Date(),timeZone='Europe/Chisinau',date=localParts(now,timeZone).date,state=store.state();return send(200,{...familyView(state,scheduleView(state,date),{date,now,timeZone},{maskIds:false}),medicinePhotos:state.medicinePhotos,medicines:state.medicines.filter(m=>!m.archived),capabilities:{voice:await voiceStatus()}});}
+      if(route==='/api/family'&&method==='GET'){
+        const now=new Date(),timeZone='Europe/Chisinau',local=localParts(now,timeZone);
+        const date=local.time<familyDayStart?nextDay(local.date,-1):local.date;
+        const dayEndsAt=zonedInstant(nextDay(date),familyDayStart,timeZone),state=store.state();
+        const view=familyView(state,scheduleView(state,date,'',true),{date,now,timeZone},{maskIds:false});
+        return send(200,{...view,dayEndsAt,account:Boolean(auth),medicinePhotos:state.medicinePhotos,medicines:state.medicines.filter(m=>!m.archived),capabilities:{voice:await voiceStatus()}});
+      }
       if(route==='/api/check'&&method==='POST') {
         const input=await body(req),state=store.state();assert(state.people.some(p=>p.id===input.personId),'Выберите человека');
         const candidate=input.candidate?{name:string(input.candidate.name,'Препарат',200,true),ingredients:string(input.candidate.ingredients,'Состав',600).split(/[+;,\n]/).map(s=>s.trim()).filter(Boolean)}:null;
@@ -287,12 +348,13 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       if(route==='/api/audit'&&method==='GET') return send(200,store.history().slice(-200).reverse());
       assert(!route.startsWith('/api/'),'Метод или маршрут не найден',404);
       assert(method==='GET'||method==='HEAD','Метод не разрешён',405);
-      if(route==='/medika-ca.cer'&&method==='GET'){res.writeHead(200,{'Content-Type':'application/x-x509-ca-cert','Content-Disposition':'attachment; filename=medika-ca.cer'});return res.end(await readFile(join(root,'data/medika-ca.cer')));}
+      if(route==='/medika-ca.cer'&&method==='GET'&&!auth){res.writeHead(200,{'Content-Type':'application/x-x509-ca-cert','Content-Disposition':'attachment; filename=medika-ca.cer'});return res.end(await readFile(join(root,'data/medika-ca.cer')));}
       if(route==='/ocr-sample.png'){res.writeHead(200,{'Content-Type':'image/png'});return res.end(await readFile(join(root,'public/ocr-sample.png')));}
       const packageImage=route.match(/^\/medicine-images\/([a-z0-9-]+\.jpg)$/);if(packageImage){let bytes;try{bytes=await readFile(join(root,'public/medicine-images',packageImage[1]));}catch{throw new InputError('Фото не найдено',404);}res.writeHead(200,{'Content-Type':'image/jpeg','Cache-Control':'public, max-age=86400'});return res.end(method==='HEAD'?undefined:bytes);}
       const assets={...designStudyAssets,'/medicines':['medicines.html','text/html'],'/medicines/':['medicines.html','text/html'],'/medicine-reference.js':['medicine-reference.js','text/javascript'],'/medicine-reference.css':['medicine-reference.css','text/css'],'/medicines.js':['medicines.js','text/javascript'],'/medicines.css':['medicines.css','text/css'],'/family':['family-preview.html','text/html'],'/family/':['family-preview.html','text/html'],'/family-preview-model.js':['family-preview-model.js','text/javascript'],'/family-card.js':['family-card.js','text/javascript'],'/ocr-lab':['ocr-lab.html','text/html'],'/ocr-lab/':['ocr-lab.html','text/html'],'/playground':['ocr-lab.html','text/html'],'/prescriptions/import':['ocr-lab.html','text/html'],'/ocr-lab.js':['ocr-lab.js','text/javascript'],'/prescription-workspace.js':['prescription-workspace.js','text/javascript'],'/prescription-workspace.css':['prescription-workspace.css','text/css'],'/medicine-forms.js':['medicine-forms.js','text/javascript'],'/routine.js':['routine.js','text/javascript'],'/':['family-preview.html','text/html'],'/manage':['index.html','text/html'],'/family-workspace.js':['family-workspace.js','text/javascript'],'/family-workspace.css':['family-workspace.css','text/css'],'/voice-lab':['voice-lab.html','text/html'],'/voice-lab/':['voice-lab.html','text/html'],'/voice-lab.js':['voice-lab.js','text/javascript'],'/voice-lab.css':['voice-lab.css','text/css'],'/prescription-summary.js':['prescription-summary.js','text/javascript'],'/medicine-images.js':['medicine-images.js','text/javascript'],'/app.js':['app.js','text/javascript'],'/style.css':['style.css','text/css'],'/icon.svg':['icon.svg','image/svg+xml'],'/voice-recorder.js':['voice-recorder.js','text/javascript'],'/voice-capture.js':['voice-capture.js','text/javascript'],'/voice-queue.js':['voice-queue.js','text/javascript']};
-      assert(assets[route],'Страница не найдена',404);
-      const [file,mime]=assets[route];res.writeHead(200,{'Content-Type':`${mime}; charset=utf-8`});res.end(method==='HEAD'?undefined:await readFile(join(root,'public',file)));
+      const asset=auth&&accountPages.has(route)?['account.html','text/html']:auth&&accountAssets.has(route)&&route!=='/icon.svg'?[route.slice(1),route.endsWith('.js')?'text/javascript':'text/css']:Object.hasOwn(assets,route)?assets[route]:null;
+      assert(asset&&['GET','HEAD'].includes(method),'Страница не найдена',404);
+      const [file,mime]=asset;res.writeHead(200,{'Content-Type':`${mime}; charset=utf-8`});res.end(method==='HEAD'?undefined:await readFile(join(root,'public',file)));
     } catch(e) {
       if(res.headersSent) return res.destroy();
       if(!(e instanceof InputError)) console.error('Ошибка запроса:',e.code||e.name);
@@ -304,7 +366,8 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
 }
 
 if(process.argv[1]&&fileURLToPath(import.meta.url)===process.argv[1]) {
-  const port=Number(process.env.PORT||4382),additionalHosts=(process.env.MEDIKA_LAN_HOSTS||'').split(',').map(host=>host.trim()).filter(Boolean),app=await createApp({port,additionalHosts,entryParser:parseWithCodex,dataDir:process.env.MEDIKA_DATA_DIR||join(root,'data')});
+  const port=Number(process.env.PORT||4382),additionalHosts=(process.env.MEDIKA_LAN_HOSTS||'').split(',').map(host=>host.trim()).filter(Boolean);
+  const publicHost=process.env.MEDIKA_PUBLIC_HOST?.toLowerCase(),app=await createApp({port,additionalHosts,publicHost,requireAccount:Boolean(publicHost),entryParser:parseWithCodex,dataDir:process.env.MEDIKA_DATA_DIR||join(root,'data')});
   app.server.listen(port,'127.0.0.1',()=>console.log('Медика: http://medika.localhost'+additionalHosts.map(host=>` · http://${host}`).join('')));
   for(const signal of ['SIGINT','SIGTERM']) process.once(signal,async()=>{await app.close();process.exit(0);});
 }

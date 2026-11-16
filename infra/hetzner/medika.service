@@ -1,0 +1,36 @@
+[Unit]
+Description=Medika family journal
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=medika
+Group=medika
+WorkingDirectory=/opt/medika/current/site
+Environment=PORT=4382
+Environment=MEDIKA_PUBLIC_HOST=medika.ibhash.com
+Environment=MEDIKA_DATA_DIR=/var/lib/medika/data
+EnvironmentFile=-/etc/medika/runtime.env
+ExecStart=/opt/medika/runtime/bin/node server.mjs
+Restart=on-failure
+RestartSec=3
+StateDirectory=medika
+StateDirectoryMode=0700
+UMask=0077
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+CapabilityBoundingSet=
+MemoryMax=1800M
+CPUQuota=150%
+TasksMax=100
+
+[Install]
+WantedBy=multi-user.target

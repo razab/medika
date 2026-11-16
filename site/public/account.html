@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Медика</title>
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/account.css">
+  <script type="module" src="/account.js"></script>
+</head>
+<body>
+  <main>
+    <header><img src="/icon.svg" alt="" width="36" height="36"><span>Медика</span></header>
+    <h1 id="account-title">Войти</h1>
+    <form id="account-form" method="post" action="/login">
+      <label>Логин<input name="username" autocomplete="username" autocapitalize="none" spellcheck="false" minlength="3" maxlength="40" required></label>
+      <label>Пароль<input name="password" type="password" autocomplete="current-password" maxlength="256" required></label>
+      <label id="account-invite" hidden>Код приглашения<input name="invite" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="64" disabled></label>
+      <button type="submit">Войти</button>
+      <a id="account-switch" href="/register">Регистрация по приглашению</a>
+    </form>
+    <section id="account-details" hidden>
+      <p id="account-name"></p>
+      <button type="button" id="account-logout">Выйти</button>
+      <a href="/family">Семейный журнал</a>
+    </section>
+    <p id="account-error" role="alert"></p>
+  </main>
+</body>
+</html>

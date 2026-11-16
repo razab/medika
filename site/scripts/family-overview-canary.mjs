@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';import {mkdtemp,rm,writeFile} from 'node:fs/promises';import {join} from 'node:path';import {tmpdir} from 'node:os';import {createApp} from '../server.mjs';
-const NativeDate=Date,fixed=Date.parse('2026-11-10T11:38:00Z');globalThis.Date=class extends NativeDate{constructor(...args){super(...(args.length?args:[fixed]));}static now(){return fixed;}};
+const NativeDate=Date,fixed=Date.parse('2026-11-10T11:38:00Z');let testNow=fixed;globalThis.Date=class extends NativeDate{constructor(...args){super(...(args.length?args:[testNow]));}static now(){return testNow;}};
 const {chromium}=await import(process.env.PLAYWRIGHT_MODULE||'playwright'),directory=await mkdtemp(join(tmpdir(),'medika-overview-')),port=14412,origin=`http://127.0.0.1:${port}`,app=await createApp({port,dataDir:directory});let browser;const checks=[],errors=[];
 try{await new Promise(r=>app.server.listen(port,'127.0.0.1',r));const {token}=await(await fetch(origin+'/api/session')).json(),api=async(path,body)=>{const r=await fetch(origin+'/api'+path,{method:body?'POST':'GET',headers:{'X-Medika-Token':token,...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined}),value=await r.json();assert(r.ok,JSON.stringify(value));return value;};
 const people=[];for(const [name,second]of [['Алиса','dinner'],['Даня','lunch']])people.push(await api('/people',{name,carePhase:'acute',routine:Object.fromEntries(['weekday','weekend'].map(kind=>[kind,{times:name==='Алиса'?{}:{breakfast:'07:30',lunch:'13:30',dinner:'19:00',secondDinner:'21:30'},intakes:['breakfast',name==='Алиса'?'lunch':second,name==='Алиса'?'dinner':'secondDinner']}]))}));
@@ -27,5 +27,35 @@ for(let i=0;i<5;i++){const slot=page.locator('.care-person').first().locator('.f
 }}
 await page.unroute('**/api/events');assert.deepEqual((await api('/state')).events,beforeTouch);checks.push({width,height,...layout,allMealAndClockTouchEdges:true});
 }
+const overnight=await browser.newPage({viewport:{width:390,height:844},hasTouch:true});
+overnight.on('pageerror',e=>errors.push(e.message));
+await overnight.clock.install({time:new NativeDate('2026-11-10T21:59:00Z')});
+const moveClock=async utc=>{testNow=NativeDate.parse(utc);await overnight.clock.setSystemTime(testNow);};
+const eveningDate='2026-11-10',morningDate='2026-11-11';
+const nightClock=await api('/prescriptions',{personId:people[0].id,name:'ТестНочноеВремя',dose:'1',unit:'табл.',type:'routine',routineSlots:[{anchor:'clock',time:'00:05'}],startDate:morningDate,timeZone:'Europe/Chisinau',carePhase:'acute',confirmed:true});
+await moveClock('2026-11-10T21:59:00Z');
+await overnight.goto(origin+'/');await overnight.locator('.family-preview-footer').waitFor();
+await moveClock('2026-11-10T22:05:00Z');
+assert.equal((await api('/family')).model.date,eveningDate);
+const exactRow=overnight.locator('[data-demo-row="'+nightClock.id+'@routine-'+morningDate+'-0"]');
+const eveningRow=overnight.locator('[data-demo-row="'+rxs[0].id+'@routine-'+eveningDate+'-2"]');
+assert.deepEqual(await overnight.locator('.care-person').first().locator('.family-slot-heading h3').allTextContents(),['Завтрак','Обед','Ужин','23:00','23:15','00:05']);
+for(const row of [eveningRow,exactRow]){await row.locator('.care-take').tap();await overnight.waitForFunction(()=>document.querySelector('#family').getAttribute('aria-busy')==='false');assert(await row.locator('input').isChecked());}
+await overnight.reload();await overnight.locator('.family-preview-footer').waitFor();
+assert(await eveningRow.locator('input').isChecked());assert(await exactRow.locator('input').isChecked());
+const afterMidnight=await api('/family'),eveningFact=afterMidnight.model.history.find(event=>event.rowKey===rxs[0].id+'@routine-'+eveningDate+'-2');
+assert.equal(eveningFact.date,morningDate);assert.equal(eveningFact.time,'00:05');assert.equal(eveningFact.input.date,eveningDate);
+assert.equal(afterMidnight.model.history.find(event=>event.prescriptionId===nightClock.id).input.date,morningDate);
+await moveClock('2026-11-11T03:59:59Z');assert.equal((await api('/family')).model.date,eveningDate);
+await moveClock('2026-11-11T04:00:00Z');assert.equal((await api('/family')).model.date,morningDate);
+const beforeRollover=(await api('/state')).events;
+const staleRow=overnight.locator('[data-demo-row="'+rxs[0].id+'@routine-'+eveningDate+'-1"]');
+await staleRow.locator('.care-take').tap();
+await eveningRow.waitFor({state:'detached'});
+const newEvening=overnight.locator('[data-demo-row="'+rxs[0].id+'@routine-'+morningDate+'-2"]');
+await newEvening.waitFor();
+assert.equal(await newEvening.locator('input').isChecked(),false);
+assert.deepEqual((await api('/state')).events,beforeRollover);
+checks.push('00:05 after midnight can complete yesterday’s meal slot, the actual date and time survive reload, a calendar-based 00:05 prescription keeps its own date, and the board rolls at 06:00');
 assert.deepEqual(errors,[]);await writeFile('reports/family-overview-canary.json',JSON.stringify({status:'PASS',syntheticOnly:true,clockFrozen:'2026-11-10T11:38:00Z',physicalDeviceTested:false,medicalPlanUnchanged:true,checks},null,2));console.log('PASS all current-day slots and dated facts');
 }catch(error){await writeFile('reports/family-overview-canary.json',JSON.stringify({status:'FAIL',syntheticOnly:true,error:error.message,checks},null,2));throw error;}finally{await browser?.close();await app.close();await rm(directory,{recursive:true,force:true});}

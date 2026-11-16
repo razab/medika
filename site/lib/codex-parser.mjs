@@ -7,7 +7,7 @@ import {assert,InputError,string,zone,occurrenceInput,localParts,zonedInstant,ac
 import {namedPeople} from './entry-parser.mjs';
 import {catalog} from './reference.mjs';
 
-const root=dirname(fileURLToPath(import.meta.url)),binary=join(root,'../tools/codex/node_modules/.bin/codex'),schema=join(root,'codex-entry-schema.json');
+const root=dirname(fileURLToPath(import.meta.url)),binary=process.env.MEDIKA_CODEX_BIN||join(root,'../tools/codex/node_modules/.bin/codex'),schema=join(root,'codex-entry-schema.json');
 export const parserRevision='dual-asr-sol-library-v4';
 export const knownMedicines=catalog.map(({name,aliases})=>({name,aliases}));
 export const knownMedicinesFor=state=>[...knownMedicines,...(state.medicines||[]).filter(m=>!m.archived).map(m=>({name:m.name,aliases:[]}))];
@@ -73,7 +73,7 @@ export async function runCodexJSON(prompt,outputSchema,{model=codexModel}={}){
   busy=true;
   let directory;
   try{
-    assert((await codexStatus()).ready,'Codex для Медики не установлен',503);
+    assert((await codexStatus()).ready,'Codex для Медики не настроен. Нужен вход через ChatGPT.',503);
     directory=await mkdtemp(join(tmpdir(),'medika-terra-'));
     const output=join(directory,'result.json');
     const args=['exec','--ignore-user-config','--ephemeral','--skip-git-repo-check','--sandbox','read-only','--model',model,'--config','forced_login_method="chatgpt"','--config','model_reasoning_effort="low"','--config','web_search="disabled"','--disable','shell_tool','--disable','multi_agent','--disable','apps','--json','--output-schema',outputSchema,'--output-last-message',output,'-'];

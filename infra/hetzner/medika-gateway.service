@@ -1,0 +1,27 @@
+[Unit]
+Description=Medika public HTTPS
+After=network-online.target medika.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=caddy
+Group=caddy
+Environment=XDG_DATA_HOME=/var/lib/medika-gateway
+Environment=XDG_CONFIG_HOME=/var/lib/medika-gateway
+ExecStart=/usr/bin/caddy run --config /etc/medika/Caddyfile --adapter caddyfile
+Restart=on-failure
+RestartSec=3
+StateDirectory=medika-gateway
+StateDirectoryMode=0700
+UMask=0077
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+NoNewPrivileges=yes
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=multi-user.target

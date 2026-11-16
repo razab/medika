@@ -44,8 +44,8 @@ export function familyPreview(state,schedule,{date,now=new Date(),timeZone='Euro
   const cards=people.map((person,index)=>{
     const groups=new Map();
     for(const item of schedule.items||[]){
-      const rx=prescriptions.get(item.rxId);
-      if(item.personId!==person.id||item.historical||!rx?.confirmed||rx.personId!==person.id||rx.archived||rx.startDate>date||rx.endDate&&rx.endDate<date||rx.carePhase&&rx.carePhase!==(person.carePhase||'prevention'))continue;
+      const rx=prescriptions.get(item.rxId),scheduledDate=item.date||date;
+      if(item.personId!==person.id||item.historical||!rx?.confirmed||rx.personId!==person.id||rx.archived||rx.startDate>scheduledDate||rx.endDate&&rx.endDate<scheduledDate||rx.carePhase&&rx.carePhase!==(person.carePhase||'prevention'))continue;
       const anchor=item.anchor||'clock',at=clock(item.displayTime)||clock(item.time),key=anchor==='clock'?'clock:'+at:anchor,label=anchor==='clock'?(at||'Точное время'):anchor==='unassigned'?'Нужно привязать приём':item.label||'Приём без названия';
       if(!groups.has(key))groups.set(key,{key,label,time:'',rows:[]});
       const group=groups.get(key);

@@ -7,7 +7,7 @@ const {chromium}=await import(process.env.PLAYWRIGHT_MODULE||'playwright'),dir=a
 async function start(folder=dir){app=await createApp({port,dataDir:folder});await new Promise(r=>app.server.listen(port,'127.0.0.1',r));token=(await(await fetch(origin+'/api/session')).json()).token;}
 async function api(path,body,method=body?'POST':'GET',status){const r=await fetch(origin+'/api'+path,{method,headers:{'X-Medika-Token':token,...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})}),v=await r.json();if(status)assert.equal(r.status,status,JSON.stringify(v));else assert(r.ok,JSON.stringify(v));return v;}
 try{
- await start();const date=new Date().toLocaleDateString('sv-SE',{timeZone:'Europe/Chisinau'}),testNow=Date.now()-40*60000,people=[];
+ await start();const date=(await api('/family')).model.date,testNow=Date.now()-40*60000,people=[];
  for(const name of ['Тест А','Тест Б'])people.push(await api('/people',{name,carePhase:'acute',routine:Object.fromEntries(['weekday','weekend'].map(k=>[k,{times:{breakfast:'07:30',secondDinner:'21:30'},intakes:['breakfast','secondDinner','']}]))}));
  const first=await api('/medicines',{name:'ТестПервый',medicineForm:'inhalation',strength:'1 мг/мл'});let second=await api('/medicines',{name:'ТестВторой',medicineForm:'inhalation',strength:'2 мг/мл'});
  browser=await chromium.launch({headless:true});const page=await browser.newPage({viewport:{width:390,height:844},hasTouch:true});page.on('pageerror',e=>errors.push(e.message));page.setDefaultTimeout(12000);

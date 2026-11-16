@@ -4,6 +4,7 @@ import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 import {assert,string} from './domain.mjs';
 import {medicinePhotoKey} from '../public/medicine-images.js';
+import {convertMedia,imageSize,isLinux} from './linux-media.mjs';
 const exec=promisify(execFile);
 function jpegSize(bytes){
   if(bytes[0]!==255||bytes[1]!==216)return null;let i=2;
@@ -23,10 +24,17 @@ export async function prepareMedicinePhotos(images,dataDir,imageType){
     const dir=await mkdtemp(join(dataDir,'photo-'));
     try{
       const source=join(dir,'input'),target=join(dir,'photo.jpg');await writeFile(source,bytes,{mode:0o600});
-      const info=(await exec('/usr/bin/sips',['-g','pixelWidth','-g','pixelHeight',source],{timeout:10000,maxBuffer:4096})).stdout;
-      const width=Number(info.match(/pixelWidth:\s*(\d+)/)?.[1]),height=Number(info.match(/pixelHeight:\s*(\d+)/)?.[1]);assert(width>0&&height>0&&width*height<=24000000,'Размер фото слишком большой');
+      if(isLinux)await imageSize(source,24000000);
+      else{
+        const info=(await exec('/usr/bin/sips',['-g','pixelWidth','-g','pixelHeight',source],{timeout:10000,maxBuffer:4096})).stdout;
+        const width=Number(info.match(/pixelWidth:\s*(\d+)/)?.[1]),height=Number(info.match(/pixelHeight:\s*(\d+)/)?.[1]);assert(width>0&&height>0&&width*height<=24000000,'Размер фото слишком большой');
+      }
       let result;
-      for(const [side,quality]of [[320,65],[240,40]]){await exec('/usr/bin/sips',['-Z',String(side),'-s','format','jpeg','-s','formatOptions',String(quality),source,'--out',target],{timeout:15000,maxBuffer:4096});result=await readFile(target);if(result.length<=32768)break;}
+      for(const [side,quality,qscale]of [[320,65,'8'],[240,40,'15']]){
+        if(isLinux)await convertMedia(source,target,['-map_metadata','-1','-frames:v','1','-vf',`scale='min(${side},iw)':'min(${side},ih)':force_original_aspect_ratio=decrease`,'-q:v',qscale,'-update','1']);
+        else await exec('/usr/bin/sips',['-Z',String(side),'-s','format','jpeg','-s','formatOptions',String(quality),source,'--out',target],{timeout:15000,maxBuffer:4096});
+        result=await readFile(target);if(result.length<=32768)break;
+      }
       assert(result.length<=32768,'Не удалось уменьшить фото');photos.push(result.toString('base64'));
     }finally{await rm(dir,{recursive:true,force:true});}
   }

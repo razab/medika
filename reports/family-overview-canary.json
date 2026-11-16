@@ -83,6 +83,7 @@
       "minHeight": 48,
       "minGap": 8,
       "allMealAndClockTouchEdges": true
-    }
+    },
+    "00:05 after midnight can complete yesterday’s meal slot, the actual date and time survive reload, a calendar-based 00:05 prescription keeps its own date, and the board rolls at 06:00"
   ]
 }

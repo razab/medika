@@ -11,34 +11,136 @@ const root=document.querySelector('#family'),dialog=document.querySelector('#fam
 let snapshot,selected=localStorage.getItem('medika-family-person')||'all',actions=[],openKey='',historyDrug=false,saving=false,loading=false,token='',recording=null,voiceAt='',language=['ru','en'].includes(localStorage.getItem('medika-language'))?localStorage.getItem('medika-language'):'ru';
 let voiceQueue=null,voiceJobs=[],queueError='',captureBusy=false,replaceVoiceJob=null,voiceRefreshPending=false;
 const outsideOpen=new Set(),newId=()=> 'family-'+Array.from(crypto.getRandomValues(new Uint32Array(2)),n=>n.toString(16)).join('');
-const baseRows=()=>allRows(snapshot),rxFor=id=>snapshot.prescriptions.find(r=>r.id===id)||{},effectiveRow=row=>({...row,warnings:courseWarnings(rxFor(row.prescriptionId),snapshot.model.date)}),phaseOf=p=>p.phaseKey,visibleRow=(r,p)=>{const rx=rxFor(r.prescriptionId);return rx.confirmed&&(!rx.phase||rx.phase===phaseOf(p))&&rx.startDate<=snapshot.model.date&&(!rx.endDate||rx.endDate>=snapshot.model.date);};
-function message(text,undoId=''){notice.innerHTML=`<span>${e(text)}</span>${undoId?`<button type="button" data-undo="${e(undoId)}">Отменить</button>`:''}`;clearTimeout(message.timer);message.timer=setTimeout(()=>notice.textContent='',12000);}
-async function api(path,body=null,method=body?'POST':'GET'){
-  if(!token){const session=await fetch('/api/session');if(!session.ok)throw Error('Не удалось открыть сессию');token=(await session.json()).token;}
-  let response,value;try{response=await fetch('/api'+path,{method,headers:{'X-Medika-Token':token,...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})});value=await response.json();}catch{const error=Error('Ответ журнала не получен');error.uncertain=method!=='GET';throw error;}
-  if(!response.ok){if(response.status===403)token='';const error=Error(value.error||'Не удалось сохранить');error.status=response.status;throw error;}return value;
+const baseRows=()=>allRows(snapshot),rxFor=id=>snapshot.prescriptions.find(r=>r.id===id)||{},phaseOf=p=>p.phaseKey;
+const planDate=row=>row.scheduledDate||snapshot.model.date;
+const effectiveRow=row=>({...row,warnings:courseWarnings(rxFor(row.prescriptionId),planDate(row))});
+function visibleRow(row,person){
+  const rx=rxFor(row.prescriptionId),date=planDate(row);
+  return rx.confirmed&&(!rx.phase||rx.phase===phaseOf(person))&&rx.startDate<=date&&(!rx.endDate||rx.endDate>=date);
 }
-function setBusy(value){root.setAttribute('aria-busy',String(value));for(const n of [...root.querySelectorAll('input,button,select'),...dialog.querySelectorAll('input,button,select,textarea')]){if(value){if(!('wasDisabled' in n.dataset))n.dataset.wasDisabled=String(n.disabled);n.disabled=true;}else if('wasDisabled' in n.dataset){n.disabled=n.dataset.wasDisabled==='true';delete n.dataset.wasDisabled;}}if(recording)root.querySelectorAll('input,button,select').forEach(n=>n.disabled=!n.hasAttribute('data-voice'));updateVoiceStatus();}
-async function refresh(){snapshot=await api('/family');if(!snapshot.model.cards.some(p=>p.id===selected))selected='all';render();}
-async function load(){if(loading||saving||recording||dialog.open)return;voiceRefreshPending=false;loading=true;try{await refresh();}catch(error){message(error.message);if(!snapshot)root.innerHTML='<main class="family-loading"><p>Не удалось открыть журнал</p><button data-retry>Обновить</button></main>';}finally{loading=false;}}
+const calendarDate=(instant=snapshot.contextAt)=>new Date(instant).toLocaleDateString('sv-SE',{timeZone:snapshot.timeZone});
+function message(text,undoId=''){notice.innerHTML=`<span>${e(text)}</span>${undoId?`<button type="button" data-undo="${e(undoId)}">Отменить</button>`:''}`;clearTimeout(message.timer);message.timer=setTimeout(()=>notice.textContent='',12000);}
+let refreshWarning='';
+const reloadMessage='Обновите журнал перед новой записью.';
+const journalWriteControls='[data-take], [data-record], [data-add-event], [data-add-medicine], [data-edit], [data-edit-event], [data-cancel], button[type="submit"]';
+async function api(path,body=null,method=body?'POST':'GET',retrySession=true){
+  if(!token){
+    const session=await fetch('/api/session');
+    if(session.status===401)location.replace('/login');
+    if(!session.ok)throw Error('Не удалось открыть сессию');
+    token=(await session.json()).token;
+  }
+  const requestToken=token;
+  let response,value;
+  try{
+    response=await fetch('/api'+path,{method,headers:{'X-Medika-Token':requestToken,...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})});
+    value=await response.json();
+  }catch{
+    const error=Error('Ответ журнала не получен');
+    error.uncertain=method!=='GET';
+    throw error;
+  }
+  if(!response.ok){
+    if(response.status===401)location.replace('/login');
+    if(response.status===403&&token===requestToken)token='';
+    if(method==='GET'&&retrySession&&response.status===403&&value.error==='Сессия обновлена. Перезагрузите страницу.'){
+      return api(path,null,'GET',false);
+    }
+    const error=Error(value.error||'Не удалось сохранить');
+    error.status=response.status;
+    error.uncertain=method!=='GET'&&response.status>=500;
+    throw error;
+  }
+  return value;
+}
+function setBusy(value){
+  root.setAttribute('aria-busy',String(value));
+  for(const control of [...root.querySelectorAll('input,button,select'),...dialog.querySelectorAll('input,button,select,textarea')]){
+    const locked=value||(refreshWarning&&control.matches(journalWriteControls));
+    if(locked){
+      if(!('wasDisabled' in control.dataset))control.dataset.wasDisabled=String(control.disabled);
+      control.disabled=true;
+    }else if('wasDisabled' in control.dataset){
+      control.disabled=control.dataset.wasDisabled==='true';
+      delete control.dataset.wasDisabled;
+    }
+  }
+  if(recording)root.querySelectorAll('input,button,select').forEach(control=>control.disabled=!control.hasAttribute('data-voice'));
+  updateVoiceStatus();
+}
+function renderRefreshWarning(){
+  const panel=root.querySelector('.family-refresh-warning');
+  panel.querySelector('p').textContent=refreshWarning;
+  panel.hidden=!refreshWarning;
+}
+async function refresh(){
+  const next=await api('/family');
+  const previous={snapshot,selected,refreshWarning};
+  try{
+    snapshot=next;
+    if(!snapshot.model.cards.some(p=>p.id===selected))selected='all';
+    refreshWarning='';
+    render();
+  }catch(error){
+    ({snapshot,selected,refreshWarning}=previous);
+    throw error;
+  }
+}
+async function load(){
+  if(loading||saving||recording||dialog.open)return;
+  voiceRefreshPending=false;
+  loading=true;
+  const retry=root.querySelector('[data-retry]');
+  if(retry)retry.disabled=true;
+  try{
+    await refresh();
+  }catch(error){
+    if(!refreshWarning)message(error.message);
+    if(!snapshot)root.innerHTML='<main class="family-loading"><p>Не удалось открыть журнал</p><button data-retry>Обновить</button></main>';
+  }finally{
+    loading=false;
+    if(retry)retry.disabled=false;
+  }
+}
 async function mutate(path,body,method='POST',{close=true,success='Сохранено',undo=false}={}){
-  if(saving||recording)return;saving=true;setBusy(true);let result,error;
+  if(saving||recording)return;
+  if(refreshWarning){
+    const field=dialog.open&&dialog.querySelector('.sandbox-form-error');
+    if(field)field.textContent=reloadMessage;
+    else{if(dialog.open)dialog.close();message(reloadMessage);}
+    return null;
+  }
+  saving=true;
+  setBusy(true);
+  let result,error;
   try{result=await api(path,body,method);}catch(e){error=e;}
-  try{await refresh();}catch{snapshot=null;root.innerHTML='<main class="family-loading"><p>Не удалось обновить журнал. Запись могла сохраниться; обновите данные перед повтором.</p><button data-retry>Обновить</button></main>';}
-  saving=false;setBusy(false);
+  try{
+    if(!error||error.uncertain||[403,409].includes(error.status))await refresh();
+  }catch{
+    const writeStatus=!error?success+'.':error.uncertain?'Ответ на запись не получен.':error.message;
+    refreshWarning=writeStatus+' Показана предыдущая версия журнала. '+reloadMessage;
+    renderRefreshWarning();
+  }finally{
+    saving=false;
+    setBusy(false);
+  }
+  if(refreshWarning){
+    if(dialog.open)dialog.close();
+    return result??null;
+  }
   if(!error){if(close&&dialog.open)dialog.close();message(success,undo?result.id:'');return result;}
   if(error.uncertain){if(dialog.open)dialog.close();message('Ответ на запись не получен. Состояние обновлено из журнала; проверьте запись перед повтором.');}
   else if([403,409].includes(error.status)){if(dialog.open)dialog.close();message(error.message+' Откройте действие заново.');}
   else {const target=dialog.open&&dialog.querySelector('.sandbox-form-error');if(target)target.textContent=error.message;else message(error.message);}
   return null;
 }
-async function record(row,time=new Date().toISOString(),unknown=false,amount=row.amount,clientKey=newId(),knownDate=snapshot.model.date){
-  const rx=rxFor(row.prescriptionId);if(!rx.id)return;if(snapshot.model.date!==new Date().toLocaleDateString('sv-SE',{timeZone:snapshot.timeZone})){if(dialog.open)dialog.close();await load();message('День изменился. Выберите приём заново.');return;}
-  return mutate('/events',{rxId:rx.id,rxVersion:row.rxVersion??rx.version,key:row.key,date:snapshot.model.date,status:'taken',dose:amount,...(rx.input.type==='prn'?{clientKey}:{}),...(unknown?{timeUnknown:true,knownDate,occurredAt:null}:{occurredAt:time})},'POST',{success:'Приём записан',undo:true});
+async function record(row,time=new Date().toISOString(),unknown=false,amount=row.amount,clientKey=newId(),knownDate=calendarDate(new Date())){
+  const rx=rxFor(row.prescriptionId);if(!rx.id)return;if(Date.now()>=Date.parse(snapshot.dayEndsAt)){if(dialog.open)dialog.close();await load();message('День изменился. Выберите приём заново.');return;}
+  return mutate('/events',{rxId:rx.id,rxVersion:row.rxVersion??rx.version,key:row.key,date:planDate(row),status:'taken',dose:amount,...(rx.input.type==='prn'?{clientKey}:{}),...(unknown?{timeUnknown:true,knownDate,occurredAt:null}:{occurredAt:time})},'POST',{success:'Приём записан',undo:true});
 }
 async function cancel(id){if(!snapshot.model.history.some(r=>r.id===id)&&!dialog.open)await load();const event=snapshot.model.history.find(r=>r.id===id);if(!event||event.status==='void')return;return mutate('/'+event.source+'/'+event.id+'/void',{version:event.version,reason:'Отменено на семейной доске'},'POST',{success:'Запись отменена'});}
 const fields=list=>`<dl class="prescription-fields">${list.map(([label,value])=>`<div><dt>${e(label)}</dt><dd>${e(value)}</dd></div>`).join('')}</dl>`;
-function showDialog(title,body){dialog.innerHTML=`<header><h2 id="family-info-title">${e(title)}</h2><button type="button" data-close>Закрыть</button></header>${body}`;dialog.showModal();}
+function showDialog(title,body){dialog.innerHTML=`<header><h2 id="family-info-title">${e(title)}</h2><button type="button" data-close>Закрыть</button></header>${body}`;dialog.showModal();if(refreshWarning)setBusy(saving);}
 function medicineThumb(name){const photos=photosForMedicine(name,snapshot.medicinePhotos||[]).photos,p=photos.find(p=>p.kind==='product')||photos[0];if(!p)return '';return `<span class="family-thumb" aria-hidden="true">${p.crop?`<svg viewBox="${p.crop.slice(0,4).join(' ')}"><image href="${e(p.src)}" width="${p.crop[4]}" height="${p.crop[5]}"/></svg>`:`<img src="${e(p.src)}" alt="">`}</span>`;}
 function medicinePhotos(name){const record=photosForMedicine(name,snapshot.medicinePhotos||[]);return record.photos.length?`<section class="family-photos">${record.photos.map(p=>p.crop?`<figure><svg viewBox="${p.crop.slice(0,4).join(' ')}" role="img" aria-label="${e(name)}"><image href="${e(p.src)}" width="${p.crop[4]}" height="${p.crop[5]}"/></svg><figcaption>${p.kind==='product'?'Препарат':'Упаковка'}${p.note?' · '+e(p.note):''}</figcaption>${p.source?`<a href="${e(p.source)}" target="_blank" rel="noreferrer">Источник фото</a>`:''}</figure>`:`<figure><img src="${e(p.src)}" alt="${e(name)}"><figcaption>${p.kind==='product'?'Препарат':'Упаковка'}${p.note?' · '+e(p.note):''}</figcaption>${p.source?`<a href="${e(p.source)}" target="_blank" rel="noreferrer">Источник фото</a>`:''}</figure>`).join('')}</section>`:'';}
 function referenceForRow(row){const rx=rxFor(row.prescriptionId),id=rx.input?.medicineId,form=rx.form||rx.suggestedForm,candidates=snapshot.medicines.filter(m=>(id?m.id===id:m.name.trim().toLocaleLowerCase()===row.name.trim().toLocaleLowerCase())&&m.medicineForm===form);if(candidates.length!==1)return;const m=candidates[0],strength=s=>String(s||'').toLowerCase().replace(/мг/g,'mg').replace(/мл/g,'ml').replace(/,/g,'.').replace(/\s+/g,'');if(m.name.trim().toLocaleLowerCase()!==row.name.trim().toLocaleLowerCase()||strength(rx.strength)!==strength(m.strength))return;return m.reference;}
@@ -54,32 +156,35 @@ function renderRow(source,later=false){const row=effectiveRow(source),event=rowE
 function group(g,p){const rows=g.rows.filter(r=>visibleRow(r,p));if(!rows.length)return '';return `<section class="care-current family-day-slot"><div class="family-slot-heading"><h3 class="sandbox-current-label">${e(g.label)}</h3><button type="button" data-add-medicine="${e(p.id)}" data-anchor="${e(rows[0].anchor==='clock'?'':p.daySlots?'slot:'+rows[0].anchor:rows[0].anchor)}"${rows[0].anchor==='clock'?` data-time="${e(g.time||'')}"`:''} aria-label="Добавить лекарство: ${e(p.name)}, ${e(g.label)}">+</button></div>${rows.map(r=>renderRow({...r,personId:p.id})).join('')}</section>`;}
 function peopleView(){return snapshot.model.cards;}
 function card(p){
-  const own=snapshot.prescriptions.filter(r=>r.personId===p.id),phase=phaseOf(p),hasRows=[...(p.current?.rows||[]),...p.later.flatMap(g=>g.rows),...p.earlier.flatMap(g=>g.rows),...p.prn].some(r=>visibleRow(r,p));
-  const outside=own.filter(r=>!r.confirmed||r.phase&&r.phase!==phase||r.startDate>snapshot.model.date||r.endDate&&r.endDate<snapshot.model.date);
+  const own=snapshot.prescriptions.filter(r=>r.personId===p.id),phase=phaseOf(p);
+  const groups=[...p.earlier,...(p.current?[p.current]:[]),...p.later];
+  const visibleIds=new Set([...groups.flatMap(g=>g.rows),...p.prn].filter(r=>visibleRow(r,p)).map(r=>r.prescriptionId)),hasRows=visibleIds.size>0;
+  const outside=own.filter(r=>!visibleIds.has(r.id)&&(!r.confirmed||r.phase&&r.phase!==phase||r.startDate>snapshot.model.date||r.endDate&&r.endDate<snapshot.model.date));
   const slotOrder=p.daySlots?profileSlots(p).map(s=>s.id):Object.keys(anchors),rank=g=>{const anchor=g.rows[0]?.anchor,index=slotOrder.indexOf(anchor);return index>=0?index:slotOrder.length+(anchor==='clock'?1:2);};
   // Meals keep their daily order even when their clock times are unknown. Exact times remain explicit.
-  const groups=[...p.earlier,...(p.current?[p.current]:[]),...p.later].sort((a,b)=>rank(a)-rank(b)||(a.time||'').localeCompare(b.time||''));
+  groups.sort((a,b)=>rank(a)-rank(b)||planDate(a.rows[0]).localeCompare(planDate(b.rows[0]))||(a.time||'').localeCompare(b.time||''));
   const plan=groups.map(g=>group(g,p)).join('')+(groups.length||hasRows?'':`<p class="family-empty">${own.length&&phase==='prevention'?'Поддерживающая схема ещё не добавлена':'Нет действующих плановых назначений'}</p>`)+(outside.length?`<details class="care-earlier family-outside-plans" data-outside-plans="${e(p.id)}"${outsideOpen.has(p.id)?' open':''}><summary>Другие назначения</summary><section class="family-outside">${outside.map(r=>`<button class="sandbox-outside" type="button" data-edit="${e(r.id)}">${e(r.name)}<small>${e(!r.confirmed?'Не подтверждено':r.phase&&r.phase!==phase?(r.phase==='acute'?'Для острой фазы':'Для поддерживающей фазы'):courseWarnings(r,snapshot.model.date).join(' · ')||'Курс завершён')}</small></button>`).join('')}</section></details>`:'');
   const temperature=activeEvents(snapshot,actions).filter(r=>r.personId===p.id&&r.kind==='temperature').sort((a,b)=>(b.date||'').localeCompare(a.date||'')||Date.parse(b.occurredAt||b.input?.createdAt||0)-Date.parse(a.occurredAt||a.input?.createdAt||0))[0];
-  return `<section class="care-person color-${p.color}" data-person="${e(p.id)}"><header class="care-person-head"><div class="family-person-identity"><h2>${e(p.name)}</h2>${phase||own.length?`<span class="family-phase-status" data-phase-status="${e(phase)}">${e(phase==='acute'?'Острая фаза':phase==='prevention'?'Поддерживающая':'Фаза не задана')}</span>`:''}</div>${temperature?`<span class="care-phase">${e(temperature.name)}<small>${e(measurementStamp(temperature,snapshot.model.date,snapshot.timeZone))}</small></span>`:''}</header>${plan}${p.prn.filter(r=>visibleRow(r,p)).length?`<section class="care-later"><h3>По необходимости</h3>${p.prn.filter(r=>visibleRow(r,p)).map(r=>renderRow({...r,personId:p.id},true)).join('')}</section>`:''}${!p.current&&!p.later.length&&!p.earlier.length?`<button type="button" class="family-add-medicine" data-add-medicine="${e(p.id)}">Добавить лекарство</button>`:''}${!hasRows?`<button type="button" class="sandbox-empty-event" data-add-event="${e(p.id)}">Записать событие</button>`:''}</section>`;
+  return `<section class="care-person color-${p.color}" data-person="${e(p.id)}"><header class="care-person-head"><div class="family-person-identity"><h2>${e(p.name)}</h2>${phase||own.length?`<span class="family-phase-status" data-phase-status="${e(phase)}">${e(phase==='acute'?'Острая фаза':phase==='prevention'?'Поддерживающая':'Фаза не задана')}</span>`:''}</div>${temperature?`<span class="care-phase">${e(temperature.name)}<small>${e(measurementStamp(temperature,calendarDate(),snapshot.timeZone))}</small></span>`:''}</header>${plan}${p.prn.filter(r=>visibleRow(r,p)).length?`<section class="care-later"><h3>По необходимости</h3>${p.prn.filter(r=>visibleRow(r,p)).map(r=>renderRow({...r,personId:p.id},true)).join('')}</section>`:''}${!p.current&&!p.later.length&&!p.earlier.length?`<button type="button" class="family-add-medicine" data-add-medicine="${e(p.id)}">Добавить лекарство</button>`:''}${!hasRows?`<button type="button" class="sandbox-empty-event" data-add-event="${e(p.id)}">Записать событие</button>`:''}</section>`;
 }
 const formatTime=instant=>new Date(instant).toLocaleTimeString('ru-RU',{timeZone:snapshot.timeZone,hour:'2-digit',minute:'2-digit'});
 const formatDate=instant=>new Date(instant).toLocaleDateString('ru-RU',{timeZone:snapshot.timeZone,day:'numeric',month:'long'});
-function eventHTML(r,names,local=false,grouped=false){const cancelled=r.status==='void';return `<button type="button" class="care-event family-event-open${cancelled?' is-cancelled':''}" data-kind="${e(r.kind)}" data-open-event="${e(r.id)}" aria-label="Открыть событие: ${e(names.get(r.personId)||'')} · ${e(r.name)}"><time>${r.occurredAt?e(formatTime(r.occurredAt)):'—'}${!grouped&&r.date!==snapshot.model.date?`<small>${e(r.date.slice(5).split('-').reverse().join('.'))}</small>`:''}</time><span>${e(names.get(r.personId)||'')}</span><strong>${e(r.name)}<small>${e(r.detail||'')}${cancelled?' · отменено':''}${!r.occurredAt?' · время неизвестно':''}</small></strong></button>`;}
-function historyDays(history,names){const groups=new Map();for(const r of history){if(!groups.has(r.date))groups.set(r.date,[]);groups.get(r.date).push(r);}return [...groups].sort(([a],[b])=>b.localeCompare(a)).map(([date,rows])=>`<section class="family-history-day">${date!==snapshot.model.date?`<h3>${e(new Date(date+'T12:00:00Z').toLocaleDateString('ru-RU',{timeZone:'UTC',day:'numeric',month:'long',...(date.slice(0,4)!==snapshot.model.date.slice(0,4)?{year:'numeric'}:{})}))}</h3>`:''}${rows.map(r=>eventHTML(r,names,false,true)).join('')}</section>`).join('');}
+function eventHTML(r,names,local=false,grouped=false){const cancelled=r.status==='void';return `<button type="button" class="care-event family-event-open${cancelled?' is-cancelled':''}" data-kind="${e(r.kind)}" data-open-event="${e(r.id)}" aria-label="Открыть событие: ${e(names.get(r.personId)||'')} · ${e(r.name)}"><time>${r.occurredAt?e(formatTime(r.occurredAt)):'—'}${!grouped&&r.date!==calendarDate()?`<small>${e(r.date.slice(5).split('-').reverse().join('.'))}</small>`:''}</time><span>${e(names.get(r.personId)||'')}</span><strong>${e(r.name)}<small>${e(r.detail||'')}${cancelled?' · отменено':''}${!r.occurredAt?' · время неизвестно':''}</small></strong></button>`;}
+function historyDays(history,names){const today=calendarDate(),groups=new Map();for(const r of history){if(!groups.has(r.date))groups.set(r.date,[]);groups.get(r.date).push(r);}return [...groups].sort(([a],[b])=>b.localeCompare(a)).map(([date,rows])=>`<section class="family-history-day">${date!==today?`<h3>${e(new Date(date+'T12:00:00Z').toLocaleDateString('ru-RU',{timeZone:'UTC',day:'numeric',month:'long',...(date.slice(0,4)!==today.slice(0,4)?{year:'numeric'}:{})}))}</h3>`:''}${rows.map(r=>eventHTML(r,names,false,true)).join('')}</section>`).join('');}
 function historyHTML(people=snapshot.model.cards){
   const names=new Map(people.map(p=>[p.id,p.name])),chosen=baseRows().find(r=>r.key===openKey),filter=r=>(selected==='all'||r.personId===selected)&&(!historyDrug||!chosen||r.personId===chosen.personId&&(r.prescriptionId===chosen.prescriptionId||r.name===chosen.name));
   const history=snapshot.model.history.filter(filter);
   const recent=activeEvents(snapshot,actions).filter(r=>r.kind==='medication'&&!['skipped','deferred'].includes(r.status)&&(selected==='all'||r.personId===selected)).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')||Date.parse(b.occurredAt||b.input?.createdAt||0)-Date.parse(a.occurredAt||a.input?.createdAt||0)).filter((r,i,list)=>list.findIndex(x=>x.personId===r.personId&&x.name===r.name)===i).slice(0,4);
-  return `<div class="sandbox-history-head"><h2>История${historyDrug&&chosen?' · '+e(names.get(chosen.personId)):''}</h2>${chosen?`<button type="button" data-history-filter aria-pressed="${historyDrug}">${historyDrug?'Все события':'Только '+e(chosen.name)}</button>`:''}</div>${recent.length&&!historyDrug?`<details class="sandbox-recent" open><summary>Последние лекарства</summary>${recent.map(r=>`<p><strong>${e(names.get(r.personId))} · ${e(r.name)}</strong><span>${e(r.detail)} · ${e(measurementStamp(r,snapshot.model.date,snapshot.timeZone))}</span></p>`).join('')}</details>`:''}<section><h3 class="sr-only">История</h3>${history.length?historyDays(history,names):'<p class="family-empty">Событий нет</p>'}</section>`;
+  return `<div class="sandbox-history-head"><h2>История${historyDrug&&chosen?' · '+e(names.get(chosen.personId)):''}</h2>${chosen?`<button type="button" data-history-filter aria-pressed="${historyDrug}">${historyDrug?'Все события':'Только '+e(chosen.name)}</button>`:''}</div>${recent.length&&!historyDrug?`<details class="sandbox-recent" open><summary>Последние лекарства</summary>${recent.map(r=>`<p><strong>${e(names.get(r.personId))} · ${e(r.name)}</strong><span>${e(r.detail)} · ${e(measurementStamp(r,calendarDate(),snapshot.timeZone))}</span></p>`).join('')}</details>`:''}<section><h3 class="sr-only">История</h3>${history.length?historyDays(history,names):'<p class="family-empty">Событий нет</p>'}</section>`;
 }
 function render(focus=false){
   const scroll=root.querySelector('main')?.scrollTop||0,historyScroll=root.querySelector('.sandbox-history')?.scrollTop||0;
   const people=peopleView(),visible=people.filter(p=>selected==='all'?p.current||p.prn.length||snapshot.prescriptions.some(r=>r.personId===p.id):p.id===selected);
-  root.innerHTML=`<header class="family-toolbar">${careFamily(people,selected)}<button type="button" data-tools aria-label="Ещё">⋯</button></header><nav class="sandbox-jump"><a href="#sandbox-history">К истории</a></nav><main class="care-board sandbox-workspace"><section class="sandbox-plan" aria-label="Лекарства и назначения"><h1 class="sr-only">Лекарства и назначения</h1><section id="family-timers" class="family-timers" aria-label="Таймеры связанных препаратов" hidden></section><div class="care-people">${visible.length?visible.map(card).join(''):'<p class="family-empty">Действующих назначений нет</p><button type="button" class="family-add-medicine" data-add-medicine="">Добавить лекарство</button>'}</div></section><aside id="sandbox-history" class="sandbox-history care-history" aria-label="История">${historyHTML(people)}</aside></main><footer class="family-preview-footer"><button type="button" class="voice" data-voice>${recording?'■ Отправить':'● Событие голосом'}</button><button type="button" data-add-event="">Вручную</button><button type="button" class="family-voice-queue" data-voice-queue hidden></button><p role="status">${recording?'Скажите имя и событие · пауза отправит запись':saving?'Сохраняю…':'Имя, что произошло, когда'}</p></footer>`;
+  root.innerHTML=`<header class="family-toolbar">${careFamily(people,selected)}<button type="button" data-tools aria-label="Ещё">⋯</button></header><section class="family-refresh-warning" hidden><p role="status"></p><button type="button" data-retry>Обновить журнал</button></section><nav class="sandbox-jump"><a href="#sandbox-history">К истории</a></nav><main class="care-board sandbox-workspace"><section class="sandbox-plan" aria-label="Лекарства и назначения"><h1 class="sr-only">Лекарства и назначения</h1><section id="family-timers" class="family-timers" aria-label="Таймеры связанных препаратов" hidden></section><div class="care-people">${visible.length?visible.map(card).join(''):'<p class="family-empty">Действующих назначений нет</p><button type="button" class="family-add-medicine" data-add-medicine="">Добавить лекарство</button>'}</div></section><aside id="sandbox-history" class="sandbox-history care-history" aria-label="История">${historyHTML(people)}</aside></main><footer class="family-preview-footer"><button type="button" class="voice" data-voice>${recording?'■ Отправить':'● Событие голосом'}</button><button type="button" data-add-event="">Вручную</button><button type="button" class="family-voice-queue" data-voice-queue hidden></button><p role="status">${recording?'Скажите имя и событие · пауза отправит запись':saving?'Сохраняю…':'Имя, что произошло, когда'}</p></footer>`;
   if(openKey){const wrapper=[...root.querySelectorAll('[data-demo-row]')].find(n=>n.dataset.demoRow===openKey);if(wrapper)wrapper.querySelector('details').open=true;}
   root.querySelector('main').scrollTop=scroll;root.querySelector('.sandbox-history').scrollTop=historyScroll;
-  setBusy(saving);updateVoiceStatus();updateTimers();
+  renderRefreshWarning();
+  setBusy(saving);updateTimers();
   if(focus)[...root.querySelectorAll('[name="care-person"]')].find(n=>n.value===selected)?.focus({preventScroll:true});
 }
 const options=(values,current)=>values.map(([value,label])=>`<option value="${e(value)}"${value===current?' selected':''}>${e(label)}</option>`).join('');
@@ -89,7 +194,7 @@ function eventForm(personId='',row=null){
   updateValues();updateTime();
 }
 function updateValues(){const form=dialog.querySelector('#event-form'),target=form?.querySelector('#event-values');if(!target)return;const kind=form.elements.kind.value;target.innerHTML=kind==='temperature'?'<label>Температура, °C<input name="celsius" inputmode="decimal" required placeholder="37,7"></label>':['medication','inhalation','other'].includes(kind)?`<label>${kind==='other'?'Что произошло':'Название'}<input name="eventName" required list="demo-medicines"></label><datalist id="demo-medicines">${[...new Set([...(snapshot.medicines||[]).map(m=>m.name),...snapshot.prescriptions.map(r=>r.name),...snapshot.model.history.filter(r=>r.kind==='medication').map(r=>r.name)])].map(name=>`<option value="${e(name)}">`).join('')}</datalist>${kind==='medication'?`<div class="sandbox-time-fields"><label>Количество<input name="amount" inputmode="decimal" required></label><label>Единица<select name="unit">${options(['мл','мг','свеча','табл.','капс.','кап.','впрыскивание','пакет','доза','г','мкг','нанесение'].map(u=>[u,u]),'мл')}</select></label></div>`:kind==='inhalation'?'<label>Состав, объёмы, длительность — что известно<textarea name="detail" rows="3"></textarea></label>':''}`:'';}
-function updateTime(){const form=dialog.querySelector('#event-form,#correction-form');if(!form)return;form.querySelector('#event-time').innerHTML=form.elements.when.value==='ago'?'<label>Сколько минут назад<input name="minutes" type="number" min="0" max="10080" required></label>':form.elements.when.value==='unknown'?`<label>Известная дата<input name="date" type="date" value="${e(snapshot.model.date)}" required></label>`:form.elements.when.value==='at'?`<div class="sandbox-time-fields"><label>Дата<input name="date" type="date" value="${e(snapshot.model.date)}" required></label><label>Время<input name="time" type="time" value="${e(formatTime(snapshot.contextAt))}" required></label></div>`:'';}
+function updateTime(){const form=dialog.querySelector('#event-form,#correction-form');if(!form)return;const now=new Date(),date=calendarDate(now);form.querySelector('#event-time').innerHTML=form.elements.when.value==='ago'?'<label>Сколько минут назад<input name="minutes" type="number" min="0" max="10080" required></label>':form.elements.when.value==='unknown'?`<label>Известная дата<input name="date" type="date" value="${e(date)}" required></label>`:form.elements.when.value==='at'?`<div class="sandbox-time-fields"><label>Дата<input name="date" type="date" value="${e(date)}" required></label><label>Время<input name="time" type="time" value="${e(formatTime(now))}" required></label></div>`:'';}
 function prescriptionOccurrence(person,slot,i,total,isNew=false){
   const choices=availableMedicineSlots(person).map(s=>[s.anchor,s.label]);
   if(!isNew&&!choices.some(([value])=>value===slot.anchor)&&slot.anchor!=='clock'){const n=['first','second','third'].indexOf(slot.anchor);choices.unshift([slot.anchor,'Текущий: '+(anchors[slot.anchor]||(n>=0?(i+1)+'-й личный приём':'Слот недоступен'))]);}
@@ -118,7 +223,7 @@ function readPrescriptionSchedule(form,rx){
 }
 function editor(id){const rx=rxFor(id);if(!rx.id)return;const form=rx.form||rx.suggestedForm,units=form?allowedMedicineUnits(form):[rx.unit].filter(Boolean);showDialog(rx.name+' · назначение',`<p>Изменение назначения не переписывает прошлые приёмы.</p>${courseWarnings(rx,snapshot.model.date).map(w=>`<p class="sandbox-warning">${e(w)}</p>`).join('')}<form id="rx-form" data-rx="${e(id)}" data-version="${rx.version}">${prescriptionScheduleFields(rx)}<label>Разовая доза<input name="dose" inputmode="decimal" value="${e(rx.dose)}" required></label><label>Единица<select name="unit">${options(units.map(u=>[u,u]),rx.unit)}</select></label><p>${e(medicineForms[form]?.name||'Форма не заполнена')}${!rx.form&&rx.suggestedForm?' · определено из текста, требует сверки':''}${rx.strength?' · концентрация '+e(rx.strength):''}</p><div class="sandbox-time-fields"><label>Начало<input type="date" name="startDate" value="${e(rx.startDate)}"></label><label>Окончание<input type="date" name="endDate" value="${e(rx.endDate)}"></label></div>${rx.source?`<details class="medicine-source"><summary>Запись врача</summary><p>${e(rx.source)}</p></details>`:''}<p class="sandbox-form-error" role="alert"></p><button class="sandbox-primary" type="submit">Сохранить</button></form>`);updatePrescriptionSchedule(dialog.querySelector('#rx-form'));}
 function readWhen(form,original=null){
-  const when=form.elements.when.value;if(when==='unknown')return {timeUnknown:true,knownDate:form.elements.date?.value||original?.knownDate||snapshot.model.date,occurredAt:null};
+  const when=form.elements.when.value;if(when==='unknown')return {timeUnknown:true,knownDate:form.elements.date?.value||original?.knownDate||calendarDate(new Date()),occurredAt:null};
   if(when==='now')return {timeUnknown:false,occurredAt:new Date().toISOString()};
   if(when==='ago'){const minutes=Number(form.elements.minutes.value);if(!form.elements.minutes.value||!Number.isFinite(minutes)||minutes<0||minutes>10080)throw Error('Укажите от 0 до 10080 минут');return {timeUnknown:false,occurredAt:new Date(Date.now()-minutes*60000).toISOString()};}
   const date=form.elements.date.value,time=form.elements.time.value;
@@ -158,13 +263,13 @@ async function saveSlotMedicine(form){
 }
 
 function showPrescription(id,personId,slotIndex=null){
-  if(!snapshot)return;if(selected!=='all'){selected=personId;localStorage.setItem('medika-family-person',selected);}outsideOpen.add(personId);render();const row=baseRows().find(r=>r.prescriptionId===id&&(slotIndex===null||r.slotIndex===slotIndex)),node=[...root.querySelectorAll('[data-demo-row]')].find(n=>n.dataset.demoRow===row?.key)||[...root.querySelectorAll('[data-edit]')].find(n=>n.dataset.edit===id);node?.scrollIntoView({block:'nearest'});
+  if(!snapshot||refreshWarning)return;if(selected!=='all'){selected=personId;localStorage.setItem('medika-family-person',selected);}outsideOpen.add(personId);render();const row=baseRows().find(r=>r.prescriptionId===id&&(slotIndex===null||r.slotIndex===slotIndex)),node=[...root.querySelectorAll('[data-demo-row]')].find(n=>n.dataset.demoRow===row?.key)||[...root.querySelectorAll('[data-edit]')].find(n=>n.dataset.edit===id);node?.scrollIntoView({block:'nearest'});
 }
 
 let timerAudio;
 root.addEventListener('pointerdown',()=>{try{timerAudio||=new(window.AudioContext||window.webkitAudioContext)();timerAudio.resume().catch(()=>{});}catch{}},{capture:true});
 function updateTimers(){
-  if(!snapshot)return;
+  if(!snapshot||refreshWarning)return;
   const rows=baseRows(),active=[];
   for(const row of rows){
     const person=snapshot.model.cards.find(p=>p.id===row.personId);if(!person||!visibleRow(row,person))continue;
@@ -183,28 +288,28 @@ setInterval(()=>{if(document.visibilityState==='visible')updateTimers();},1000);
 
 function inputSettings(){showDialog('Голосовой ввод',`<label>Язык диктовки<select id="family-language">${options([['ru','Русский'],['en','English']],language)}</select></label>`);}
 function eventDetail(id){const r=snapshot.model.history.find(r=>r.id===id);if(!r)return;const raw=r.input,person=snapshot.model.cards.find(p=>p.id===r.personId),date=new Date(r.date+'T12:00:00Z').toLocaleDateString('ru-RU',{timeZone:'UTC',day:'numeric',month:'long',year:'numeric'}),dose=['medication','inhalation'].includes(r.kind)&&(raw.actualDose||raw.amount)?shortDose({dose:raw.actualDose||raw.amount,unit:raw.unit}):'';showDialog(r.name,`${fields([['Кто',person?.name||''],['Когда',date+' · '+(r.occurredAt?formatTime(r.occurredAt):'время неизвестно')],...(dose?[['Количество',dose]]:[]),['Статус',({taken:'Принято',recorded:'Записано',void:'Отменено',skipped:'Пропущено',deferred:'Отложено'}[r.status]||r.status)]])}${raw.note?`<section><h3>Примечание</h3><p>${e(raw.note)}</p></section>`:''}${raw.voidReason?`<section><h3>Причина отмены</h3><p>${e(raw.voidReason)}</p></section>`:''}${raw.sourceText?`<details class="medicine-source"><summary>Исходная фраза</summary><p>${e(raw.sourceText)}</p></details>`:''}${r.status!=='void'?`<div class="sandbox-row-actions">${r.source!=='events'||r.status==='taken'?`<button type="button" data-edit-event="${e(id)}">Исправить</button>`:''}<button type="button" data-cancel="${e(id)}">Отменить запись</button></div>`:''}`);}
-function tools(){showDialog('Ещё',`<nav class="family-tools"><button type="button" data-add-medicine="">Добавить в расписание</button><a href="/medicines">Лекарства</a><button type="button" data-treatment>Лечение</button><button type="button" data-input-settings>Голосовой ввод</button><button type="button" data-phrase>Событие текстом</button><a href="/prescriptions/import">Разобрать выписку</a><a href="/manage">Все настройки и документы</a></nav><details class="family-test-tools"><summary>Тестовые инструменты</summary><nav class="family-tools"><a href="/playground">Проверка OCR и дизайна</a><a href="/voice-lab">Проверка голоса</a></nav></details>`);}
+function tools(){showDialog('Ещё',`<nav class="family-tools"><button type="button" data-add-medicine="">Добавить в расписание</button><a href="/medicines">Лекарства</a>${snapshot.account?'<a href="/account">Аккаунт</a>':''}<button type="button" data-treatment>Лечение</button><button type="button" data-input-settings>Голосовой ввод</button><button type="button" data-phrase>Событие текстом</button><a href="/prescriptions/import">Разобрать выписку</a><a href="/manage">Все настройки и документы</a></nav><details class="family-test-tools"><summary>Тестовые инструменты</summary><nav class="family-tools"><a href="/playground">Проверка OCR и дизайна</a><a href="/voice-lab">Проверка голоса</a></nav></details>`);}
 let voiceDraft=null;
 function draftForm(draft){eventForm(draft.personId||'');const form=dialog.querySelector('form');if(draft.queueSequence!==undefined){form.dataset.voiceJob=draft.queueSequence;form.dataset.clientKey=draft.clientKey;}form.dataset.sourceText=draft.sourceText||'';form.dataset.relatedRxId=draft.relatedRxId||'';form.elements.kind.value=draft.kind;updateValues();if(form.elements.celsius)form.elements.celsius.value=draft.celsius??'';if(form.elements.eventName)form.elements.eventName.value=draft.name||'';if(form.elements.amount)form.elements.amount.value=draft.amount||'';if(form.elements.unit)form.elements.unit.value=draft.unit||'';form.elements.when.value=draft.occurredAt?'at':'unknown';updateTime();if(draft.occurredAt){form.elements.date.value=new Date(draft.occurredAt).toLocaleDateString('sv-SE',{timeZone:snapshot.timeZone});form.elements.time.value=formatTime(draft.occurredAt);}if(draft.notes?.length)form.querySelector('.sandbox-form-error').textContent=draft.notes.join(' ');}
 function updateVoiceStatus(){
   const footer=root.querySelector('.family-preview-footer');if(!footer)return;const pending=voiceJobs.filter(j=>j.state==='queued').length,review=voiceJobs.filter(j=>['review','failed','interrupted'].includes(j.state)).length,processing=voiceJobs.some(j=>j.state==='processing'),button=footer.querySelector('[data-voice-queue]');
   button.hidden=!voiceJobs.length;button.textContent=review?`Разобрать: ${review}`:`Записи: ${voiceJobs.length}`;
   footer.querySelector('p').textContent=recording?'Скажите имя и событие · пауза отправит запись':captureBusy?'Подготавливаю запись…':saving?'Сохраняю…':queueError?'Очередь недоступна':review?`Нужно разобрать ${review} · ожидают ${pending}`:processing?`Распознаётся · ожидают ${pending}. Можно диктовать ещё.`:pending?`В очереди ${pending} · можно диктовать ещё`:'Имя, что произошло, когда';
-  footer.querySelector('[data-voice]').disabled=saving||captureBusy;notice.style.bottom=`${Math.ceil(footer.getBoundingClientRect().height)+8}px`;
+  footer.querySelector('[data-voice]').disabled=saving||captureBusy||(!recording&&Boolean(refreshWarning));notice.style.bottom=`${Math.ceil(footer.getBoundingClientRect().height)+8}px`;
 }
 function voiceQueueDialog(){showDialog('Голосовые записи',`<p class="family-setting-note">Незавершённые записи сохраняются в этом браузере. Приём появится в истории после разбора.</p><div class="family-voice-jobs">${voiceJobs.map(j=>`<section><h3>Запись ${e(formatTime(j.recordedAt))} · ${e(({queued:'Ожидает',processing:'Распознаётся',review:'Нужно уточнить',failed:'Ошибка',interrupted:'Прервана',complete:'Записана'})[j.state])}</h3>${j.text?`<p>${e(j.text)}</p>`:''}${j.error?`<p role="alert">${e(j.error)}</p>`:''}<div class="sandbox-row-actions">${j.state==='review'?`<button type="button" data-voice-review="${j.sequence}">Уточнить</button>`:['failed','interrupted'].includes(j.state)&& (j.text||j.audio)?`<button type="button" data-voice-resume="${j.sequence}">${j.text?'Повторить сохранение':'Продолжить'}</button>`:j.state==='failed'?`<button type="button" data-voice-redo="${j.sequence}">Повторить голосом</button>`:''}${j.state!=='processing'?`<button type="button" data-voice-remove="${j.sequence}">Убрать из очереди</button>`:''}</div></section>`).join('')||'<p>Очередь пуста.</p>'}</div>`);}
 async function speechFile(file,recordedAt=new Date().toISOString(),spokenLanguage=language,replacement=null){
   if(!file)return;if(!voiceQueue){message(queueError||'Очередь ещё загружается');return;}
   try{await voiceQueue.add(file,{recordedAt,language:spokenLanguage,timeZone:snapshot.timeZone,id:newId()});if(replacement!==null)await voiceQueue.remove(replacement);}catch(error){message('Запись не добавлена. '+error.message);}
 }
-async function voice(){if(saving||captureBusy)return;if(recording){const current=recording,recordedAt=voiceAt,spokenLanguage=language;recording=null;captureBusy=true;render();try{await speechFile(await current.stop(),recordedAt,spokenLanguage,current.replaceSequence??null);}catch(error){message(error.message);}finally{captureBusy=false;render();}return;}
+async function voice(){if(saving||captureBusy||(!recording&&refreshWarning))return;if(recording){const current=recording,recordedAt=voiceAt,spokenLanguage=language;recording=null;captureBusy=true;render();try{await speechFile(await current.stop(),recordedAt,spokenLanguage,current.replaceSequence??null);}catch(error){message(error.message);}finally{captureBusy=false;render();}return;}
   const replacement=replaceVoiceJob;replaceVoiceJob=null;
   if(!voiceQueue){message(queueError||'Очередь ещё загружается');return;}if(voiceJobs.length>=MAX_VOICE_JOBS){message('В очереди 10 записей. Дождитесь обработки или разберите ошибки.');return;}
   if(!isSecureContext||!navigator.mediaDevices?.getUserMedia){showDialog('Микрофон на телефоне',`<p>Для микрофона нужен доверенный HTTPS.</p><nav class="family-tools"><a href="${e(snapshot.capabilities.voice?.secureOrigin||'https://macbook-air-5.local')}">Открыть HTTPS</a><a href="/medika-ca.cer">Сертификат Медики</a></nav><label>Или выберите аудиозапись<input type="file" id="family-audio" data-replace="${replacement??''}" accept=".wav,.m4a,.mp4,.aif,.aiff"></label>`);return;}
   if(!snapshot.capabilities.voice?.ready){message('Локальное распознавание ещё не готово');return;}
   captureBusy=true;updateVoiceStatus();try{recording=await captureVoice(()=>voice());voiceAt=new Date().toISOString();recording.replaceSequence=replacement;}catch(error){message(error.name==='NotAllowedError'?'Разрешите доступ к микрофону в браузере':'Не удалось включить микрофон');}finally{captureBusy=false;render();}}
 async function initVoiceQueue(){try{voiceQueue=await createVoiceQueue({api,onChange(jobs,error){if(error){queueError=error.message;message('Очередь остановлена. '+error.message);}else{const changed=JSON.stringify(voiceJobs.map(j=>[j.sequence,j.state,j.error]))!==JSON.stringify(jobs.map(j=>[j.sequence,j.state,j.error]));voiceJobs=jobs;queueError='';if(changed&&dialog.open&&dialog.querySelector('.family-voice-jobs'))voiceQueueDialog();}updateVoiceStatus();},async onSaved(){voiceRefreshPending=true;await load();}});await voiceQueue.sync();}catch(error){queueError='Не удалось открыть локальную очередь. '+error.message;updateVoiceStatus();}}
-root.addEventListener('change',event=>{if(saving||loading||recording)return;if(event.target.name==='care-person'){selected=event.target.value;root.querySelector('main').scrollTop=0;localStorage.setItem('medika-family-person',selected);openKey='';historyDrug=false;render(true);}else if(event.target.matches('[data-take]')){const row=baseRows().find(r=>r.key===event.target.dataset.take);if(!row)return;const old=rowEvent(snapshot,actions,row);if(event.target.checked)record(row);else if(old)cancel(old.id);}});
+root.addEventListener('change',event=>{if(saving||loading||recording)return;if(event.target.name==='care-person'){selected=event.target.value;root.querySelector('main').scrollTop=0;localStorage.setItem('medika-family-person',selected);openKey='';historyDrug=false;render(true);}else if(event.target.matches('[data-take]')){const row=baseRows().find(r=>r.key===event.target.dataset.take);if(!row)return;const old=rowEvent(snapshot,actions,row),checked=event.target.checked;event.target.checked=Boolean(old);if(checked)record(row);else if(old)cancel(old.id);}});
 root.addEventListener('toggle',event=>{if(event.target.hasAttribute('data-outside-plans')){if(event.target.open)outsideOpen.add(event.target.dataset.outsidePlans);else outsideOpen.delete(event.target.dataset.outsidePlans);return;}if(!event.target.parentElement?.classList.contains('care-med'))return;const key=event.target.closest('[data-demo-row]')?.dataset.demoRow;if(event.target.open){openKey=key;root.querySelectorAll('.care-med>details[open]').forEach(n=>{if(n!==event.target)n.open=false;});}else if(openKey===key){openKey='';historyDrug=false;}else return;root.querySelectorAll('[data-demo-row]').forEach(n=>n.classList.toggle('is-selected',n.dataset.demoRow===openKey));root.querySelector('.sandbox-history').innerHTML=historyHTML();},true);
 root.addEventListener('click',event=>{const target=event.target.closest('button');if(!target||saving)return;if(target.hasAttribute('data-voice')){voice();return;}if(recording)return;
   if(target.hasAttribute('data-voice-queue'))voiceQueueDialog();if(target.hasAttribute('data-tools'))tools();if(target.hasAttribute('data-retry'))load();if(target.hasAttribute('data-medicine-info'))medicineInfo(target.dataset.medicineInfo);

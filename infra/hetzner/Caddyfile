@@ -1,0 +1,13 @@
+{
+	admin off
+}
+
+medika.ibhash.com {
+	request_body {
+		max_size 64MiB
+	}
+	reverse_proxy 127.0.0.1:4382 {
+		header_up X-Medika-Client-IP {remote_host}
+		header_up X-Forwarded-Proto https
+	}
+}

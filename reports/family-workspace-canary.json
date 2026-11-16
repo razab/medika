@@ -5,6 +5,7 @@
   "physicalDeviceTested": false,
   "checks": [
     "Passive phase, no inline switches; treatment preview/cancel and language preference do not write medical data; only Russian/English",
+    "Keep the last journal view on read failure, distinguish a confirmed write from a lost write response, and recover an expired session without replaying a write",
     "External root link; prior-day medicine; current intake saved and survives reload",
     "Prescription editing leaves old facts intact; atomic fact correction; explicit unknown time; dependency does not invent a clock",
     "Stale treatment save is rejected, preserving the concurrent profile update and phase",

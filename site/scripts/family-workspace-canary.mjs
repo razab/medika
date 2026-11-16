@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';import {mkdtemp,rm,writeFile,readFile} f
 const {chromium}=await import(process.env.PLAYWRIGHT_MODULE||'playwright'),directory=await mkdtemp(join(tmpdir(),'medika-live-family-')),port=14410,origin=`http://127.0.0.1:${port}`;let app,browser,token;const checks=[],errors=[];
 async function start(){app=await createApp({port,dataDir:directory});await new Promise(r=>app.server.listen(port,'127.0.0.1',r));token=(await(await fetch(origin+'/api/session')).json()).token;}
 async function api(path,body,method=body?'POST':'GET'){const r=await fetch(origin+'/api'+path,{method,headers:{'X-Medika-Token':token,...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined}),v=await r.json();assert(r.ok,JSON.stringify(v));return v;}
-try{await start();const date=new Date().toLocaleDateString('sv-SE',{timeZone:'Europe/Chisinau'}),routine=Object.fromEntries(['weekday','weekend'].map(d=>[d,{times:{breakfast:'00:00',lunch:'00:00',dinner:'00:00',secondDinner:'23:59'},intakes:['breakfast',d==='weekday'?'dinner':'lunch','secondDinner']}]));
+try{await start();const date=(await api('/family')).model.date,calendarDate=new Date().toLocaleDateString('sv-SE',{timeZone:'Europe/Chisinau'}),routine=Object.fromEntries(['weekday','weekend'].map(d=>[d,{times:{breakfast:'00:00',lunch:'00:00',dinner:'00:00',secondDinner:'23:59'},intakes:['breakfast',d==='weekday'?'dinner':'lunch','secondDinner']}]));
 const a=await api('/people',{name:'Алиса',carePhase:'acute',routine,allergies:'Синтетическая заметка',weight:'20'}),b=await api('/people',{name:'Даня',carePhase:'acute',routine}),parent=await api('/people',{name:'Тест Родитель'});
 const rx=[];for(const p of [a,b])for(const [name,dose,source]of [['ТестПервый','2','Назальный спрей, курсом не более 10 дней.'],['ТестВторой','1','Через 10–15 минут после применения ТестПервый использовать ТестВторой.']])rx.push(await api('/prescriptions',{personId:p.id,name,dose,unit:'впрыскивание',medicineForm:'spray',type:'routine',routineSlots:[{anchor:'first'},{anchor:'second'},{anchor:'third'}],startDate:date,timeZone:'Europe/Chisinau',carePhase:'acute',confirmed:true,sourceText:source}));
 await api('/activities',{personId:a.id,kind:'medication',name:'ТестСвеча',amount:'1',unit:'свеча',occurredAt:new Date(Date.now()-86400000).toISOString(),clientKey:'prior-day-live-family',timeZone:'Europe/Chisinau'});
@@ -15,7 +15,64 @@ assert.equal(await page.locator('.sandbox-phases,[data-phase]').count(),0);asser
 const beforeBrowse=await api('/state');await openTreatment();assert.equal(await page.locator('[data-save-treatment]').isDisabled(),true);await page.locator('#treatment-form [name=person]').selectOption(a.id);await page.getByRole('radio',{name:'Поддерживающая',exact:true}).check();assert.match(await page.locator('#treatment-preview').innerText(),/ещё не добавлены/);await closeDialog();assert.deepEqual(await api('/state'),beforeBrowse);
 await page.getByRole('button',{name:'Ещё',exact:true}).tap();await page.getByRole('button',{name:'Голосовой ввод',exact:true}).tap();assert.deepEqual(await page.locator('#family-language option').evaluateAll(ns=>ns.map(n=>n.value)),['ru','en']);await page.locator('#family-language').selectOption('en');assert.equal(await page.evaluate(()=>localStorage.getItem('medika-language')),'en');await page.locator('#family-language').selectOption('ru');await closeDialog();assert.deepEqual(await api('/state'),beforeBrowse);checks.push('Passive phase, no inline switches; treatment preview/cancel and language preference do not write medical data; only Russian/English');
 
-await first().locator('.care-take').tap();await settled();assert.equal(await first().locator('input').isChecked(),true);assert.equal(await page.locator('.family-preview-footer p').innerText(),'Имя, что произошло, когда');await page.reload();await page.locator('.family-preview-footer').waitFor();assert.equal(await first().locator('input').isChecked(),true);const recorded=(await api('/state')).events[0];assert.equal(recorded.personId,a.id);assert.equal(recorded.actualDose,'2');checks.push('External root link; prior-day medicine; current intake saved and survives reload');
+// Commit the write, then lose the following journal read as on an interrupted connection.
+let eventWrites=0, sessionReads=0;
+const countRequests=request=>{
+  if(request.url().endsWith('/api/events')&&request.method()==='POST')eventWrites++;
+  if(request.url().endsWith('/api/session'))sessionReads++;
+};
+const failRefresh=route=>route.abort();
+page.on('request',countRequests);
+await page.route('**/api/family',failRefresh);
+await first().locator('.care-take').tap();
+await settled();
+const recovery=page.locator('.family-refresh-warning');
+assert.equal(await recovery.isVisible(),true,'The journal must stay on screen with a recovery action');
+assert.match(await recovery.innerText(),/Приём записан/);
+assert.equal(await first().locator('input').isDisabled(),true);
+assert.equal(await first().locator('input').isChecked(),false);
+assert.equal((await api('/state')).events.length,1);
+assert.equal(eventWrites,1);
+await page.unroute('**/api/family',failRefresh);
+await page.route('**/api/family',route=>route.fulfill({status:403,json:{error:'Сессия обновлена. Перезагрузите страницу.'}}),{times:1});
+await recovery.getByRole('button',{name:'Обновить журнал'}).tap();
+await recovery.waitFor({state:'hidden'});
+assert.equal(await first().locator('input').isChecked(),true);
+assert.equal(eventWrites,1);
+assert.equal(sessionReads,1);
+// Lose both the response to an actual write and the read that follows it.
+await page.setViewportSize({width:768,height:1024});
+const eventPath='**/api/events/*/void';
+let voidWrites=0;
+await page.route(eventPath,async route=>{
+  voidWrites++;
+  const response=await route.fetch({maxRetries:0});
+  assert.equal(response.status(),200);
+  await route.abort();
+});
+await page.route('**/api/family',failRefresh);
+await first().locator('.care-take').tap();
+await settled();
+assert.match(await recovery.innerText(),/Ответ на запись не получен/);
+assert.equal(await first().locator('input').isChecked(),true);
+assert.equal((await api('/state')).events[0].status,'void');
+await page.unroute('**/api/family',failRefresh);
+await page.unroute(eventPath);
+const retryButton=recovery.getByRole('button',{name:'Обновить журнал'});
+const box=await retryButton.boundingBox();
+assert(box.width>=48&&box.height>=48);
+await page.touchscreen.tap(box.x+box.width-2,box.y+box.height/2);
+await recovery.waitFor({state:'hidden'});
+assert.equal(await first().locator('input').isChecked(),false);
+assert.equal(voidWrites,1);
+assert.equal(eventWrites,1);
+await page.setViewportSize({width:390,height:844});
+await first().locator('.care-take').tap();
+await settled();
+assert.equal((await api('/state')).events.length,1);
+page.off('request',countRequests);
+checks.push('Keep the last journal view on read failure, distinguish a confirmed write from a lost write response, and recover an expired session without replaying a write');
+assert.equal(await page.locator('.family-preview-footer p').innerText(),'Имя, что произошло, когда');await page.reload();await page.locator('.family-preview-footer').waitFor();assert.equal(await first().locator('input').isChecked(),true);const recorded=(await api('/state')).events[0];assert.equal(recorded.personId,a.id);assert.equal(recorded.actualDose,'2');checks.push('External root link; prior-day medicine; current intake saved and survives reload');
 if(!await first().locator('details').evaluate(n=>n.open))await first().locator('summary').tap();await first().locator('[data-edit]').tap();await page.locator('#rx-form [name=dose]').fill('3');await page.getByRole('button',{name:'Сохранить',exact:true}).tap();await settled();assert.equal((await api('/state')).prescriptions.find(r=>r.id===rx[0].id).dose,'3');assert.equal((await api('/state')).events[0].actualDose,'2');
 await editEvent(recorded.id);await page.locator('#correction-form [name=amount]').fill('1');await page.locator('#correction-form [name=when]').selectOption('unknown');await page.getByRole('button',{name:'Сохранить исправление',exact:true}).tap();await settled();let fact=(await api('/state')).events[0];assert.equal(fact.actualDose,'1');assert.equal(fact.timeUnknown,true);assert.equal(fact.occurredAt,null);assert.match(await page.locator('.dependency-state').first().innerText(),/неизвестно/);assert.equal((await api('/state')).prescriptions.find(r=>r.id===rx[0].id).dose,'3');checks.push('Prescription editing leaves old facts intact; atomic fact correction; explicit unknown time; dependency does not invent a clock');
 await openTreatment(a.id);await page.getByRole('radio',{name:'Поддерживающая',exact:true}).check();const concurrent=(await api('/state')).people.find(p=>p.id===a.id);await api('/people/'+a.id,{...concurrent,weight:'21',version:concurrent.version},'PUT');const afterConcurrent=await api('/state');await page.getByRole('button',{name:'Сохранить',exact:true}).tap();await settled();assert.match(await page.locator('#family-status').innerText(),/измен|верси|обнов/i);assert.equal(await page.locator('#family-info').evaluate(n=>n.open),false);assert.deepEqual(await api('/state'),afterConcurrent);const updated=(await api('/state')).people.find(p=>p.id===a.id);await api('/people/'+a.id,{...updated,weight:a.weight,version:updated.version},'PUT');await page.reload();await page.locator('.family-preview-footer').waitFor();checks.push('Stale treatment save is rejected, preserving the concurrent profile update and phase');
@@ -24,7 +81,7 @@ await openTreatment(a.id);await page.getByRole('radio',{name:'Острая',exac
 await openTreatment(a.id);await page.getByRole('button',{name:'Личные слоты',exact:true}).tap();assert.equal(await page.locator('#slots-form [name=person]').inputValue(),a.id);assert.equal(await page.locator('#slots-form [name=day]').count(),0);await page.locator('#slots-form [name=second]').selectOption('lunch');await page.getByRole('button',{name:'Сохранить',exact:true}).tap();await settled();people=(await api('/state')).people;assert.equal(people.find(p=>p.id===a.id).routine.weekday.intakes[1],'lunch');assert.equal(people.find(p=>p.id===a.id).weight,a.weight);checks.push('Per-person phase and personal slots save from treatment settings through versioned API without overwriting past facts, profile or another patient');
 await page.locator('.care-family label').filter({hasText:'Тест Родитель'}).tap();await page.locator('.sandbox-empty-event').tap();await page.locator('#event-form [name=celsius]').fill('37,7');await page.locator('#event-form [name=when]').selectOption('ago');await page.locator('#event-form [name=minutes]').fill('2');await page.getByRole('button',{name:'Записать',exact:true}).tap();await settled();let activity=(await api('/state')).activities.find(r=>r.kind==='temperature');assert.equal(activity.personId,parent.id);assert(Math.abs(Date.now()-Date.parse(activity.occurredAt)-120000)<10000);
 await editEvent(activity.id);await page.locator('#correction-form [name=celsius]').fill('37,8');await page.getByRole('button',{name:'Сохранить исправление',exact:true}).tap();await settled();assert.equal((await api('/state')).activities.find(r=>r.id===activity.id).celsius,37.8);await editEvent(activity.id);await page.getByRole('button',{name:'Отменить запись',exact:true}).tap();await settled();assert.equal((await api('/state')).activities.find(r=>r.id===activity.id).status,'void');
-await page.locator('.family-preview-footer [data-add-event]').tap();await page.locator('#event-form [name=kind]').selectOption('retching');await page.locator('#event-form [name=when]').selectOption('unknown');await page.getByRole('button',{name:'Записать',exact:true}).tap();await settled();activity=(await api('/state')).activities.find(r=>r.kind==='retching');assert.equal(activity.occurredAt,null);assert.equal(activity.knownDate,date);checks.push('Empty-profile temperature two minutes ago, corrected and voided; symptom with unknown time persists');
+await page.locator('.family-preview-footer [data-add-event]').tap();await page.locator('#event-form [name=kind]').selectOption('retching');await page.locator('#event-form [name=when]').selectOption('unknown');await page.getByRole('button',{name:'Записать',exact:true}).tap();await settled();activity=(await api('/state')).activities.find(r=>r.kind==='retching');assert.equal(activity.occurredAt,null);assert.equal(activity.knownDate,calendarDate);checks.push('Empty-profile temperature two minutes ago, corrected and voided; symptom with unknown time persists');
 await page.locator('.care-family label').filter({hasText:'Все'}).tap();const earlier=page.locator('.care-person').first().locator('.family-day-slot').nth(1);await earlier.locator('.care-med summary').first().tap();const previousKey=await earlier.locator('[data-record]').first().getAttribute('data-record');await earlier.locator('[data-record]').first().tap();await page.locator('#event-form [name=when]').selectOption('unknown');const knownDate=new Date(Date.parse(date+'T12:00:00Z')-86400000).toISOString().slice(0,10);await page.locator('#event-form [name=date]').fill(knownDate);await page.getByRole('button',{name:'Записать',exact:true}).tap();await settled();assert.equal((await api('/state')).events.find(r=>r.key===previousKey).knownDate,knownDate);checks.push('Unknown-time scheduled fact preserves the date explicitly entered by the user');
 await page.locator('.care-family label').filter({hasText:'Тест Родитель'}).tap();
 // Speech recognition is stubbed; the existing auto-record endpoint is real and uses the named person.
