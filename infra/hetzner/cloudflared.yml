@@ -1,0 +1,4 @@
+ingress:
+  - hostname: medika.ibhash.com
+    service: http://127.0.0.1:4384
+  - service: http_status:404

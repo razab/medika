@@ -1,6 +1,14 @@
 # Медика на Hetzner
 
-Публичный адрес — https://medika.ibhash.com. У поддомена отдельная DNS-запись типа A без проксирования Cloudflare. Caddy на VPS принимает HTTPS и передаёт запросы в Node.js на `127.0.0.1:4382`. Сервисы `medika.service` и `medika-gateway.service` используют отдельные конфигурации.
+Публичный адрес — https://medika.ibhash.com. Cloudflare принимает HTTPS и передаёт запросы по выделенному туннелю `medika`. На VPS туннель обращается к Caddy на `127.0.0.1:4384`, а Caddy передаёт запросы в Node.js на `127.0.0.1:4382`. Оба порта доступны только на самом VPS.
+
+## Cloudflare
+
+- У `medika.ibhash.com` проксируемая CNAME-запись на `<UUID>.cfargotunnel.com`. Она относится к выделенному туннелю `medika`, который запускает `medika-tunnel.service`. HTTPS заканчивается на Cloudflare, а соединение до `cloudflared` шифрует туннель. Локальный шлюз перенаправляет HTTP на HTTPS.
+- Конфигурация `/etc/medika/cloudflared.yml` начинается с `tunnel: <UUID>` и содержит правила из `cloudflared.yml` в этой папке. Учётные данные `/etc/medika/tunnel.json` принадлежат `root`, права 0600. Systemd передаёт их выделенному процессу через `LoadCredential`.
+- Для изменения DNS использовать `cloudflared tunnel --config /etc/medika/cloudflared.yml route dns <UUID> medika.ibhash.com`. Сверить `tunnelID` в результате с выделенным UUID. При конфигурации без `--config` CLI может выбрать туннель из общего `/etc/cloudflared/config.yml`.
+- Caddy передаёт IP посетителя из `CF-Connecting-IP` на локальном порту туннеля. Медика использует его для ограничения попыток входа. Приложение ставит `Cache-Control: no-store`. Правила кэша Cloudflare для этого поддомена должны учитывать этот заголовок.
+- После изменений проверить `systemctl is-active medika medika-gateway medika-tunnel`, `curl -fsSI https://medika.ibhash.com/login` с `cf-ray` и `Cache-Control: no-store`, а также `401` у `/api/family` без сессии. При прямом обращении к IP VPS с именем Медики сайт не должен отвечать.
 
 ## Доступ
 
@@ -27,7 +35,7 @@ runuser -u medika -- env MEDIKA_DATA_DIR=/var/lib/medika/data \
 
 ## Развёртывание и перенос
 
-- Код хранится под `/opt/medika/releases/`. Символическая ссылка `/opt/medika/current` указывает на активный выпуск. Для HTTPS использовать отдельный systemd-сервис и `/etc/medika/Caddyfile`. Публичный режим требует `MEDIKA_PUBLIC_HOST`; локальный запуск на Mac использует прежний сетевой режим.
+- Код хранится под `/opt/medika/releases/`. Символическая ссылка `/opt/medika/current` указывает на активный выпуск. Шлюз использует `/etc/medika/Caddyfile`. Публичный режим требует `MEDIKA_PUBLIC_HOST`; локальный запуск на Mac использует прежний сетевой режим.
 - Стойкое хранилище — `/var/lib/medika/data` с правами 0700. SQLite и файлы принадлежат системному пользователю `medika`. Оригиналы выписок, OCR-случаи, импорт упаковок, голосовая лаборатория и снимок дизайна входят в рабочую копию. Исторические локальные копии и сертификат Mac хранятся отдельно.
 - Для переноса остановить запись на источнике и выполнить `node infra/hetzner/snapshot.mjs SOURCE DESTINATION`. Скрипт создаёт согласованную SQLite-копию, копирует рабочие файлы, проверяет ссылки в БД и SHA-256 оригиналов. Передать архив через SSH и сверить его SHA-256 до распаковки. Распаковать в приватный `/var/lib/medika/incoming.XXXXXX` и запустить `bash /opt/medika/current/infra/hetzner/activate-snapshot.sh <incoming>`. При ошибке запуска скрипт поднимает прежний журнал.
 - Успешный запуск проверяется запросом на `/api/health` и браузерным входом. Без аккаунта `/api/family`, `/api/backup`, `/api/audit` и оригиналы возвращают 401. Новый выпуск проверять со свежим временным хранилищем, на синтетических данных.

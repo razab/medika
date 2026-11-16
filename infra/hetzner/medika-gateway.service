@@ -1,5 +1,5 @@
 [Unit]
-Description=Medika public HTTPS
+Description=Medika local HTTP gateway
 After=network-online.target medika.service
 Wants=network-online.target
 

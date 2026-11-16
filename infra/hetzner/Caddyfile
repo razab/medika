@@ -2,12 +2,15 @@
 	admin off
 }
 
-medika.ibhash.com {
+http://medika.ibhash.com:4384 {
+	bind 127.0.0.1
+	@insecure not header X-Forwarded-Proto https
+	redir @insecure https://medika.ibhash.com{uri} 308
 	request_body {
 		max_size 64MiB
 	}
 	reverse_proxy 127.0.0.1:4382 {
-		header_up X-Medika-Client-IP {remote_host}
+		header_up X-Medika-Client-IP {http.request.header.CF-Connecting-IP}
 		header_up X-Forwarded-Proto https
 	}
 }

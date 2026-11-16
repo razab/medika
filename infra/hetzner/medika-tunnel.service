@@ -1,0 +1,16 @@
+[Unit]
+Description=Medika Cloudflare Tunnel
+After=network-online.target medika-gateway.service
+Wants=network-online.target medika-gateway.service
+
+[Service]
+DynamicUser=yes
+LoadCredential=tunnel.json:/etc/medika/tunnel.json
+ExecStart=/usr/local/bin/cloudflared tunnel --no-autoupdate --config /etc/medika/cloudflared.yml run --credentials-file %d/tunnel.json
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target
