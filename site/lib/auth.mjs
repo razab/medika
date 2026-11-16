@@ -6,6 +6,8 @@ const derive=promisify(scrypt);
 const minute=60_000, day=24*60*minute;
 const cookieName='__Host-medika';
 const hexToken=/^[a-f0-9]{64}$/;
+const emailAddress=/^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/;
+const legacyUsername=/^[a-z0-9][a-z0-9._-]{2,39}$/;
 const randomToken=()=>randomBytes(32).toString('hex');
 const digest=value=>createHash('sha256').update(value).digest('hex');
 const passwordHash=(password,salt)=>derive(password,salt,64,{N:2**17,r:8,p:1,maxmem:160*1024*1024});
@@ -51,17 +53,19 @@ export function openAuth(db){
     useAttempt('ip:'+ip,12,15*minute,now);
     return now;
   }
-  function readUsername(input){
-    const username=typeof input.username==='string'?input.username.trim().toLowerCase():'';
-    assert(/^[a-z0-9][a-z0-9._-]{2,39}$/.test(username),'Логин — 3–40 латинских букв, цифр, точек, дефисов или подчёркиваний');
+  function readUsername(input,register){
+    const identifier=input.email??input.username;
+    const username=typeof identifier==='string'?identifier.trim().toLowerCase():'';
+    const validEmail=username.length<=254&&username.indexOf('@')<=64&&emailAddress.test(username);
+    assert(validEmail||(!register&&legacyUsername.test(username)),register?'Введите корректный email':'Проверьте email и пароль');
     return username;
   }
   function credentials(input,ip,register){
-    const now=limit(ip),username=readUsername(input);
+    const now=limit(ip),username=readUsername(input,register);
     useAttempt('user:'+username,8,15*minute,now);
     const {password}=input;
     assert(typeof password==='string'&&password.length<=256&&password.isWellFormed()&&[...password].length<=128&&[...password].length>=(register?15:1),
-      register?'Пароль должен содержать от 15 до 128 символов':'Проверьте логин и пароль');
+      register?'Пароль должен содержать от 15 до 128 символов':'Проверьте email и пароль');
     return {username,password};
   }
   async function hash(password,salt){
@@ -85,7 +89,7 @@ export function openAuth(db){
     assert(db.prepare('DELETE FROM auth_invites WHERE secret_hash=? AND expires_at>?').run(key,Date.now()).changes===1,'Приглашение недействительно или истекло',403);
   }
   function addUser(username,salt,passwordHash){
-    assert(db.prepare('INSERT OR IGNORE INTO auth_users VALUES(?,?,?)').run(username,salt,passwordHash).changes===1,'Этот логин занят',409);
+    assert(db.prepare('INSERT OR IGNORE INTO auth_users VALUES(?,?,?)').run(username,salt,passwordHash).changes===1,'На этот email уже зарегистрирован аккаунт',409);
   }
   function transaction(operation){
     db.exec('BEGIN IMMEDIATE');
@@ -99,7 +103,7 @@ export function openAuth(db){
     const user=db.prepare("SELECT salt,password_hash FROM auth_users WHERE username=? AND password_hash<>''").get(username);
     const actual=await hash(password,user?.salt||dummySalt);
     const expected=user?Buffer.from(user.password_hash,'hex'):Buffer.alloc(64);
-    assert(timingSafeEqual(actual,expected)&&user,'Проверьте логин и пароль',401);
+    assert(timingSafeEqual(actual,expected)&&user,'Проверьте email и пароль',401);
   }
   return {
     invite(){
@@ -132,7 +136,7 @@ export function openAuth(db){
         case 'register':
           limit(ip);
           assert(!session,'Сначала выйдите из аккаунта Медики',409);
-          return {mode:'register',username:readUsername(input),invitation:inviteHash(input.invite)};
+          return {mode:'register',username:readUsername(input,true),invitation:inviteHash(input.invite)};
         case 'link': {
           assert(session,'Войдите в Медику',401);
           const {username,password}=credentials({username:session.username,password:input.password},ip,false);
@@ -151,8 +155,9 @@ export function openAuth(db){
         }
         if(flow.mode==='register'){
           assert(!found,'Этот Google-аккаунт уже привязан. Войдите через Google.',409);
+          const username=readUsername(flow,true);
           consumeInvite(flow.invitation);
-          addUser(flow.username,'','');
+          addUser(username,'','');
         }
         const binding=db.prepare('SELECT subject FROM auth_google WHERE username=?').get(flow.username);
         assert(!found||found.username===flow.username,'Этот Google-аккаунт уже привязан',409);

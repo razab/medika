@@ -6,7 +6,7 @@ const account=location.pathname==='/account';
 const googleMessages={
   cancelled:'Вход через Google отменён.',
   unlinked:'Google ещё не подключён. Войдите по паролю и подключите его в аккаунте или зарегистрируйтесь по приглашению.',
-  conflict:'Логин занят или Google уже привязан. Попробуйте войти.',
+  conflict:'Email уже зарегистрирован или Google уже привязан. Попробуйте войти.',
   invalid:'Не удалось подтвердить вход. Если вы регистрируетесь, проверьте код приглашения.',
   unavailable:'Вход через Google временно недоступен.'
 };
@@ -105,7 +105,7 @@ if(account){
       try{
         const fields=new FormData(form);
         const input=register?{
-          username:fields.get('new-username'),password:fields.get('new-password'),invite:fields.get('invite').trim()
+          email:fields.get('email'),password:fields.get('new-password'),invite:fields.get('invite').trim()
         }:Object.fromEntries(fields);
         await request('account/'+(register?'register':'login'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)});
         location.replace('/family');
@@ -120,9 +120,9 @@ if(account){
     const googleButton=document.querySelector(register?'#google-register':'#google-login');
     googleButton.hidden=false;
     googleButton.addEventListener('click',()=>{
-      if(register&&![form.elements['new-username'],form.elements.invite].every(field=>field.reportValidity()))return;
+      if(register&&![form.elements.email,form.elements.invite].every(field=>field.reportValidity()))return;
       action(googleButton,()=>startGoogle(register?{
-        mode:'register',username:form.elements['new-username'].value,invite:form.elements.invite.value.trim()
+        mode:'register',email:form.elements.email.value,invite:form.elements.invite.value.trim()
       }:{mode:'login'}));
     });
   }).catch(()=>{});

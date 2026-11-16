@@ -42,30 +42,37 @@ test('Публичная Медика: регистрация по пригла�
     assert.equal(registerPage.status,200);
     const loginHTML=await loginPage.text(),registerHTML=await registerPage.text();
     assert.match(loginHTML,/<form[^>]*method="post"[^>]*action="\/login"/);
+    assert.match(loginHTML,/Электронная почта<input[^>]*name="email"[^>]*type="email"[^>]*autocomplete="username"/);
     assert.match(loginHTML,/<input[^>]*type="password"[^>]*autocomplete="current-password"/);
     assert.match(registerHTML,/<form[^>]*method="post"[^>]*action="\/register"/);
+    assert.match(registerHTML,/Электронная почта<input[^>]*name="email"[^>]*type="email"[^>]*autocomplete="username"/);
     assert.match(registerHTML,/<input[^>]*type="password"[^>]*autocomplete="new-password"/);
     assert.doesNotMatch(registerHTML,/autocomplete="current-password"/);
     for(const path of ['/api/session','/api/state','/api/family','/api/backup','/api/audit','/api/design-study/a1-snapshot','/api/documents/abc/image']){
       assert.equal((await request(path,{headers:{'X-Medika-Token':'a'.repeat(64)}})).status,401,path);
     }
     const invite=openAuth(app.store.db).invite(),password='synthetic-long-password 42';
-    const credentials={username:'test-family',password,invite};
+    const email='test-family+medika@long-domain.example.test';
+    const credentials={email:` ${email.toUpperCase()} `,password,invite};
     assert.equal((await request('/api/account/register',{body:credentials,headers:{Origin:'https://other.example.test'}})).status,403);
     assert.equal((await request('/api/account/register',{body:{...credentials,password:'short'}})).status,400);
-    assert.equal((await request('/api/account/register',{body:{...credentials,username:'<script>'}})).status,400);
+    for(const invalid of ['test-family','bad..address@example.test','bad@example-.test']){
+      const response=await request('/api/account/register',{body:{...credentials,email:invalid}});
+      assert.equal(response.status,400);
+      assert.match((await response.json()).error,/корректный email/);
+    }
     assert.equal((await request('/api/account/register',{body:{...credentials,invite:'a'.repeat(64)}})).status,403);
     const registration=await request('/api/account/register',{body:credentials});
     assert.equal(registration.status,201);
     const setCookie=registration.headers.get('set-cookie'),cookie=setCookie.split(';')[0];
     assert.match(setCookie,/^__Host-medika=[a-f0-9]{64}; Secure; HttpOnly; SameSite=Lax; Path=\//);
-    assert.equal((await request('/api/account/register',{body:{...credentials,username:'another-user'}})).status,403);
-    assert.equal((await request('/api/account/login',{body:{username:'test-family',password:'wrong input'}})).status,401);
+    assert.equal((await request('/api/account/register',{body:{...credentials,email:'another-user@example.test'}})).status,403);
+    assert.equal((await request('/api/account/login',{body:{email,password:'wrong input'}})).status,401);
     const authHeaders=await (async()=>{
       const response=await request('/api/session',{headers:{Cookie:cookie}});
       assert.equal(response.status,200);
       const {token,username}=await response.json();
-      assert.equal(username,'test-family');
+      assert.equal(username,email);
       return {Cookie:cookie,'X-Medika-Token':token};
     })();
     assert.equal((await request('/api/family',{headers:{Cookie:cookie}})).status,403);
@@ -91,14 +98,16 @@ test('Публичная Медика: регистрация по пригла�
     assert.equal((await request('/api/family',{headers:authHeaders})).status,200);
     assert.equal((await request('/api/account/logout',{method:'POST',headers:{...authHeaders,Origin:origin}})).status,200);
     assert.equal((await request('/api/family',{headers:authHeaders})).status,401);
-    const login=await request('/api/account/login',{body:{username:'test-family',password},headers:{'X-Medika-Client-IP':'192.0.2.2'}});
+    const login=await request('/api/account/login',{body:{email,password},headers:{'X-Medika-Client-IP':'192.0.2.2'}});
     assert.equal(login.status,200);
     const newCookie=login.headers.get('set-cookie').split(';')[0];
     assert.notEqual(newCookie,cookie);
-    assert.equal(openAuth(app.store.db).revoke('test-family'),true);
+    const duplicateInvite=openAuth(app.store.db).invite();
+    assert.equal((await request('/api/account/register',{body:{...credentials,invite:duplicateInvite},headers:{'X-Medika-Client-IP':'192.0.2.2'}})).status,409);
+    assert.equal(openAuth(app.store.db).revoke(email),true);
     assert.equal((await request('/api/session',{headers:{Cookie:newCookie}})).status,401);
-    for(let i=0;i<8;i++)assert.equal((await request('/api/account/register',{body:{username:'rate-limit',password:'short'},headers:{'X-Medika-Client-IP':'192.0.2.3'}})).status,400);
-    assert.equal((await request('/api/account/register',{body:{username:'rate-limit',password:'short'},headers:{'X-Medika-Client-IP':'192.0.2.3'}})).status,429);
+    for(let i=0;i<8;i++)assert.equal((await request('/api/account/register',{body:{email:'rate-limit@example.test',password:'short'},headers:{'X-Medika-Client-IP':'192.0.2.3'}})).status,400);
+    assert.equal((await request('/api/account/register',{body:{email:'rate-limit@example.test',password:'short'},headers:{'X-Medika-Client-IP':'192.0.2.3'}})).status,429);
   }finally{
     await app.close();
     await rm(dataDir,{recursive:true,force:true});

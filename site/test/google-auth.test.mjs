@@ -67,22 +67,23 @@ test('Google OAuth: приглашение, вход, привязка с пов
   try{
     await run();
     assert.deepEqual((await request('/api/account/providers')).json(),{google:true,linked:false});
-    assert.equal((await request('/auth/google/start',{body:{mode:'register',username:'someone',invite:'f'.repeat(64)}})).status,403);
+    assert.equal((await request('/auth/google/start',{body:{mode:'register',email:'someone@example.test',invite:'f'.repeat(64)}})).status,403);
     assert.equal((await request('/auth/google/start',{body:{mode:'login'},headers:{Origin:'https://other.example.test'}})).status,403);
     const unlinked=await start({mode:'login'});
     assert.equal((await callback(unlinked,'unknown-google')).headers.location,'/login?google=unlinked');
     assert.equal((await request('/api/family')).status,401);
     const invite=openAuth(app.store.db).invite();
-    const registration=await start({mode:'register',username:'google-user',invite});
+    assert.equal((await request('/auth/google/start',{body:{mode:'register',email:'google-user',invite}})).status,400);
+    const registration=await start({mode:'register',email:'Google-User@Example.Test',invite});
     assert.equal((await callback(registration,'google-sub',{state:'z'.repeat(43)})).headers.location,'/login?google=invalid');
     await app.close();app=null;await run();
     const registered=await callback(registration,'google-sub');
     assert.equal(registered.headers.location,'/family');
     const cookie=sessionCookie(registered);
-    assert.equal((await request('/api/session',{headers:{Cookie:cookie}})).json().username,'google-user');
+    assert.equal((await request('/api/session',{headers:{Cookie:cookie}})).json().username,'google-user@example.test');
     assert.equal((await callback(registration,'google-sub')).headers.location,'/login?google=invalid');
-    assert.equal((await request('/auth/google/start',{body:{mode:'register',username:'someone',invite}})).status,403);
-    assert.equal((await request('/api/account/login',{body:{username:'google-user',password:'some password'}})).status,401);
+    assert.equal((await request('/auth/google/start',{body:{mode:'register',email:'someone@example.test',invite}})).status,403);
+    assert.equal((await request('/api/account/login',{body:{email:'google-user@example.test',password:'some password'}})).status,401);
     for(const invalid of ['aud','nonce','signature']){
       const forged=await start({mode:'login'});
       assert.equal((await callback(forged,'google-sub',{invalid})).headers.location,'/login?google=invalid');
@@ -90,7 +91,7 @@ test('Google OAuth: приглашение, вход, привязка с пов
     const signedIn=await callback(await start({mode:'login'}),'google-sub');
     assert.ok(sessionCookie(signedIn));
     const password='local synthetic password';
-    const local=await request('/api/account/register',{body:{username:'local-user',password,invite:openAuth(app.store.db).invite()},ip:'192.0.2.4'});
+    const local=await request('/api/account/register',{body:{email:'local-user@example.test',password,invite:openAuth(app.store.db).invite()},ip:'192.0.2.4'});
     const localCookie=sessionCookie(local),localSession=(await request('/api/session',{headers:{Cookie:localCookie}})).json();
     const headers={Cookie:localCookie,'X-Medika-Token':localSession.token,'X-Medika-Client-IP':'192.0.2.5'};
     assert.equal((await request('/auth/google/start',{body:{mode:'link',password},headers:{Cookie:localCookie}})).status,403);
@@ -104,7 +105,7 @@ test('Google OAuth: приглашение, вход, привязка с пов
     assert.equal((await request('/api/session',{headers:{Cookie:localCookie}})).status,401);
     const linkedSession=sessionCookie(linked);
     assert.deepEqual((await request('/api/account/providers',{headers:{Cookie:linkedSession}})).json(),{google:true,linked:true});
-    assert.equal((await request('/api/session',{headers:{Cookie:sessionCookie(await callback(await start({mode:'login'}, {'X-Medika-Client-IP':'192.0.2.6'}),'local-google'))}})).json().username,'local-user');
+    assert.equal((await request('/api/session',{headers:{Cookie:sessionCookie(await callback(await start({mode:'login'}, {'X-Medika-Client-IP':'192.0.2.6'}),'local-google'))}})).json().username,'local-user@example.test');
   }finally{
     await app?.close();
     await rm(dataDir,{recursive:true,force:true});
