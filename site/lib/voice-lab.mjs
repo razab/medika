@@ -33,7 +33,7 @@ export function scoreLabDraft(phraseId,draft,capturedAt){
   if(expected.kind==='medication')checks.medicine=/парацетамол|paracetamol/iu.test(draft.name)&&draft.strength.includes(expected.strengthNumber)&&/мг|mg/iu.test(draft.strength);
   return {passed:Object.values(checks).every(Boolean),checks};
 }
-export async function createVoiceLab(dataDir,{prepare=prepareAudio,transcribe=transcribePrepared,parse=parseWithCodex,availability,context=()=>[]}={}){
+export async function createVoiceLab(dataDir,{prepare=prepareAudio,transcribe=transcribePrepared,parse=parseWithCodex,availability,context=()=>[],modelRuns=true}={}){
   function currentContext(){const supplied=context(),people=Array.isArray(supplied)?supplied:supplied.people;return {...labState,medicines:Array.isArray(supplied)?[]:(supplied.medicines||[]).map(name=>({name})),prescriptions:labState.people.flatMap(p=>{const found=people.find(x=>[x.name,x.displayName].some(n=>n?.toLowerCase()===p.name.toLowerCase()));return (found?.medicines||[]).map(name=>({personId:p.id,name}));})};}
   const analysisKey=state=>hash(Buffer.from(JSON.stringify({parserRevision,people:codexPeople(state),knownMedicines:knownMedicinesFor(state)})));
   const dir=join(dataDir,'voice-lab');await mkdir(dir,{recursive:true,mode:0o700});let busy=null;
@@ -45,7 +45,7 @@ export async function createVoiceLab(dataDir,{prepare=prepareAudio,transcribe=tr
   async function locked(label,fn){assert(!busy,'Проверка уже идёт. Дождитесь её окончания.',409);busy=label;try{return await fn();}finally{busy=null;}}
   return {
     async state(){
-      const ready=availability?await availability():await Promise.all([voiceStatus('medium'),voiceStatus('small'),codexStatus()]).then(([medium,small,codex])=>({medium:medium.ready,small:small.ready,codex:codex.ready}));
+      const ready=!modelRuns?{}:availability?await availability():await Promise.all([voiceStatus('medium'),voiceStatus('small'),codexStatus()]).then(([medium,small,codex])=>({medium:medium.ready,small:small.ready,codex:codex.ready}));
       return {analysisKey:analysisKey(currentContext()),phrases:labPhrases.map(({expected,...p})=>p),variants:labVariants.map(v=>({...v,reasoning:'low',ready:(v.asr==='dual'?!!ready.small&&!!ready.medium:!!ready[v.asr])&&!!ready.codex})),recordings:(await records()).map(view),busy:!!busy};
     },
     async add(input){return locked('saving',async()=>{
@@ -61,6 +61,7 @@ export async function createVoiceLab(dataDir,{prepare=prepareAudio,transcribe=tr
     });},
     async audio(id){const record=await load(id),bytes=await readFile(wavPath(id));assert(hash(bytes)===record.audioSha256,'Аудиофайл повреждён',422);return bytes;},
     async run(id,variantId){
+      assert(modelRuns,'Сравнение с Codex отложено.',403);
       const variant=labVariants.find(v=>v.id===variantId);assert(variant,'Неизвестный вариант');
       return locked(id+':'+variantId,async()=>{
         const record=await load(id),previous=record.results[variantId],contextState=currentContext(),key=analysisKey(contextState);if(previous?.status==='complete'&&previous.analysisKey===key)return previous;

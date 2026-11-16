@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {parseEntry,spokenNumbers} from '../lib/entry-parser.mjs';
+import {parseEntry,parseLocalEntry,spokenNumbers} from '../lib/entry-parser.mjs';
 const state={people:[{id:'a',name:'Алиса',carePhase:'prevention'},{id:'d',name:'Даня',carePhase:'acute'}],documents:[],activities:[],prescriptions:[{id:'rx-a',personId:'a',name:'Elizium'}]};
 const now=new Date('2026-11-08T18:00:00Z'),parse=(text,personId='a')=>parseEntry(state,{text,personId,timeZone:'Europe/Chisinau'},{now});
 test('Фраза: пациент, симптомы, числа и явное время',()=>{
@@ -42,4 +42,22 @@ test('Общее событие: относительное время, табл
   assert.equal(parse('Даня, рвота пару минут назад').occurredAt,'2026-11-08T17:58:00.000Z');
   assert.equal(parseEntry(state,{text:'Даня температура 39 две минуты назад',recordedAt:'2026-11-08T17:00:00Z'},{now}).occurredAt,'2026-11-08T16:58:00.000Z');
   for(const text of ['Даня рвота 2 - 3 минуты назад','Даня рвота несколько минут назад','Даня рвота час и десять минут назад','Даня высокая температура','температура 38,2','Даня получил таблетку','Даня рвоты не было'])assert.equal(parse(text).canAutoRecord,false,text);
+});
+
+test('Локальный голос: согласованные измерения сохраняются, лекарства и расхождения идут на сверку',()=>{
+  const parse=(small,medium)=>parseLocalEntry(state,{text:`Whisper Small:\n${small}\n\nWhisper Medium:\n${medium}`,recordedAt:now.toISOString()},{now});
+  const ru='Алиса температура 38,2 две минуты назад';
+  const measurement=parse(ru,'Алиса температура 38.2 2 минуты назад');
+  assert.equal(measurement.canAutoRecord,true);
+  assert.equal(measurement.occurredAt,'2026-11-08T17:58:00.000Z');
+  for(const disagree of ['Даня температура 38,2 две минуты назад','Алиса температура 38,1 две минуты назад','Алиса температура 38,2 минуту назад','Алиса рвота; температура 38,2']){
+    const draft=parse(ru,disagree);
+    assert.equal(draft.canAutoRecord,false);
+    assert.equal(draft.celsius,'');
+    assert.ok(draft.notes.length);
+  }
+  const medication='Алисе дали Elizium четыре миллилитра сейчас';
+  assert.equal(parse(medication,medication).amount,'4');
+  assert.equal(parse(medication,medication).canAutoRecord,false);
+  assert.equal(parseLocalEntry(state,{text:ru},{now}).canAutoRecord,false);
 });

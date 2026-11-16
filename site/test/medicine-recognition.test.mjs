@@ -1,6 +1,23 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {mkdtemp,rm,readFile} from 'node:fs/promises';import {join} from 'node:path';import {tmpdir} from 'node:os';import {createMedicineRecognition,validateMedicineRecognition} from '../lib/medicine-recognition.mjs';
 const text='TESTMIX\nСпрей назальный\n10 мг + 5 мг/мл\nДля интраназального применения\nTEST LAB';
 const output={name:'TESTMIX',nameEvidence:'TESTMIX',medicineForm:'spray',formEvidence:'Спрей назальный',strengthEvidence:'10 мг + 5 мг/мл',instructionsEvidence:'Для интраназального применения',manufacturerEvidence:'TEST LAB',notes:[],conflicts:[]};
+test('Локальный OCR упаковки: черновик на сверку, конфликт двух фото и повторное чтение результата',async()=>{
+ const dir=await mkdtemp(join(tmpdir(),'medika-package-local-'));
+ try{
+  const options={local:true,imageType:()=>true,recognize:async bytes=>({text:bytes.toString()}),prepare:async()=>['synthetic-thumbnail']};
+  const service=await createMedicineRecognition(dir,options);
+  const input={images:[Buffer.from(text).toString('base64')]};
+  const draft=await service.recognize(input);
+  assert.equal(draft.model,'local-ocr');assert.equal(draft.name,'TESTMIX');assert.equal(draft.medicineForm,'spray');assert.equal(draft.strength,'10 мг + 5 мг/мл');
+  assert.equal(draft.canSave,false);
+  assert.deepEqual((await service.get(draft.recognitionKey)).photos,['synthetic-thumbnail']);
+  const reopened=await createMedicineRecognition(dir,options);
+  assert.equal((await reopened.recognize(input)).cached,true);
+  const other=Buffer.from('OTHER\nТаблетки\n15 мг').toString('base64');
+  const mixed=await reopened.recognize({images:[...input.images,other]});
+  assert.equal(mixed.name,'');assert.equal(mixed.strength,'');assert.equal(mixed.canSave,false);assert.ok(mixed.conflicts.length);
+ }finally{await rm(dir,{recursive:true,force:true});}
+});
 test('AI упаковки: доказательства из OCR, без выдуманных названий/цифр/инструкций и без смешивания препаратов',()=>{
  const d=validateMedicineRecognition(text,output);assert(d.canSave);assert.equal(d.strength,'10 мг + 5 мг/мл');assert.equal(d.instructions,output.instructionsEvidence);assert.equal(d.manufacturer,'TEST LAB');
  assert.equal(validateMedicineRecognition(text,{...output,name:'OTHER DRUG'}).name,'');assert.equal(validateMedicineRecognition(text,{...output,strengthEvidence:'15 мг/мл'}).strength,'');assert.equal(validateMedicineRecognition(text,{...output,instructionsEvidence:'Детям по 2 мл три раза в день'}).instructions,'');assert.equal(validateMedicineRecognition(text,{...output,medicineForm:'tablet'}).medicineForm,'');assert(!validateMedicineRecognition(text,{...output,conflicts:['Два разных препарата на снимках']}).canSave);

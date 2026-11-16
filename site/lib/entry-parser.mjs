@@ -1,4 +1,4 @@
-import {assert,string,zone,localParts,zonedInstant,nextDay,day} from './domain.mjs';
+import {assert,InputError,string,zone,localParts,zonedInstant,nextDay,day} from './domain.mjs';
 
 const singles={ноль:0,нуль:0,один:1,одна:1,одну:1,одно:1,два:2,две:2,двух:2,три:3,трижды:3,четыре:4,пять:5,шесть:6,семь:7,восемь:8,девять:9,десять:10,одиннадцать:11,двенадцать:12,тринадцать:13,четырнадцать:14,пятнадцать:15,шестнадцать:16,семнадцать:17,восемнадцать:18,девятнадцать:19,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10};
 const tens={двадцать:20,тридцать:30,сорок:40,пятьдесят:50,шестьдесят:60,семьдесят:70,восемьдесят:80,девяносто:90,twenty:20,thirty:30,forty:40,fifty:50};
@@ -116,4 +116,28 @@ export function parseEntry(state,input,{now=new Date()}={}){
   if(kind==='other'&&!name)missing.push('name');
   const canAutoRecord=explicit.length===1&&!missing.length&&!notes.length&&kind!=='other'&&!/не было|нет|без\s|не получил|не принимал|такую[ -]то|какую[ -]то/iu.test(text);
   return {personId:p?.id||'',kind,name,amount,unit,strength,celsius,occurredAt,timeZone,carePhase,relatedRxId,sourceText,missing:[...new Set(missing)],notes,canAutoRecord};
+}
+
+export function parseLocalEntry(state,input,{now=new Date()}={}){
+  const sourceText=string(input.text,'Фраза',4000,true);
+  const pair=sourceText.match(/^Whisper Small:\n([\s\S]+?)\n\nWhisper Medium:\n([\s\S]+)$/u);
+  if(!pair){
+    const draft=parseEntry(state,input,{now});
+    return {...draft,canAutoRecord:false};
+  }
+  const personId='',timeZone=zone(input.timeZone||'Europe/Chisinau');
+  const drafts=pair.slice(1).map(text=>{
+    try{return parseEntry(state,{...input,personId,text:text.trim()},{now});}
+    catch(error){if(!(error instanceof InputError))throw error;return null;}
+  });
+  const [first,second]=drafts;
+  const fields=['personId','kind','name','amount','unit','strength','celsius','occurredAt','carePhase','relatedRxId'];
+  if(!first||!second||!fields.every(key=>first[key]===second[key])){
+    return {personId,kind:'other',name:'',amount:'',unit:'',strength:'',celsius:'',occurredAt:'',timeZone,
+      carePhase:'',relatedRxId:'',sourceText,missing:['personId','name','occurredAt'],notes:['Расшифровки различаются или фраза неполная. Сверьте событие перед записью.'],canAutoRecord:false};
+  }
+  const canAutoRecord=first.kind==='temperature'&&first.canAutoRecord&&second.canAutoRecord;
+  const notes=[...new Set([...first.notes,...second.notes])];
+  if(!canAutoRecord&&!notes.length)notes.push('Проверьте событие перед записью.');
+  return {...first,sourceText,notes,canAutoRecord};
 }

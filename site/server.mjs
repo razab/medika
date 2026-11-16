@@ -14,7 +14,7 @@ import { randomBytes, createHash } from 'node:crypto';
 import { openStore } from './lib/store.mjs';
 import { assert, InputError, occurrenceInput, validateRoutineBinding, personInput, rxInput, temperatureInput, activityInput, procedureNote, day, newId, string, positive, scheduleFor, parseSuggestions, localParts, nextDay, zonedInstant, courseEnd } from './lib/domain.mjs';
 import { catalog, rules, referenceInfo, checkPerson, intakeWarnings } from './lib/reference.mjs';
-import { parseEntry } from './lib/entry-parser.mjs';
+import { parseEntry,parseLocalEntry } from './lib/entry-parser.mjs';
 import { parseWithCodex,codexStatus,codexPeople } from './lib/codex-parser.mjs';
 import { voiceStatus,transcribeAudio } from './lib/voice.mjs';
 import { restoreBackup } from './lib/backup.mjs';
@@ -46,16 +46,16 @@ export function imageType(bytes) {
   if(bytes.toString('ascii',0,4)==='RIFF'&&bytes.toString('ascii',8,12)==='WEBP') return 'image/webp';
   return null;
 }
-export async function createApp({dataDir=join(root,'data'),port=4382,publicHost='medika.localhost',additionalHosts=[],requireAccount=false,entryParser=parseEntry,voiceLabOptions={},medicineRecognitionOptions={}}={}) {
+export async function createApp({dataDir=join(root,'data'),port=4382,publicHost='medika.localhost',additionalHosts=[],requireAccount=false,entryParser=requireAccount?parseLocalEntry:parseEntry,voiceLabOptions={},medicineRecognitionOptions={}}={}) {
   const store=openStore(dataDir), uploads=join(dataDir,'uploads');
   const auth=requireAccount?openAuth(store.db):null;
   await mkdir(uploads,{recursive:true,mode:0o700});
-  const voiceLab=await createVoiceLab(dataDir,{context:()=>({people:codexPeople(store.state()),medicines:store.state().medicines.filter(m=>!m.archived).map(m=>m.name)}),...voiceLabOptions});
+  const voiceLab=await createVoiceLab(dataDir,{context:()=>({people:codexPeople(store.state()),medicines:store.state().medicines.filter(m=>!m.archived).map(m=>m.name)}),...voiceLabOptions,modelRuns:!requireAccount});
   const token=randomBytes(32).toString('hex'),ocrBinary=isLinux?'/usr/bin/tesseract':join(root,'scripts/medika-ocr');
   let ocrReady=false,photoBusy=false;
   try { await access(ocrBinary);ocrReady=true; } catch {}
   const recognize=createLocalOCR(ocrBinary,dataDir),prescriptionLab=await createPrescriptionLab(dataDir,{recognize:async bytes=>{const hash=createHash('sha256').update(bytes).digest('hex'),saved=store.db.prepare('SELECT data FROM documents WHERE hash=?').all(hash).map(r=>JSON.parse(r.data)).filter(d=>d.mime);if(saved.length){const d=saved[0],reviewed=saved.every(x=>x.sourceKind==='doctor'&&x.text===d.text);return {text:d.ocrText??d.text,lines:d.lines||[],engine:'Apple Vision · сохранённый результат',...(reviewed&&d.text!==(d.ocrText??d.text)?{reviewedText:d.text}:{})};}assert(ocrReady,'OCR не настроен',503);return recognize(bytes);},imageType});
-  const medicineRecognition=await createMedicineRecognition(dataDir,{recognize,imageType,...medicineRecognitionOptions});
+  const medicineRecognition=await createMedicineRecognition(dataDir,{recognize,imageType,local:requireAccount,...medicineRecognitionOptions});
   function recordActivity(raw){
     const input=activityInput({...raw,clientKey:raw.clientKey===undefined?newId():raw.clientKey});assert(store.get('people',input.personId),'Выберите человека');
     if(input.relatedRxId)assert(store.get('prescriptions',input.relatedRxId)?.personId===input.personId,'Назначение принадлежит другому человеку');
@@ -367,7 +367,7 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
 
 if(process.argv[1]&&fileURLToPath(import.meta.url)===process.argv[1]) {
   const port=Number(process.env.PORT||4382),additionalHosts=(process.env.MEDIKA_LAN_HOSTS||'').split(',').map(host=>host.trim()).filter(Boolean);
-  const publicHost=process.env.MEDIKA_PUBLIC_HOST?.toLowerCase(),app=await createApp({port,additionalHosts,publicHost,requireAccount:Boolean(publicHost),entryParser:parseWithCodex,dataDir:process.env.MEDIKA_DATA_DIR||join(root,'data')});
+  const publicHost=process.env.MEDIKA_PUBLIC_HOST?.toLowerCase(),app=await createApp({port,additionalHosts,publicHost,requireAccount:Boolean(publicHost),...(publicHost?{}:{entryParser:parseWithCodex}),dataDir:process.env.MEDIKA_DATA_DIR||join(root,'data')});
   app.server.listen(port,'127.0.0.1',()=>console.log('Медика: http://medika.localhost'+additionalHosts.map(host=>` · http://${host}`).join('')));
   for(const signal of ['SIGINT','SIGTERM']) process.once(signal,async()=>{await app.close();process.exit(0);});
 }
