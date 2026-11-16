@@ -15,6 +15,13 @@
     <form id="registration-form" method="post" action="/register">
       <label>Логин<input id="register-username" name="new-username" autocomplete="username" autocapitalize="none" spellcheck="false" minlength="3" maxlength="40" required></label>
       <label>Пароль<input id="new-password" name="new-password" type="password" autocomplete="new-password" minlength="15" maxlength="256" required></label>
+      <div>
+        <div class="password-actions">
+          <button type="button" id="generate-password">Сгенерировать пароль</button>
+          <button type="button" id="copy-password" hidden>Скопировать пароль</button>
+        </div>
+        <p id="password-status" role="status"></p>
+      </div>
       <label>Код приглашения<input id="register-invite" name="invite" autocomplete="off" autocapitalize="none" spellcheck="false" minlength="64" maxlength="64" required></label>
       <button type="submit">Создать аккаунт</button>
       <a href="/login">Уже есть аккаунт? Войти</a>

@@ -12,6 +12,10 @@ button,a{display:inline-grid;place-items:center;text-align:center;padding:8px 12
 button{margin-top:2px;border:1px solid #3055b0;background:#3055b0;color:white;font-weight:650;cursor:pointer}
 a{color:#294995}
 button:disabled{opacity:.65;cursor:wait}
+.password-actions{display:flex;flex-wrap:wrap;gap:8px}
+.password-actions button{flex:1 1 145px;width:auto;margin:0;background:#fff;color:#294995;border-color:#aab8cd}
+#password-status{margin:0;color:#405171;font-size:.875rem}
+#password-status:not(:empty){margin-top:8px}
 :focus-visible{outline:3px solid #466ccd;outline-offset:2px}
 #account-error{margin:0;color:#9b3226}
 #account-error:not(:empty){margin-top:14px}
