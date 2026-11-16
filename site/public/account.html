@@ -16,10 +16,19 @@
       <label>Логин<input id="login-username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" minlength="3" maxlength="40" required></label>
       <label>Пароль<input id="current-password" name="password" type="password" autocomplete="current-password" maxlength="256" required></label>
       <button type="submit">Войти</button>
+      <button type="button" class="google-button" id="google-login" hidden><img src="/google-logo.png" width="18" height="18" alt="">Войти через Google</button>
       <a href="/register">Регистрация по приглашению</a>
     </form>
     <section id="account-details" hidden>
       <p id="account-name"></p>
+      <p id="google-linked" hidden>Google подключён</p>
+      <details id="google-link" hidden>
+        <summary>Подключить Google</summary>
+        <form id="google-link-form" method="post" action="/auth/google/start">
+          <label>Пароль от Медики<input name="password" type="password" required autocomplete="current-password" maxlength="256"></label>
+          <button type="submit" class="google-button"><img src="/google-logo.png" width="18" height="18" alt="">Продолжить с Google</button>
+        </form>
+      </details>
       <button type="button" id="account-logout">Выйти</button>
       <a href="/family">Семейный журнал</a>
     </section>

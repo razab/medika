@@ -29,6 +29,9 @@ export function openAuth(db){
       csrf TEXT NOT NULL, expires_at INTEGER NOT NULL, last_seen INTEGER NOT NULL
     );
     CREATE INDEX IF NOT EXISTS auth_session_expiry ON auth_sessions(expires_at);
+    CREATE TABLE IF NOT EXISTS auth_google(
+      subject TEXT PRIMARY KEY, username TEXT UNIQUE NOT NULL REFERENCES auth_users(username) ON DELETE CASCADE
+    );
   `);
   const attempts=new Map();
   let hashing=0;
@@ -40,14 +43,21 @@ export function openAuth(db){
     entry.count++;
     attempts.set(key,entry);
   }
-  function credentials(input,ip,register){
+  function limit(ip){
     const now=Date.now();
     for(const [key,entry] of attempts)if(entry.until<=now)attempts.delete(key);
     assert(attempts.size<10_000,'Слишком много попыток. Попробуйте позже.',429);
     useAttempt('global',90,minute,now);
     useAttempt('ip:'+ip,12,15*minute,now);
+    return now;
+  }
+  function readUsername(input){
     const username=typeof input.username==='string'?input.username.trim().toLowerCase():'';
     assert(/^[a-z0-9][a-z0-9._-]{2,39}$/.test(username),'Логин — 3–40 латинских букв, цифр, точек, дефисов или подчёркиваний');
+    return username;
+  }
+  function credentials(input,ip,register){
+    const now=limit(ip),username=readUsername(input);
     useAttempt('user:'+username,8,15*minute,now);
     const {password}=input;
     assert(typeof password==='string'&&password.length<=256&&password.isWellFormed()&&[...password].length<=128&&[...password].length>=(register?15:1),
@@ -65,6 +75,32 @@ export function openAuth(db){
     db.prepare('INSERT INTO auth_sessions VALUES(?,?,?,?,?)').run(digest(secret),username,randomToken(),now+7*day,now);
     return secret;
   }
+  function inviteHash(invite){
+    assert(typeof invite==='string'&&hexToken.test(invite),'Приглашение недействительно или истекло',403);
+    const key=digest(invite);
+    assert(db.prepare('SELECT 1 FROM auth_invites WHERE secret_hash=? AND expires_at>?').get(key,Date.now()),'Приглашение недействительно или истекло',403);
+    return key;
+  }
+  function consumeInvite(key){
+    assert(db.prepare('DELETE FROM auth_invites WHERE secret_hash=? AND expires_at>?').run(key,Date.now()).changes===1,'Приглашение недействительно или истекло',403);
+  }
+  function addUser(username,salt,passwordHash){
+    assert(db.prepare('INSERT OR IGNORE INTO auth_users VALUES(?,?,?)').run(username,salt,passwordHash).changes===1,'Этот логин занят',409);
+  }
+  function transaction(operation){
+    db.exec('BEGIN IMMEDIATE');
+    try{
+      const result=operation();
+      db.exec('COMMIT');
+      return result;
+    }catch(error){db.exec('ROLLBACK');throw error;}
+  }
+  async function verifyPassword(username,password){
+    const user=db.prepare("SELECT salt,password_hash FROM auth_users WHERE username=? AND password_hash<>''").get(username);
+    const actual=await hash(password,user?.salt||dummySalt);
+    const expected=user?Buffer.from(user.password_hash,'hex'):Buffer.alloc(64);
+    assert(timingSafeEqual(actual,expected)&&user,'Проверьте логин и пароль',401);
+  }
   return {
     invite(){
       const secret=randomToken();
@@ -74,27 +110,56 @@ export function openAuth(db){
     },
     async register(input,ip){
       const {username,password}=credentials(input,ip,true);
-      assert(typeof input.invite==='string'&&hexToken.test(input.invite),'Приглашение недействительно или истекло',403);
-      const invitation=digest(input.invite);
-      assert(db.prepare('SELECT 1 FROM auth_invites WHERE secret_hash=? AND expires_at>?').get(invitation,Date.now()),'Приглашение недействительно или истекло',403);
+      const invitation=inviteHash(input.invite);
       const salt=randomToken(),password_hash=(await hash(password,salt)).toString('hex');
-      db.exec('BEGIN IMMEDIATE');
-      try{
-        assert(db.prepare('DELETE FROM auth_invites WHERE secret_hash=? AND expires_at>?').run(invitation,Date.now()).changes===1,'Приглашение недействительно или истекло',403);
-        assert(db.prepare('INSERT OR IGNORE INTO auth_users VALUES(?,?,?)').run(username,salt,password_hash).changes===1,'Этот логин занят',409);
-        const session=issue(username);
-        db.exec('COMMIT');
-        return session;
-      }catch(error){db.exec('ROLLBACK');throw error;}
+      return transaction(()=>{consumeInvite(invitation);addUser(username,salt,password_hash);return issue(username);});
     },
     async login(input,ip){
       const {username,password}=credentials(input,ip,false);
-      const user=db.prepare('SELECT salt,password_hash FROM auth_users WHERE username=?').get(username);
-      const actual=await hash(password,user?.salt||dummySalt);
-      const expected=user?Buffer.from(user.password_hash,'hex'):Buffer.alloc(64);
-      assert(timingSafeEqual(actual,expected)&&user,'Проверьте логин и пароль',401);
+      await verifyPassword(username,password);
       attempts.delete('user:'+username);
       return issue(username);
+    },
+    googleLinked(username){
+      return Boolean(db.prepare('SELECT 1 FROM auth_google WHERE username=?').get(username));
+    },
+    async prepareGoogle(input,ip,session){
+      switch(input.mode){
+        case 'login':
+          limit(ip);
+          assert(!session,'Сначала выйдите из аккаунта Медики',409);
+          return {mode:'login'};
+        case 'register':
+          limit(ip);
+          assert(!session,'Сначала выйдите из аккаунта Медики',409);
+          return {mode:'register',username:readUsername(input),invitation:inviteHash(input.invite)};
+        case 'link': {
+          assert(session,'Войдите в Медику',401);
+          const {username,password}=credentials({username:session.username,password:input.password},ip,false);
+          await verifyPassword(username,password);
+          return {mode:'link',username,sessionId:session.id};
+        }
+        default: throw new InputError('Неизвестный способ входа',400);
+      }
+    },
+    finishGoogle(flow,subject){
+      return transaction(()=>{
+        const found=db.prepare('SELECT username FROM auth_google WHERE subject=?').get(subject);
+        if(flow.mode==='login'){
+          assert(found,'Google ещё не привязан. Войдите по паролю и подключите его в аккаунте или зарегистрируйтесь по приглашению.',401);
+          return issue(found.username);
+        }
+        if(flow.mode==='register'){
+          assert(!found,'Этот Google-аккаунт уже привязан. Войдите через Google.',409);
+          consumeInvite(flow.invitation);
+          addUser(flow.username,'','');
+        }
+        const binding=db.prepare('SELECT subject FROM auth_google WHERE username=?').get(flow.username);
+        assert(!found||found.username===flow.username,'Этот Google-аккаунт уже привязан',409);
+        assert(!binding||binding.subject===subject,'К аккаунту Медики уже привязан другой Google-аккаунт',409);
+        if(!binding)db.prepare('INSERT INTO auth_google VALUES(?,?)').run(subject,flow.username);
+        return issue(flow.username);
+      });
     },
     session(cookie=''){
       const secret=cookie.split(';').map(pair=>pair.trim()).find(pair=>pair.startsWith(cookieName+'='))?.slice(cookieName.length+1);

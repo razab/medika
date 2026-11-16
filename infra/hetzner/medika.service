@@ -12,6 +12,7 @@ Environment=PORT=4382
 Environment=MEDIKA_PUBLIC_HOST=medika.ibhash.com
 Environment=MEDIKA_DATA_DIR=/var/lib/medika/data
 EnvironmentFile=-/etc/medika/runtime.env
+EnvironmentFile=-/etc/medika/google.env
 ExecStart=/opt/medika/runtime/bin/node server.mjs
 Restart=on-failure
 RestartSec=3

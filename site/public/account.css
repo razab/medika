@@ -20,4 +20,9 @@ button:disabled{opacity:.65;cursor:wait}
 #account-error{margin:0;color:#9b3226}
 #account-error:not(:empty){margin-top:14px}
 #account-name{margin:0;overflow-wrap:anywhere}
+.google-button{display:flex;justify-content:center;gap:10px;margin:0;background:#fff;color:#1f1f1f;border-color:#747775;font-weight:550}
+.google-button img{flex:none}
+#google-linked{margin:0;color:#405171}
+#google-link summary{display:flex;align-items:center;min-height:48px;cursor:pointer;color:#294995}
+#google-link-form{margin-top:8px}
 [hidden]{display:none!important}

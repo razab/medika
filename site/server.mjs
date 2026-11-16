@@ -22,12 +22,13 @@ import { createVoiceLab } from './lib/voice-lab.mjs';
 import {prepareMedicinePhotos,medicinePhotoInput} from './lib/medicine-photos.mjs';
 import {medicinePhotoKey} from './public/medicine-images.js';
 import {openAuth,sameToken,sessionCookie} from './lib/auth.mjs';
+import {createGoogleAuth,googleCallback,googleCookie} from './lib/google-auth.mjs';
 import {isLinux} from './lib/linux-media.mjs';
 
 const root=dirname(fileURLToPath(import.meta.url));
 const familyDayStart='06:00';
 const accountPages=new Map([['/login','account.html'],['/register','register.html'],['/account','account.html']]);
-const accountAssets=new Set(['/account.js','/account.css','/icon.svg']);
+const accountAssets=new Map([['/account.js','text/javascript'],['/account.css','text/css'],['/icon.svg','image/svg+xml'],['/google-logo.png','image/png']]);
 // Public design shells and synthetic specimens; copied medical data stays behind the API.
 const designStudyAssets=Object.fromEntries([
   ['/design-study',['design-study/index.html','text/html']],
@@ -46,9 +47,10 @@ export function imageType(bytes) {
   if(bytes.toString('ascii',0,4)==='RIFF'&&bytes.toString('ascii',8,12)==='WEBP') return 'image/webp';
   return null;
 }
-export async function createApp({dataDir=join(root,'data'),port=4382,publicHost='medika.localhost',additionalHosts=[],requireAccount=false,entryParser=requireAccount?parseLocalEntry:parseEntry,voiceLabOptions={},medicineRecognitionOptions={}}={}) {
+export async function createApp({dataDir=join(root,'data'),port=4382,publicHost='medika.localhost',additionalHosts=[],requireAccount=false,entryParser=requireAccount?parseLocalEntry:parseEntry,voiceLabOptions={},medicineRecognitionOptions={},googleOptions={}}={}) {
   const store=openStore(dataDir), uploads=join(dataDir,'uploads');
   const auth=requireAccount?openAuth(store.db):null;
+  const google=auth?createGoogleAuth(store.db,{...googleOptions,publicHost}):null;
   await mkdir(uploads,{recursive:true,mode:0o700});
   const voiceLab=await createVoiceLab(dataDir,{context:()=>({people:codexPeople(store.state()),medicines:store.state().medicines.filter(m=>!m.archived).map(m=>m.name)}),...voiceLabOptions,modelRuns:!requireAccount});
   const token=randomBytes(32).toString('hex'),ocrBinary=isLinux?'/usr/bin/tesseract':join(root,'scripts/medika-ocr');
@@ -100,7 +102,7 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       assert(req.url.startsWith('/'),'Некорректный адрес');
       const base=new URL(`${scheme}://${req.headers.host}`),url=new URL(req.url,base),route=url.pathname,method=req.method;
       assert(url.origin===base.origin,'Некорректный адрес');
-      const redirect=location=>{res.writeHead(303,{Location:location});res.end();};
+      const redirect=(location,headers={})=>{res.writeHead(303,{Location:location,...headers});res.end();};
       if(auth){
         res.setHeader('X-Robots-Tag','noindex, nofollow, noarchive');
         res.setHeader('X-Frame-Options','DENY');
@@ -111,7 +113,7 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       }
       if(route==='/design-study/a1')res.setHeader('Content-Security-Policy',`default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src ${url.origin}/api/session ${url.origin}/api/design-study/a1-snapshot; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'`);
       // Links from chats may be cross-site; the shell and public CA contain no medical data.
-      const publicRead=['GET','HEAD'].includes(method)&&(['/','/manage','/family','/family/','/voice-lab','/voice-lab/','/ocr-lab','/ocr-lab/','/playground','/prescriptions/import','/medika-ca.cer','/medicines','/medicines/'].includes(route)||Object.hasOwn(designStudyAssets,route)||auth&&accountPages.has(route));
+      const publicRead=['GET','HEAD'].includes(method)&&(['/','/manage','/family','/family/','/voice-lab','/voice-lab/','/ocr-lab','/ocr-lab/','/playground','/prescriptions/import','/medika-ca.cer','/medicines','/medicines/'].includes(route)||Object.hasOwn(designStudyAssets,route)||auth&&accountPages.has(route)||google&&route===googleCallback);
       if(!publicRead){
         assert(!req.headers.origin||req.headers.origin===url.origin,'Запрос с другого сайта отклонён',403);
         assert(req.headers['sec-fetch-site']!=='cross-site','Запрос с другого сайта отклонён',403);
@@ -119,6 +121,38 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       if(route==='/api/health'&&method==='GET') return send(200,auth?{ok:true}:{ok:true,app:'medika',version:'0.1.0',ocr:ocrReady});
       const session=auth?.session(req.headers.cookie);
       if(auth){
+        if(route==='/api/account/providers'&&method==='GET'){
+          return send(200,{google:!!google,linked:Boolean(google&&session&&auth.googleLinked(session.username))});
+        }
+        if(route==='/auth/google/start'&&method==='POST'){
+          assert(google,'Вход через Google пока недоступен',404);
+          assert(req.headers.origin===url.origin,'Запрос с другого сайта отклонён',403);
+          const input=await body(req,4096);
+          if(input.mode==='link')assert(session&&sameToken(session.csrf,req.headers['x-medika-token']),'Обновите страницу и повторите',403);
+          const suppliedIp=req.headers['x-medika-client-ip'],ip=isIP(suppliedIp||'')?suppliedIp:req.socket.remoteAddress;
+          const flow=await auth.prepareGoogle(input,ip,session);
+          const {location,cookie}=google.start(flow);
+          return send(200,{location},{'Set-Cookie':cookie});
+        }
+        if(google&&route===googleCallback&&method==='GET'){
+          let flow;
+          const clear=googleCookie('',0);
+          const destination=()=>flow?.mode==='register'?'/register':flow?.mode==='link'?'/account':'/login';
+          try{
+            flow=google.take(req.headers.cookie,url.searchParams.get('state'));
+            if(url.searchParams.has('error'))return redirect(destination()+'?google=cancelled',{'Set-Cookie':clear});
+            const subject=await google.exchange(url.searchParams.get('code'),flow);
+            const current=auth.session(req.headers.cookie);
+            assert(flow.mode==='link'?current?.id===flow.sessionId:!current,'Запрос входа истёк',403);
+            const secret=auth.finishGoogle(flow,subject);
+            if(current)auth.logout(current.id);
+            return redirect(flow.mode==='link'?'/account':'/family',{'Set-Cookie':[clear,sessionCookie(secret)]});
+          }catch(error){
+            if(!(error instanceof InputError))console.error('Ошибка входа через Google:',error.name);
+            const reason=error.status===409?'conflict':error.status===401?'unlinked':error.status===403?'invalid':'unavailable';
+            return redirect(destination()+'?google='+reason,flow?{'Set-Cookie':clear}:{});
+          }
+        }
         if(['/api/account/login','/api/account/register'].includes(route)&&method==='POST'){
           assert(req.headers.origin===url.origin,'Запрос с другого сайта отклонён',403);
           const suppliedIp=req.headers['x-medika-client-ip'],ip=isIP(suppliedIp||'')?suppliedIp:req.socket.remoteAddress;
@@ -352,7 +386,7 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       if(route==='/ocr-sample.png'){res.writeHead(200,{'Content-Type':'image/png'});return res.end(await readFile(join(root,'public/ocr-sample.png')));}
       const packageImage=route.match(/^\/medicine-images\/([a-z0-9-]+\.jpg)$/);if(packageImage){let bytes;try{bytes=await readFile(join(root,'public/medicine-images',packageImage[1]));}catch{throw new InputError('Фото не найдено',404);}res.writeHead(200,{'Content-Type':'image/jpeg','Cache-Control':'public, max-age=86400'});return res.end(method==='HEAD'?undefined:bytes);}
       const assets={...designStudyAssets,'/medicines':['medicines.html','text/html'],'/medicines/':['medicines.html','text/html'],'/medicine-reference.js':['medicine-reference.js','text/javascript'],'/medicine-reference.css':['medicine-reference.css','text/css'],'/medicines.js':['medicines.js','text/javascript'],'/medicines.css':['medicines.css','text/css'],'/family':['family-preview.html','text/html'],'/family/':['family-preview.html','text/html'],'/family-preview-model.js':['family-preview-model.js','text/javascript'],'/family-card.js':['family-card.js','text/javascript'],'/ocr-lab':['ocr-lab.html','text/html'],'/ocr-lab/':['ocr-lab.html','text/html'],'/playground':['ocr-lab.html','text/html'],'/prescriptions/import':['ocr-lab.html','text/html'],'/ocr-lab.js':['ocr-lab.js','text/javascript'],'/prescription-workspace.js':['prescription-workspace.js','text/javascript'],'/prescription-workspace.css':['prescription-workspace.css','text/css'],'/medicine-forms.js':['medicine-forms.js','text/javascript'],'/routine.js':['routine.js','text/javascript'],'/':['family-preview.html','text/html'],'/manage':['index.html','text/html'],'/family-workspace.js':['family-workspace.js','text/javascript'],'/family-workspace.css':['family-workspace.css','text/css'],'/voice-lab':['voice-lab.html','text/html'],'/voice-lab/':['voice-lab.html','text/html'],'/voice-lab.js':['voice-lab.js','text/javascript'],'/voice-lab.css':['voice-lab.css','text/css'],'/prescription-summary.js':['prescription-summary.js','text/javascript'],'/medicine-images.js':['medicine-images.js','text/javascript'],'/app.js':['app.js','text/javascript'],'/style.css':['style.css','text/css'],'/icon.svg':['icon.svg','image/svg+xml'],'/voice-recorder.js':['voice-recorder.js','text/javascript'],'/voice-capture.js':['voice-capture.js','text/javascript'],'/voice-queue.js':['voice-queue.js','text/javascript']};
-      const asset=auth&&accountPages.has(route)?[accountPages.get(route),'text/html']:auth&&accountAssets.has(route)&&route!=='/icon.svg'?[route.slice(1),route.endsWith('.js')?'text/javascript':'text/css']:Object.hasOwn(assets,route)?assets[route]:null;
+      const asset=auth&&accountPages.has(route)?[accountPages.get(route),'text/html']:auth&&accountAssets.has(route)?[route.slice(1),accountAssets.get(route)]:Object.hasOwn(assets,route)?assets[route]:null;
       assert(asset&&['GET','HEAD'].includes(method),'Страница не найдена',404);
       const [file,mime]=asset;res.writeHead(200,{'Content-Type':`${mime}; charset=utf-8`});res.end(method==='HEAD'?undefined:await readFile(join(root,'public',file)));
     } catch(e) {
@@ -367,7 +401,11 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
 
 if(process.argv[1]&&fileURLToPath(import.meta.url)===process.argv[1]) {
   const port=Number(process.env.PORT||4382),additionalHosts=(process.env.MEDIKA_LAN_HOSTS||'').split(',').map(host=>host.trim()).filter(Boolean);
-  const publicHost=process.env.MEDIKA_PUBLIC_HOST?.toLowerCase(),app=await createApp({port,additionalHosts,publicHost,requireAccount:Boolean(publicHost),...(publicHost?{}:{entryParser:parseWithCodex}),dataDir:process.env.MEDIKA_DATA_DIR||join(root,'data')});
+  const publicHost=process.env.MEDIKA_PUBLIC_HOST?.toLowerCase(),app=await createApp({
+    port,additionalHosts,publicHost,requireAccount:Boolean(publicHost),...(publicHost?{}:{entryParser:parseWithCodex}),
+    dataDir:process.env.MEDIKA_DATA_DIR||join(root,'data'),
+    googleOptions:{clientId:process.env.MEDIKA_GOOGLE_CLIENT_ID,clientSecret:process.env.MEDIKA_GOOGLE_CLIENT_SECRET}
+  });
   app.server.listen(port,'127.0.0.1',()=>console.log('Медика: http://medika.localhost'+additionalHosts.map(host=>` · http://${host}`).join('')));
   for(const signal of ['SIGINT','SIGTERM']) process.once(signal,async()=>{await app.close();process.exit(0);});
 }
