@@ -1,7 +1,7 @@
-const form=document.querySelector('#account-form');
+const form=document.querySelector('#account-form,#registration-form');
 const title=document.querySelector('#account-title');
 const error=document.querySelector('#account-error');
-const register=location.pathname==='/register';
+const register=form.id==='registration-form';
 const account=location.pathname==='/account';
 
 async function request(path,options){
@@ -35,24 +35,13 @@ if(account){
   });
 }else{
   const button=form.querySelector('button');
-  if(register){
-    title.textContent=button.textContent='Создать аккаунт';
-    form.elements.password.autocomplete='new-password';
-    form.elements.password.minLength=15;
-    const invite=form.elements.invite;
-    invite.disabled=false;
-    invite.required=true;
-    invite.minLength=64;
-    document.querySelector('#account-invite').hidden=false;
-    const switchPage=document.querySelector('#account-switch');
-    switchPage.href='/login';
-    switchPage.textContent='Уже есть аккаунт? Войти';
-  }
   form.addEventListener('submit',event=>{
     event.preventDefault();
     action(button,async()=>{
-      const input=Object.fromEntries(new FormData(form));
-      if(register)input.invite=input.invite.trim();
+      const fields=new FormData(form);
+      const input=register?{
+        username:fields.get('new-username'),password:fields.get('new-password'),invite:fields.get('invite').trim()
+      }:Object.fromEntries(fields);
       await request('account/'+(register?'register':'login'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)});
       location.replace('/family');
     });

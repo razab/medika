@@ -37,7 +37,15 @@ test('Публичная Медика: регистрация по пригла�
     const landing=await request('/family');
     assert.equal(landing.status,303);
     assert.equal(landing.headers.get('location'),'/login');
-    assert.equal((await request('/login')).status,200);
+    const loginPage=await request('/login'),registerPage=await request('/register');
+    assert.equal(loginPage.status,200);
+    assert.equal(registerPage.status,200);
+    const loginHTML=await loginPage.text(),registerHTML=await registerPage.text();
+    assert.match(loginHTML,/<form[^>]*method="post"[^>]*action="\/login"/);
+    assert.match(loginHTML,/<input[^>]*type="password"[^>]*autocomplete="current-password"/);
+    assert.match(registerHTML,/<form[^>]*method="post"[^>]*action="\/register"/);
+    assert.match(registerHTML,/<input[^>]*type="password"[^>]*autocomplete="new-password"/);
+    assert.doesNotMatch(registerHTML,/autocomplete="current-password"/);
     for(const path of ['/api/session','/api/state','/api/family','/api/backup','/api/audit','/api/design-study/a1-snapshot','/api/documents/abc/image']){
       assert.equal((await request(path,{headers:{'X-Medika-Token':'a'.repeat(64)}})).status,401,path);
     }

@@ -13,11 +13,10 @@
     <header><img src="/icon.svg" alt="" width="36" height="36"><span>Медика</span></header>
     <h1 id="account-title">Войти</h1>
     <form id="account-form" method="post" action="/login">
-      <label>Логин<input name="username" autocomplete="username" autocapitalize="none" spellcheck="false" minlength="3" maxlength="40" required></label>
-      <label>Пароль<input name="password" type="password" autocomplete="current-password" maxlength="256" required></label>
-      <label id="account-invite" hidden>Код приглашения<input name="invite" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="64" disabled></label>
+      <label>Логин<input id="login-username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" minlength="3" maxlength="40" required></label>
+      <label>Пароль<input id="current-password" name="password" type="password" autocomplete="current-password" maxlength="256" required></label>
       <button type="submit">Войти</button>
-      <a id="account-switch" href="/register">Регистрация по приглашению</a>
+      <a href="/register">Регистрация по приглашению</a>
     </form>
     <section id="account-details" hidden>
       <p id="account-name"></p>
