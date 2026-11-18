@@ -1,0 +1,159 @@
+{
+  "synthetic": true,
+  "variants": [
+    {
+      "variant": "calm",
+      "width": 320,
+      "height": 740,
+      "geometry": "passed",
+      "touch": "center and edges passed"
+    },
+    {
+      "variant": "calm",
+      "width": 390,
+      "height": 844,
+      "geometry": "passed",
+      "touch": "center and edges passed"
+    },
+    {
+      "variant": "calm",
+      "width": 768,
+      "height": 1024,
+      "geometry": "passed",
+      "touch": "center and edges passed"
+    },
+    {
+      "variant": "calm",
+      "width": 1024,
+      "height": 768,
+      "geometry": "passed",
+      "touch": "center and edges passed"
+    },
+    {
+      "variant": "agenda",
+      "width": 320,
+      "height": 740,
+      "geometry": "passed",
+      "touch": "center and edges passed"
+    },
+    {
+      "variant": "agenda",
+      "width": 390,
+      "height": 844,
+      "geometry": "passed",
+      "touch": "center and edges passed"
+    },
+    {
+      "variant": "agenda",
+      "width": 768,
+      "height": 1024,
+      "geometry": "passed",
+      "touch": "center and edges passed"
+    },
+    {
+      "variant": "agenda",
+      "width": 1024,
+      "height": 768,
+      "geometry": "passed",
+      "touch": "center and edges passed"
+    },
+    {
+      "variant": "people",
+      "width": 320,
+      "height": 740,
+      "geometry": "passed",
+      "touch": "center and edges passed"
+    },
+    {
+      "variant": "people",
+      "width": 390,
+      "height": 844,
+      "geometry": "passed",
+      "touch": "center and edges passed"
+    },
+    {
+      "variant": "people",
+      "width": 768,
+      "height": 1024,
+      "geometry": "passed",
+      "touch": "center and edges passed"
+    },
+    {
+      "variant": "people",
+      "width": 1024,
+      "height": 768,
+      "geometry": "passed",
+      "touch": "center and edges passed"
+    },
+    {
+      "variant": "focus",
+      "width": 320,
+      "height": 740,
+      "geometry": "passed",
+      "touch": "center and edges passed"
+    },
+    {
+      "variant": "focus",
+      "width": 390,
+      "height": 844,
+      "geometry": "passed",
+      "touch": "center and edges passed"
+    },
+    {
+      "variant": "focus",
+      "width": 768,
+      "height": 1024,
+      "geometry": "passed",
+      "touch": "center and edges passed"
+    },
+    {
+      "variant": "focus",
+      "width": 1024,
+      "height": 768,
+      "geometry": "passed",
+      "touch": "center and edges passed"
+    },
+    {
+      "variant": "board",
+      "width": 320,
+      "height": 740,
+      "geometry": "passed",
+      "touch": "center and edges passed"
+    },
+    {
+      "variant": "board",
+      "width": 390,
+      "height": 844,
+      "geometry": "passed",
+      "touch": "center and edges passed"
+    },
+    {
+      "variant": "board",
+      "width": 768,
+      "height": 1024,
+      "geometry": "passed",
+      "touch": "center and edges passed"
+    },
+    {
+      "variant": "board",
+      "width": 1024,
+      "height": 768,
+      "geometry": "passed",
+      "touch": "center and edges passed"
+    }
+  ],
+  "screenshots": [
+    "calm-phone.png",
+    "calm-tablet.png",
+    "agenda-phone.png",
+    "agenda-tablet.png",
+    "people-phone.png",
+    "people-tablet.png",
+    "focus-phone.png",
+    "focus-tablet.png",
+    "board-phone.png",
+    "board-tablet.png"
+  ],
+  "network": [],
+  "failures": []
+}
