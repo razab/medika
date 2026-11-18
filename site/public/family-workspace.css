@@ -94,6 +94,19 @@
 .family-app .care-med-later:has(>.care-take){grid-template-columns:minmax(0,1fr) 48px}
 .family-timers[hidden]{display:none}
 
+.family-frequency{margin:4px 0 0;font-size:12px;color:#627084}
+.family-intake-timer{margin:6px 0;font-size:12px;line-height:1.5;font-variant-numeric:tabular-nums}
+.family-intake-timer[data-state=waiting],.family-intake-timer[data-state=unknown]{color:#8a5318}
+.family-supply{margin-top:16px;padding:12px 16px;border:1px solid #dce4ee;border-radius:12px;background:#fff}
+.family-supply>summary{display:flex;align-items:center;min-height:48px;cursor:pointer;font-size:14px;font-weight:600}
+.family-supply>p,.family-supply section p{font-size:12px;line-height:1.5;color:#627084}
+.family-supply section{padding:12px 0;border-top:1px solid #dce4ee}
+.family-supply h3{font-size:14px;margin:0 0 8px}
+.family-supply section strong{font-size:14px}
+#family-info .family-interval-fields{display:grid;gap:16px;border:0;padding:0;margin:0;min-width:0}
+#family-info .family-interval-fields legend{font-size:14px;padding:8px 0}
+#family-info .family-interval-fields p{font-size:12px;color:#627084;margin:0}
+
 .family-app [hidden]{display:none!important}[data-rx-occurrences]{display:grid;gap:0}
 
 .family-app .family-day-slot+.family-day-slot{border-top:1px solid #dce4ee;margin-top:8px;padding-top:8px}

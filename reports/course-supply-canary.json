@@ -1,0 +1,9 @@
+{
+  "status": "PASS",
+  "syntheticOnly": true,
+  "physicalDeviceTested": false,
+  "frequency": true,
+  "remainingForFamily": true,
+  "actualIntakeTimer": true,
+  "restart": true
+}
