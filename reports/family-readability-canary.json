@@ -1,0 +1,349 @@
+{
+  "status": "PASS",
+  "syntheticOnly": true,
+  "physicalDeviceTested": false,
+  "keyboardNavigation": true,
+  "checks": [
+    {
+      "width": 320,
+      "height": 844,
+      "typography": {
+        ".care-med-name": {
+          "actual": 22,
+          "minimum": 22
+        },
+        ".care-dose": {
+          "actual": 22,
+          "minimum": 22
+        },
+        ".care-person-head h2": {
+          "actual": 24,
+          "minimum": 24
+        },
+        ".family-medicine-group": {
+          "actual": 16,
+          "minimum": 16
+        },
+        ".family-phase-status": {
+          "actual": 16,
+          "minimum": 16
+        },
+        ".family-intake-timer": {
+          "actual": 18,
+          "minimum": 18
+        },
+        ".family-progress-count": {
+          "actual": 16,
+          "minimum": 16
+        },
+        ".family-preview-footer button": {
+          "actual": 18,
+          "minimum": 18
+        }
+      },
+      "contrast": [
+        {
+          "selector": ".care-med-name",
+          "ratio": 14.419374574101022
+        },
+        {
+          "selector": ".family-medicine-group",
+          "ratio": 6.850164665660756
+        },
+        {
+          "selector": ".family-intake-timer",
+          "ratio": 5.765813742995275
+        },
+        {
+          "selector": ".family-phase-status",
+          "ratio": 6.850164665660756
+        },
+        {
+          "selector": ".family-progress-count",
+          "ratio": 14.419374574101022
+        },
+        {
+          "selector": ".family-preview-footer p",
+          "ratio": 5.872412166946932
+        }
+      ],
+      "checkboxEdges": true,
+      "modalHeaderClear": true,
+      "audioMuted": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "typography": {
+        ".care-med-name": {
+          "actual": 22,
+          "minimum": 22
+        },
+        ".care-dose": {
+          "actual": 22,
+          "minimum": 22
+        },
+        ".care-person-head h2": {
+          "actual": 24,
+          "minimum": 24
+        },
+        ".family-medicine-group": {
+          "actual": 16,
+          "minimum": 16
+        },
+        ".family-phase-status": {
+          "actual": 16,
+          "minimum": 16
+        },
+        ".family-intake-timer": {
+          "actual": 18,
+          "minimum": 18
+        },
+        ".family-progress-count": {
+          "actual": 16,
+          "minimum": 16
+        },
+        ".family-preview-footer button": {
+          "actual": 18,
+          "minimum": 18
+        }
+      },
+      "contrast": [
+        {
+          "selector": ".care-med-name",
+          "ratio": 14.419374574101022
+        },
+        {
+          "selector": ".family-medicine-group",
+          "ratio": 6.850164665660756
+        },
+        {
+          "selector": ".family-intake-timer",
+          "ratio": 5.765813742995275
+        },
+        {
+          "selector": ".family-phase-status",
+          "ratio": 6.850164665660756
+        },
+        {
+          "selector": ".family-progress-count",
+          "ratio": 14.419374574101022
+        },
+        {
+          "selector": ".family-preview-footer p",
+          "ratio": 5.872412166946932
+        }
+      ],
+      "checkboxEdges": true,
+      "modalHeaderClear": true,
+      "audioMuted": true
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "typography": {
+        ".care-med-name": {
+          "actual": 22,
+          "minimum": 22
+        },
+        ".care-dose": {
+          "actual": 22,
+          "minimum": 22
+        },
+        ".care-person-head h2": {
+          "actual": 24,
+          "minimum": 24
+        },
+        ".family-medicine-group": {
+          "actual": 16,
+          "minimum": 16
+        },
+        ".family-phase-status": {
+          "actual": 16,
+          "minimum": 16
+        },
+        ".family-intake-timer": {
+          "actual": 18,
+          "minimum": 18
+        },
+        ".family-progress-count": {
+          "actual": 16,
+          "minimum": 16
+        },
+        ".family-preview-footer button": {
+          "actual": 18,
+          "minimum": 18
+        }
+      },
+      "contrast": [
+        {
+          "selector": ".care-med-name",
+          "ratio": 14.419374574101022
+        },
+        {
+          "selector": ".family-medicine-group",
+          "ratio": 6.850164665660756
+        },
+        {
+          "selector": ".family-intake-timer",
+          "ratio": 5.765813742995275
+        },
+        {
+          "selector": ".family-phase-status",
+          "ratio": 6.850164665660756
+        },
+        {
+          "selector": ".family-progress-count",
+          "ratio": 14.419374574101022
+        },
+        {
+          "selector": ".family-preview-footer p",
+          "ratio": 5.872412166946932
+        }
+      ],
+      "checkboxEdges": true,
+      "modalHeaderClear": true,
+      "audioMuted": true
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "typography": {
+        ".care-med-name": {
+          "actual": 22,
+          "minimum": 22
+        },
+        ".care-dose": {
+          "actual": 22,
+          "minimum": 22
+        },
+        ".care-person-head h2": {
+          "actual": 24,
+          "minimum": 24
+        },
+        ".family-medicine-group": {
+          "actual": 16,
+          "minimum": 16
+        },
+        ".family-phase-status": {
+          "actual": 16,
+          "minimum": 16
+        },
+        ".family-intake-timer": {
+          "actual": 18,
+          "minimum": 18
+        },
+        ".family-progress-count": {
+          "actual": 16,
+          "minimum": 16
+        },
+        ".family-preview-footer button": {
+          "actual": 18,
+          "minimum": 18
+        }
+      },
+      "contrast": [
+        {
+          "selector": ".care-med-name",
+          "ratio": 14.419374574101022
+        },
+        {
+          "selector": ".family-medicine-group",
+          "ratio": 6.850164665660756
+        },
+        {
+          "selector": ".family-intake-timer",
+          "ratio": 5.765813742995275
+        },
+        {
+          "selector": ".family-phase-status",
+          "ratio": 6.850164665660756
+        },
+        {
+          "selector": ".family-progress-count",
+          "ratio": 14.419374574101022
+        },
+        {
+          "selector": ".family-preview-footer p",
+          "ratio": 5.872412166946932
+        }
+      ],
+      "checkboxEdges": true,
+      "modalHeaderClear": true,
+      "audioMuted": true
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "typography": {
+        ".care-med-name": {
+          "actual": 22,
+          "minimum": 22
+        },
+        ".care-dose": {
+          "actual": 22,
+          "minimum": 22
+        },
+        ".care-person-head h2": {
+          "actual": 24,
+          "minimum": 24
+        },
+        ".family-medicine-group": {
+          "actual": 16,
+          "minimum": 16
+        },
+        ".family-phase-status": {
+          "actual": 16,
+          "minimum": 16
+        },
+        ".family-intake-timer": {
+          "actual": 18,
+          "minimum": 18
+        },
+        ".family-progress-count": {
+          "actual": 16,
+          "minimum": 16
+        },
+        ".family-preview-footer button": {
+          "actual": 18,
+          "minimum": 18
+        }
+      },
+      "contrast": [
+        {
+          "selector": ".care-med-name",
+          "ratio": 14.419374574101022
+        },
+        {
+          "selector": ".family-medicine-group",
+          "ratio": 6.850164665660756
+        },
+        {
+          "selector": ".family-intake-timer",
+          "ratio": 5.765813742995275
+        },
+        {
+          "selector": ".family-phase-status",
+          "ratio": 6.850164665660756
+        },
+        {
+          "selector": ".family-progress-count",
+          "ratio": 14.419374574101022
+        },
+        {
+          "selector": ".family-preview-footer p",
+          "ratio": 5.872412166946932
+        }
+      ],
+      "checkboxEdges": true,
+      "modalHeaderClear": true,
+      "audioMuted": true
+    },
+    {
+      "textScale": "200%",
+      "normalSize": 22,
+      "enlargedSize": 44,
+      "modalUsable": true
+    }
+  ]
+}

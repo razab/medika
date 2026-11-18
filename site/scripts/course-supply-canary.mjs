@@ -125,9 +125,11 @@ try{
       await field.scrollIntoViewIfNeeded();
       const rect=await field.boundingBox();
       assert.ok(rect.width>=48&&rect.height>=48);
-      for(const x of [rect.x+2,rect.x+rect.width/2,rect.x+rect.width-2]){
-        await page.touchscreen.tap(x,rect.y+rect.height/2);
-        assert.equal(await field.evaluate(input=>input===document.activeElement),true);
+      for(const edge of ['left','center','right']){
+        await field.scrollIntoViewIfNeeded();
+        const current=await field.boundingBox();
+        await page.touchscreen.tap(edge==='left'?current.x+2:edge==='right'?current.x+current.width-2:current.x+current.width/2,current.y+current.height/2);
+        assert.equal(await field.evaluate(input=>input===document.activeElement),true,JSON.stringify({width,height,name,edge,current}));
         if(name==='dailyFrequency')await page.keyboard.press('Tab');
       }
     }
