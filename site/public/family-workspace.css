@@ -95,6 +95,9 @@
 .family-timers[hidden]{display:none}
 
 .family-frequency{margin:4px 0 0;font-size:12px;color:#627084}
+.family-intake-progress{display:inline-flex;flex-wrap:wrap;align-items:center;gap:7px;padding:3px 0;max-width:100%;vertical-align:middle}
+.family-intake-dot{width:10px;height:10px;box-sizing:border-box;border:1.5px solid #8295b8;border-radius:50%;background:transparent;flex:none}
+.family-intake-dot.is-taken{border-color:#315ac1;background:#315ac1}
 .family-intake-timer{margin:6px 0;font-size:12px;line-height:1.5;font-variant-numeric:tabular-nums}
 .family-intake-timer[data-state=waiting],.family-intake-timer[data-state=unknown]{color:#8a5318}
 .family-supply{margin-top:16px;padding:12px 16px;border:1px solid #dce4ee;border-radius:12px;background:#fff}

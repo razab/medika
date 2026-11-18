@@ -4,7 +4,7 @@ import {careDrug,careFamily,escapeHTML as e} from '/family-card.js';
 import {anchors,relations,profileSlots,dailyRoutine} from '/routine.js';
 import {medicineForms,allowedMedicineUnits} from '/medicine-forms.js';
 import {prescriptionSummary} from '/prescription-summary.js';
-import {intakeTimer,prescribedInterval} from '/intake-timer.js';
+import {intakeTimer,prescribedInterval,dailyIntakeProgress} from '/intake-timer.js';
 import {allRows,activeEvents,rowEvent,dependencyStatus,dependencyTimer,courseWarnings,localInstant} from '/design-study/a1-events.js';
 import {photosForMedicine} from '/medicine-images.js';
 import {captureVoice} from '/voice-capture.js';
@@ -154,7 +154,9 @@ function renderRow(source,later=false){const row=effectiveRow(source),event=rowE
   html=html.replace('</dl>','</dl>'+`<div class="sandbox-row-actions"><button type="button" data-record="${e(row.key)}">${event||row.eventId?'Изменить факт':'Записать приём'}</button><button type="button" data-edit="${e(row.prescriptionId)}">Изменить назначение</button></div>`);
   if(row.warnings.length)html=html.replace('</summary>',`</summary><p class="sandbox-warning">${e(row.warnings.join(' · '))}</p>`);
   const frequency=prescriptionSummary(rxFor(row.prescriptionId).input||{}).frequency;
-  return `<div class="sandbox-dose${openKey===row.key?' is-selected':''}" data-demo-row="${e(row.key)}">${html}<p class="family-frequency">${e(frequency)}</p><p class="family-intake-timer" data-intake-row="${e(row.key)}" hidden></p>${row.dependency?`<p class="dependency-state" data-dependency-row="${e(row.key)}">${e(dependencyTimer(snapshot,actions,row)?.text||dependency)}</p>`:''}${event&&row.aftercare?`<p class="family-aftercare">После ингаляции: ${e(row.aftercare)}</p>`:''}</div>`;
+  const progress=dailyIntakeProgress(snapshot,row,actions);
+  const dots=progress?`<span class="family-intake-progress" role="img" aria-label="Принято ${progress.taken} из ${progress.total} ${progress.period}">${Array.from({length:progress.total},(_,i)=>`<span class="family-intake-dot${i<progress.taken?' is-taken':''}" aria-hidden="true"></span>`).join('')}</span><span class="sr-only">${e(frequency)}</span>${progress.taken>progress.total?'<span>Превышено указанное количество</span>':''}`:e(frequency);
+  return `<div class="sandbox-dose${openKey===row.key?' is-selected':''}" data-demo-row="${e(row.key)}">${html}<p class="family-frequency">${dots}</p><p class="family-intake-timer" data-intake-row="${e(row.key)}" hidden></p>${row.dependency?`<p class="dependency-state" data-dependency-row="${e(row.key)}">${e(dependencyTimer(snapshot,actions,row)?.text||dependency)}</p>`:''}${event&&row.aftercare?`<p class="family-aftercare">После ингаляции: ${e(row.aftercare)}</p>`:''}</div>`;
 }
 function group(g,p){const rows=g.rows.filter(r=>visibleRow(r,p));if(!rows.length)return '';return `<section class="care-current family-day-slot"><div class="family-slot-heading"><h3 class="sandbox-current-label">${e(g.label)}</h3><button type="button" data-add-medicine="${e(p.id)}" data-anchor="${e(rows[0].anchor==='clock'?'':p.daySlots?'slot:'+rows[0].anchor:rows[0].anchor)}"${rows[0].anchor==='clock'?` data-time="${e(g.time||'')}"`:''} aria-label="Добавить лекарство: ${e(p.name)}, ${e(g.label)}">+</button></div>${rows.map(r=>renderRow({...r,personId:p.id})).join('')}</section>`;}
 function peopleView(){return snapshot.model.cards;}

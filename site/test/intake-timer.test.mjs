@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {intakeTimer,prescribedInterval} from '../public/intake-timer.js';
+import {intakeTimer,prescribedInterval,dailyIntakeProgress} from '../public/intake-timer.js';
 
 const start=Date.parse('2026-11-18T06:00:00Z');
 const input={personId:'p',name:'ТестПрепарат',medicineId:'m',minHours:'12',timeZone:'Europe/Chisinau'};
@@ -34,7 +34,7 @@ test('Неизвестное время не даёт отсчёт, максим
   copy.model.history=[{...event,occurredAt:null}];
   assert.equal(intakeTimer(copy,row,start).state,'unknown');
   copy.prescriptions[0].input={...input,minHours:'6',maxPer24h:'2'};
-  copy.model.history=[event,{...event,id:'second',occurredAt:new Date(start+6*3600000).toISOString()}];
+  copy.model.history=[{...event},{...event,id:'second',occurredAt:new Date(start+6*3600000).toISOString()}];
   assert.match(intakeTimer(copy,row,start+12*3600000).text,/Достигнут максимум/);
   assert.equal(intakeTimer(copy,row,start+24*3600000).state,'elapsed');
   copy.model.history[0].status='void';
@@ -46,4 +46,28 @@ test('Число приёмов само по себе не назначает �
   assert.equal(prescribedInterval({sourceText:'каждые 12 часов'}).hours,12);
   assert.equal(prescribedInterval({conditions:'не ранее чем через 6 ч'}).hours,6);
   assert.equal(prescribedInterval({type:'interval',intervalHours:8}).hours,8);
+});
+
+test('Точки дня объединяют назначения одного препарата и человека, учитывают отмену и новый день',()=>{
+  const rows=[0,1,2].map(i=>({...row,key:'dose-'+i,prescriptionId:i===2?'evening':'r'}));
+  const copy={prescriptions:[{id:'r',personId:'p',input},{id:'evening',personId:'p',input}],model:{cards:[{id:'p',current:{rows:rows.slice(0,2)},earlier:[],later:[{rows:[rows[2],rows[0]]}]}],history:[]}};
+  assert.deepEqual(dailyIntakeProgress(copy,row),{taken:0,total:3,period:'за день расписания'});
+  copy.model.history=[{...event,rowKey:rows[0].key}];
+  assert.equal(dailyIntakeProgress(copy,row).taken,1);
+  assert.equal(dailyIntakeProgress(copy,row,[{kind:'cancel',targetId:event.id}]).taken,0);
+  copy.model.history[0].status='void';
+  assert.equal(dailyIntakeProgress(copy,row).taken,0);
+  copy.model.history=[...rows.map((item,i)=>({...event,id:'fact-'+i,rowKey:item.key}))];
+  assert.equal(dailyIntakeProgress(copy,row).taken,3);
+  copy.model.history.forEach(item=>item.rowKey='previous-'+item.rowKey);
+  assert.equal(dailyIntakeProgress(copy,row).taken,0);
+  assert.equal(dailyIntakeProgress(copy,{...row,personId:'other'}),null);
+});
+
+test('По необходимости точки используют указанный максимум за 24 часа и сохраняют неизвестность',()=>{
+  const copy={prescriptions:[{id:'r',personId:'p',input:{...input,type:'prn',maxPer24h:'3'}}],model:{cards:[{id:'p'}],history:[{...event}]}};
+  assert.deepEqual(dailyIntakeProgress(copy,row,[],start),{taken:1,total:3,period:'за 24 часа'});
+  assert.equal(dailyIntakeProgress(copy,row,[],start+86400000).taken,0);
+  copy.model.history[0].occurredAt=null;
+  assert.equal(dailyIntakeProgress(copy,row,[],start),null);
 });

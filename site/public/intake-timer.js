@@ -1,4 +1,29 @@
+import {rowEvent} from './design-study/a1-events.js';
+
 const normalize=value=>String(value||'').normalize('NFKC').toLocaleLowerCase().replace(/ё/g,'е').trim();
+
+export function dailyIntakeProgress(snapshot,row,actions=[],now=Date.now()){
+  const rx=snapshot.prescriptions.find(r=>r.id===row.prescriptionId)?.input;
+  const person=snapshot.model.cards.find(p=>p.id===row.personId);
+  if(!rx||!person)return null;
+  const identity=input=>[input.medicineId||input.name,input.medicineForm||input.form,input.strength,input.unit].map(normalize).join('|');
+  const ids=new Set(snapshot.prescriptions.filter(p=>p.personId===row.personId&&p.input&&identity(p.input)===identity(rx)).map(p=>p.id));
+  if(rx.type==='prn'){
+    const total=Number(rx.maxPer24h);
+    if(!Number.isInteger(total)||total<1||total>100)return null;
+    const cancelled=new Set(actions.filter(a=>a.kind==='cancel').map(a=>a.targetId));
+    const events=snapshot.model.history.filter(event=>event.personId===row.personId&&ids.has(event.prescriptionId)&&
+      ['taken','recorded'].includes(event.status)&&!cancelled.has(event.id));
+    const today=new Date(now-86400000).toLocaleDateString('sv-SE',{timeZone:rx.timeZone});
+    if(events.some(event=>!event.occurredAt&&event.date>=today))return null;
+    const taken=events.filter(event=>Date.parse(event.occurredAt)>now-86400000&&Date.parse(event.occurredAt)<=now).length;
+    return {total,taken,period:'за 24 часа'};
+  }
+  const groups=[...(person.current?[person.current]:[]),...person.earlier,...person.later];
+  const rows=[...new Map(groups.flatMap(group=>group.rows).filter(item=>ids.has(item.prescriptionId)).map(item=>[item.key,item])).values()];
+  if(!rows.length)return null;
+  return {total:rows.length,taken:rows.filter(item=>rowEvent(snapshot,actions,{...item,personId:row.personId})).length,period:'за день расписания'};
+}
 
 export function prescribedInterval(rx){
   if(Number(rx.minHours)>0)return {hours:Number(rx.minHours),source:'Назначение'};
