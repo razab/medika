@@ -1,0 +1,38 @@
+{
+  "kind": "manual full-detail visual review",
+  "notes": {
+    "c1": "White/violet hierarchy, all four rows and correct patient grouping. Exact doses/course/dots; checked vs empty actions clearly distinct. No green. Header taller than proposed 15%, accepted as readable visual exploration rather than a measured implementation.",
+    "c2": "White/espresso and burnt-orange controls visibly distinct from C1. Four correct rows, doses/course and dots. No green. Flat form silhouettes and passive phase text.",
+    "c3": "Warm burgundy background, pale apricot controls, ivory names and doses. Correct two-row grouping per patient and exact state. Minor tonal rendering in dark fields, accepted without further image edits. No green. Colour is a theme, not medical urgency."
+  },
+  "sharedInvariants": {
+    "people": [
+      "Лена",
+      "Миша"
+    ],
+    "rowsPerPerson": 2,
+    "doses": [
+      "2 пшика",
+      "5 капель",
+      "1 мл",
+      "1 капс."
+    ],
+    "courses": [
+      "Ещё 5 дней",
+      "Ещё 3 дня",
+      "Ещё 4 дня",
+      "Последний день"
+    ],
+    "dots": [
+      "filled-empty-empty",
+      "empty-empty",
+      "filled-empty",
+      "empty"
+    ],
+    "noGreen": true,
+    "noProgressFraction": true,
+    "passivePhase": true
+  },
+  "revisionDecision": "All content, grouping and contrast gates pass. No additional generator edits: earlier broad editing changed patient boundaries; avoid an unnecessary repeat. This is a visual comparison, not a multi-screen flow.",
+  "physicalDeviceTest": false
+}

@@ -8,7 +8,8 @@
   "confirmedPalette": {
     "source": "user",
     "direction": "round-4/VD1",
-    "scope": "botanical green palette; not entire layout"
+    "scope": "botanical green palette; not entire layout",
+    "status": "superseded-by-user-rejection"
   },
   "requestedVariants": {
     "dark": 3,
@@ -120,5 +121,10 @@
       "inspected": true,
       "functionalUI": false
     }
-  ]
+  ],
+  "userFeedback": {
+    "status": "green palette rejected",
+    "nextExploration": "../round-6/render-manifest.json",
+    "request": "three contrasting themes in different colours"
+  }
 }

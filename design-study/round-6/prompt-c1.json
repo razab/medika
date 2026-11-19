@@ -1,0 +1,40 @@
+{
+  "id": "c1",
+  "name": "Белый и фиолетовый",
+  "themeVariant": "light",
+  "styleFamily": "Crisp Content Utility",
+  "referenceIds": [
+    "RF1",
+    "RF2",
+    "RF3"
+  ],
+  "themeTokens": {
+    "background": "#F6F4FA",
+    "surface": "#FFFFFF",
+    "text": "#241D2E",
+    "muted": "#5D5368",
+    "action": "#6230A8",
+    "actionText": "#FFFFFF",
+    "course": "#50415E",
+    "border": "#B9AFCA",
+    "radius": {
+      "surface": 16,
+      "action": 24
+    },
+    "spacing": [
+      8,
+      12,
+      16,
+      24
+    ],
+    "type": {
+      "heading": 26,
+      "name": 21,
+      "dose": 22,
+      "secondary": 17
+    }
+  },
+  "prompt": "Use case: ui-mockup. Create ONE standalone high-fidelity Russian iPhone app screenshot for «медика», a family medication organiser. Portrait image approximately 1024x2048, clean front-on full-bleed screen, NO phone hardware or poster canvas. This is a synthetic design comparison, no medical advice. The user REJECTED the green-on-green palette and soft moulded ceramic tray look. Generate a fresh, crisp genuinely usable native app. NO GREEN anywhere, including checkmarks, capsules, icons, filters or navigation. NO teal, mint, olive, navy, blue, gradient, glow, neumorphic ridges, huge rounded outer tray or glossy plastic. Clean high contrast, foreground controls and large readable type. One task region, restrained small medicine-form silhouettes, modest straight dividers and clearly grouped patients; not a dashboard or floating card wall. Main content occupies most of the screen. Header takes at most 15% of screen; no giant heading.\nEXACT shared content and top-to-bottom order, preserve every value: compact small wordmark «медика», main heading «Приёмы», family tabs «Все», «Лена», «Миша», «Мама», «Папа» with «Все» selected. Meal heading «Завтрак».\nFIRST person heading «Лена» with passive small plain-text status «Острая фаза», NOT a filled pill or button. Exactly TWO rows below this heading:\n1 «Спрей для носа», dose «2 пшика», course «Ещё 5 дней». Three daily progress dots: first filled, two outlined. Separate filled intake action with checkmark.\n2 «Капли», dose «5 капель», course «Ещё 3 дня». Two daily dots, both outlined. Separate EMPTY outlined intake circle, with NO checkmark.\nTHEN second person heading «Миша» with passive small plain-text status «Поддерживающая». Exactly TWO rows below this heading:\n3 «Раствор», dose «1 мл», course «Ещё 4 дня». Two daily dots, first filled, second outlined. Separate filled intake action with checkmark.\n4 «Капсулы», dose «1 капс.», course «Последний день». One outlined daily dot. Separate EMPTY outlined intake circle, no checkmark.\nThen beginning of next OPEN meal «Обед» visible. No collapsed Other doses. Bottom full-width button «Событие голосом» with mic; below it native destinations «Приёмы», «Лекарства», «История», active «Приёмы». No date, Today, absolute hours, popup, toast, numerical progress fraction such as 1/3 or 1 из 3, statistics or charts.\nLAYOUT: Each medication row has a small meaningful form symbol at left (spray/dropper/ampoule/capsule), a left text region NAME plus COURSE below, a right-aligned bold DOSE with progress DOTS underneath, and an independent generous intake circle on the far right. Long name can wrap on two lines, NEVER shrink it. Do not swap group headings or move a person's medicine under the other person. Keep all FOUR rows fully present and comfortably readable, approx 20–22 CSS px names/doses and 17px course. Separate large 48px-equivalent actions, at least 8px free gaps. The small form symbols should use only the chosen palette and occupy at most 32px equivalent. No large pictures or hero art. Safe areas and mobile navigation believable. Type is a readable modern sans, no editorial serif.\nC1 WHITE + TRUE VIOLET. Fresh white #FFFFFF task field on a barely tinted #F6F4FA background, near-black plum #241D2E text, secondary #5D5368, deep clear violet #6230A8 for primary actions, active filter and progress dots, white checks. Course labels #50415E, not a low-contrast pastel. Neutral rows with very fine #B9AFCA separators. Small form silhouettes in violet/white, no amber or green bottles. Restrained violet header rule instead of thick cards. No purple gradient, no blue. The white field dominates, the violet is confidently limited to interactive roles. Native app, large crisp typography, right-side dose column. High contrast white versus violet, no saturation wash over content.",
+  "tool": "image_gen.imagegen",
+  "synthetic": true
+}

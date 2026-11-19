@@ -1,0 +1,80 @@
+{
+  "scope": "Declared text tokens only; not proof of generated pixels or live UI accessibility",
+  "ratios": [
+    {
+      "id": "c1",
+      "pair": "text/background",
+      "ratio": 14.91
+    },
+    {
+      "id": "c1",
+      "pair": "text/surface",
+      "ratio": 16.28
+    },
+    {
+      "id": "c1",
+      "pair": "muted/surface",
+      "ratio": 7.23
+    },
+    {
+      "id": "c1",
+      "pair": "course/surface",
+      "ratio": 9.3
+    },
+    {
+      "id": "c1",
+      "pair": "actionText/action",
+      "ratio": 8.37
+    },
+    {
+      "id": "c2",
+      "pair": "text/background",
+      "ratio": 14.81
+    },
+    {
+      "id": "c2",
+      "pair": "text/surface",
+      "ratio": 15.6
+    },
+    {
+      "id": "c2",
+      "pair": "muted/surface",
+      "ratio": 7.36
+    },
+    {
+      "id": "c2",
+      "pair": "course/surface",
+      "ratio": 8.26
+    },
+    {
+      "id": "c2",
+      "pair": "actionText/action",
+      "ratio": 6.05
+    },
+    {
+      "id": "c3",
+      "pair": "text/background",
+      "ratio": 16.29
+    },
+    {
+      "id": "c3",
+      "pair": "text/surface",
+      "ratio": 13.81
+    },
+    {
+      "id": "c3",
+      "pair": "muted/surface",
+      "ratio": 9.11
+    },
+    {
+      "id": "c3",
+      "pair": "course/surface",
+      "ratio": 10.47
+    },
+    {
+      "id": "c3",
+      "pair": "actionText/action",
+      "ratio": 11.39
+    }
+  ]
+}

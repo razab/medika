@@ -1,0 +1,74 @@
+{
+  "selectionStatus": "awaiting-user-selection",
+  "selectionSource": "pending",
+  "visualLock": {
+    "status": "unlocked",
+    "chosenDirectionId": null
+  },
+  "supersedes": "round-5 green palette",
+  "images": [
+    {
+      "id": "c1",
+      "name": "Белый и фиолетовый",
+      "themeVariant": "light",
+      "styleFamily": "Crisp Content Utility",
+      "referenceIds": [
+        "RF1",
+        "RF2",
+        "RF3"
+      ],
+      "path": "site/public/design-study/round-6/c1.png",
+      "sourceRender": "/Users/dcor/.codex/generated_images/01a1bab3-70d6-7921-9724-d4f6fbecc736/exec-95cda806-d3b7-4de4-bd20-5f597dc74f7f.png",
+      "prompt": "prompt-c1.json",
+      "sha256": "9bb5671bd863b620d658ffa619670503dd58e0d78068facbf2fa30f9e4491d92",
+      "width": 887,
+      "height": 1774,
+      "tool": "image_gen.imagegen",
+      "synthetic": true,
+      "inspected": true,
+      "functionalUI": false
+    },
+    {
+      "id": "c2",
+      "name": "Светлый и оранжевый",
+      "themeVariant": "light",
+      "styleFamily": "Warm Signal Utility",
+      "referenceIds": [
+        "RF1",
+        "RF2",
+        "RF3"
+      ],
+      "path": "site/public/design-study/round-6/c2.png",
+      "sourceRender": "/Users/dcor/.codex/generated_images/01a1bab3-70d6-7921-9724-d4f6fbecc736/exec-2d6d7d74-d0a7-4468-a228-3187c9cd5661.png",
+      "prompt": "prompt-c2.json",
+      "sha256": "92e9cce0500814be8e959ba6e84399f96f14690850e1d80754b09ae1be50ee3f",
+      "width": 887,
+      "height": 1774,
+      "tool": "image_gen.imagegen",
+      "synthetic": true,
+      "inspected": true,
+      "functionalUI": false
+    },
+    {
+      "id": "c3",
+      "name": "Тёмный бордовый",
+      "themeVariant": "dark",
+      "styleFamily": "Dark Contrast Utility",
+      "referenceIds": [
+        "RF1",
+        "RF2",
+        "RF3"
+      ],
+      "path": "site/public/design-study/round-6/c3.png",
+      "sourceRender": "/Users/dcor/.codex/generated_images/01a1bab3-70d6-7921-9724-d4f6fbecc736/exec-0b331bce-af24-427c-a2fa-61f04056e483.png",
+      "prompt": "prompt-c3.json",
+      "sha256": "80ecc71b945cca11f45e214067a78a0c98909b66b7a085ef3660ecf804fb31c2",
+      "width": 887,
+      "height": 1774,
+      "tool": "image_gen.imagegen",
+      "synthetic": true,
+      "inspected": true,
+      "functionalUI": false
+    }
+  ]
+}
