@@ -32,6 +32,11 @@ const accountPages=new Map([['/login','account.html'],['/register','register.htm
 const accountAssets=new Map([['/account.js','text/javascript'],['/account.css','text/css'],['/icon.svg','image/svg+xml'],['/google-logo.png','image/png']]);
 // Public design shells and synthetic specimens; copied medical data stays behind the API.
 const designStudyAssets=Object.fromEntries([
+  ['/design-study/round-3',['design-study/round-3/index.html','text/html']],
+  ['/design-study/round-3/',['design-study/round-3/index.html','text/html']],
+  ...['feed','family','large','sequence','panels'].map(id=>['/design-study/round-3/'+id,['design-study/round-3/preview.html','text/html']]),
+  ...['study.js','variants.js','gallery.js','study.css','gallery.css'].map(file=>['/design-study/round-3/'+file,['design-study/round-3/'+file,file.endsWith('.js')?'text/javascript':'text/css']]),
+  ...['feed','family','large','sequence','panels'].flatMap(id=>['phone','tablet','large'].map(size=>['/design-study/round-3/previews/'+id+'-'+size+'.png',['design-study/round-3/previews/'+id+'-'+size+'.png','image/png']])),
   ['/design-study/round-2',['design-study/round-2/index.html','text/html']],
   ['/design-study/round-2/',['design-study/round-2/index.html','text/html']],
   ...['calm','agenda','people','focus','board'].map(id=>['/design-study/round-2/'+id,['design-study/round-2/preview.html','text/html']]),
@@ -119,7 +124,7 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
         res.setHeader('Strict-Transport-Security','max-age=31536000');
       }
       if(route==='/design-study/a1')res.setHeader('Content-Security-Policy',`default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src ${url.origin}/api/session ${url.origin}/api/design-study/a1-snapshot; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'`);
-      if(route.startsWith('/design-study/round-2'))res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'none'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'");
+      if(['/design-study/round-2','/design-study/round-3'].some(prefix=>route.startsWith(prefix)))res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'none'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'");
       // Links from chats may be cross-site; the shell and public CA contain no medical data.
       const publicRead=['GET','HEAD'].includes(method)&&(['/','/manage','/family','/family/','/voice-lab','/voice-lab/','/ocr-lab','/ocr-lab/','/playground','/prescriptions/import','/medika-ca.cer','/medicines','/medicines/'].includes(route)||Object.hasOwn(designStudyAssets,route)||auth&&accountPages.has(route)||google&&route===googleCallback);
       if(!publicRead){
