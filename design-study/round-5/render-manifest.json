@@ -1,0 +1,124 @@
+{
+  "selectionStatus": "awaiting-user-selection",
+  "selectionSource": "pending",
+  "visualLock": {
+    "status": "unlocked",
+    "chosenDirectionId": null
+  },
+  "confirmedPalette": {
+    "source": "user",
+    "direction": "round-4/VD1",
+    "scope": "botanical green palette; not entire layout"
+  },
+  "requestedVariants": {
+    "dark": 3,
+    "light": 2
+  },
+  "images": [
+    {
+      "id": "d1",
+      "name": "Лесная керамика",
+      "themeVariant": "dark",
+      "styleFamily": "Botanical Tactile Utility",
+      "referenceIds": [
+        "R4-VD1",
+        "RF1",
+        "RF2",
+        "RF3"
+      ],
+      "path": "site/public/design-study/round-5/d1.png",
+      "prompt": "prompt-d1.json",
+      "sha256": "71afaf1d8be68b2c0720f424db28d2625fb38210ddbd0585f77d94036e25f8ea",
+      "width": 887,
+      "height": 1774,
+      "tool": "image_gen.imagegen",
+      "synthetic": true,
+      "inspected": true,
+      "functionalUI": false
+    },
+    {
+      "id": "d2",
+      "name": "Тихий графит",
+      "themeVariant": "dark",
+      "styleFamily": "Botanical Tactile Utility",
+      "referenceIds": [
+        "R4-VD1",
+        "RF1",
+        "RF2",
+        "RF3"
+      ],
+      "path": "site/public/design-study/round-5/d2.png",
+      "prompt": "prompt-d2.json",
+      "sha256": "1306ed4e4db4cacb3cae78c0b9c5b1e52180d052a2bb73edf404d1a8d9defb93",
+      "width": 887,
+      "height": 1774,
+      "tool": "image_gen.imagegen",
+      "synthetic": true,
+      "inspected": true,
+      "functionalUI": false
+    },
+    {
+      "id": "d3",
+      "name": "Зелёный бархат",
+      "themeVariant": "dark",
+      "styleFamily": "Botanical Tactile Utility",
+      "referenceIds": [
+        "R4-VD1",
+        "RF1",
+        "RF2",
+        "RF3"
+      ],
+      "path": "site/public/design-study/round-5/d3.png",
+      "prompt": "prompt-d3-grouping-fix.json",
+      "sha256": "f2694cdaaac9836b7e4097d116e13ae9bc4973acf0e8c35985ab1d53578f4ffd",
+      "width": 887,
+      "height": 1774,
+      "tool": "image_gen.imagegen",
+      "synthetic": true,
+      "inspected": true,
+      "functionalUI": false
+    },
+    {
+      "id": "l1",
+      "name": "Светлая керамика",
+      "themeVariant": "light",
+      "styleFamily": "Botanical Tactile Utility",
+      "referenceIds": [
+        "R4-VD1",
+        "RF1",
+        "RF2",
+        "RF3"
+      ],
+      "path": "site/public/design-study/round-5/l1.png",
+      "prompt": "prompt-l1.json",
+      "sha256": "14ba2649e79ffde6447829374add22929fd8af0e1d0fe1fd1b21624cfd9b224d",
+      "width": 887,
+      "height": 1774,
+      "tool": "image_gen.imagegen",
+      "synthetic": true,
+      "inspected": true,
+      "functionalUI": false
+    },
+    {
+      "id": "l2",
+      "name": "Светлый шалфей",
+      "themeVariant": "light",
+      "styleFamily": "Botanical Tactile Utility",
+      "referenceIds": [
+        "R4-VD1",
+        "RF1",
+        "RF2",
+        "RF3"
+      ],
+      "path": "site/public/design-study/round-5/l2.png",
+      "prompt": "prompt-l2.json",
+      "sha256": "bd77e3abff40c99fe2015b98bde82e87c9bb15144b80c5115ad03f7f9664cf3e",
+      "width": 887,
+      "height": 1774,
+      "tool": "image_gen.imagegen",
+      "synthetic": true,
+      "inspected": true,
+      "functionalUI": false
+    }
+  ]
+}

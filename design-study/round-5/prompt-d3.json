@@ -1,0 +1,42 @@
+{
+  "id": "d3",
+  "name": "Зелёный бархат",
+  "themeVariant": "dark",
+  "themeTokens": {
+    "background": "#153A2C",
+    "surface": "#224C3A",
+    "raised": "#315C46",
+    "text": "#F7F3E5",
+    "muted": "#CCD9BC",
+    "action": "#CFDDB1",
+    "actionText": "#193C2B",
+    "border": "#70896C",
+    "course": "#F0D5A8",
+    "radius": {
+      "surface": 24,
+      "action": 24
+    },
+    "spacing": [
+      8,
+      12,
+      16,
+      24
+    ],
+    "type": {
+      "title": 28,
+      "name": 21,
+      "dose": 21,
+      "secondary": 17
+    }
+  },
+  "styleFamily": "Botanical Tactile Utility",
+  "referenceIds": [
+    "R4-VD1",
+    "RF1",
+    "RF2",
+    "RF3"
+  ],
+  "prompt": "Use case: ui-mockup. Generate ONE standalone high fidelity Russian mobile app screenshot, portrait 1024x2048 approximately, front-on full-bleed, no physical phone, no poster, no perspective, no surrounding canvas. The attached image is the USER-APPROVED PALETTE AND MATERIAL REFERENCE, not an image to copy exactly. Retain botanical green identity, useful small medicine-form renderings, generous standalone intake actions, grouping by person within the breakfast meal, and native bottom navigation. This is the same Medika synthetic concept, now refining light and dark green variants. Reduce header height slightly to give medicine rows more room. Crisp highly readable text, no tiny labels. Standard large sans typography, no editorial serif, no charts, no date, no Today, no numerals such as 1/3, no blue or navy or purple hue. No floating overlays. Colours must be comfortably readable, no green text disappearing into green surfaces.\nSHARED EXACT CONTENT, same in all directions: small wordmark «медика» at top. Compact main heading «Приёмы». Family selection «Все», «Лена», «Миша», «Мама», «Папа», with «Все» selected. Open meal heading «Завтрак». Four medication rows, organised clearly for their respective people:\nЛена, passive small status «Острая фаза».\n1. «Спрей для носа» — «2 пшика» — «Ещё 5 дней». Three progress dots, first filled, two outlined. Separate generous round checked intake action.\n2. «Капли» — «5 капель» — «Ещё 3 дня». Two outlined dots. Separate generous outlined intake action.\nМиша, passive small status «Поддерживающая».\n3. «Раствор» — «1 мл» — «Ещё 4 дня». Two dots, first filled. Separate checked intake action.\n4. «Капсулы» — «1 капс.» — «Последний день». One outlined dot. Separate outlined intake action.\nAfter these, start open heading «Обед» to establish a continuing scrollable schedule. A comfortable lower full-width voice event button «Событие голосом» with a restrained mic symbol, then three native-looking bottom destinations «Приёмы», «Лекарства», «История». Maintain proper safe areas and legible, realistic finger-sized targets. Russian copy accurately spelled. Dose, patient identity, remaining days and actionable take check are primary; no unnecessary text, no fraction like 1/3 or «1 из 3». No popup or toast. Keep all medication text comfortably readable, enough room for both patients and four medications in a believable normal first viewport; lower meal heading can be near the fold. Never copy another brand's interface.\n\nUnrecorded intake actions are empty outlined round controls, NOT filled. Recorded actions have a clearly contrasting check. Daily dots and single intake action are distinct. Four medication rows must be fully present. The next open meal heading «Обед» starts below them; no collapsed Other doses section. The images must remain clear at actual phone size. No copied external brand.\nD3 DEEP GREEN VELVET TONAL PANELS. A richer forest-green but restful dark mode: #153A2C background, #224C3A person panels within the shared breakfast workspace, #315C46 lifted controls. Cream #F7F3E5 text, #CCD9BC secondary, light celadon #CFDDB1 actions. Tiny sand #F0D5A8 course labels. Very subtle matte textile softness, no literal fabric weave or velvet photo, no glow or gradients. Compact person headers flush with their two medicine rows, doses strongly aligned to a clear right-side lane, dots directly underneath the dose, with independent 48px+ take controls. A shallow tonal hierarchy gives structure, no bento dashboard or large margins. Small precise ceramic form miniatures integrated next to names. All functional details remain equally legible.",
+  "tool": "image_gen.imagegen",
+  "synthetic": true
+}

@@ -1,0 +1,26 @@
+{
+  "sourceRenders": {
+    "d1": "/Users/dcor/.codex/generated_images/01a1bab3-70d6-7921-9724-d4f6fbecc736/exec-fc0377a3-c914-4d63-b17f-2f055626cc3b.png",
+    "d2": "/Users/dcor/.codex/generated_images/01a1bab3-70d6-7921-9724-d4f6fbecc736/exec-54409399-a335-4f17-b887-6d596e43ed4d.png",
+    "d3": "/Users/dcor/.codex/generated_images/01a1bab3-70d6-7921-9724-d4f6fbecc736/exec-f664edca-1b5b-4c55-91fe-3f4982135846.png",
+    "l1": "/Users/dcor/.codex/generated_images/01a1bab3-70d6-7921-9724-d4f6fbecc736/exec-e84b3338-b173-4cbd-8d3f-2624807a07c6.png",
+    "l2": "/Users/dcor/.codex/generated_images/01a1bab3-70d6-7921-9724-d4f6fbecc736/exec-210ec195-012e-4ad3-ad6e-2a1c129733f6.png"
+  },
+  "notes": {
+    "d1": "Four rows/copy/dots/course preserved. Deep forest and ceramic depth match brief. Unrecorded action still contains an outlined check glyph; treated as action affordance, not completed state. Native touch behaviour cannot be tested in raster.",
+    "d2": "All rows and hierarchy present. Flatter green charcoal/olive treatment and symbolic forms distinguish it from D1. No neon/blue. Same outlined-check affordance limitation.",
+    "d3": "Final local grouping correction passed: Lena -> spray -> drops -> Misha -> solution -> capsules -> lunch. All four doses, course days and dots preserved; dose and dots now occupy their own right-side column. Empty actions have no check glyph. Two superseded renders are not in the public gallery.",
+    "l1": "White ceramic surface, original green identity, reduced rim and depth. Four rows and exact copy preserved.",
+    "l2": "Sage tonal headers and largely flat workspace. Four rows/copy/progress preserved. More photographic forms than requested pictograms, accepted as family consistency rather than a new style."
+  },
+  "revisionHistory": [
+    {
+      "source": "/Users/dcor/.codex/generated_images/01a1bab3-70d6-7921-9724-d4f6fbecc736/exec-3d6f5afd-b910-4dc3-bfbc-498cacf63055.png",
+      "reason": "Dose remained below names; correct grouping but insufficient layout difference."
+    },
+    {
+      "source": "/Users/dcor/.codex/generated_images/01a1bab3-70d6-7921-9724-d4f6fbecc736/exec-8b5cb909-71a1-4656-8a81-72ead4ac234e.png",
+      "reason": "Right column succeeded but patient heading moved below its medicines; rejected."
+    }
+  ]
+}

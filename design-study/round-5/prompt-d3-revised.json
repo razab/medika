@@ -1,0 +1,44 @@
+{
+  "id": "d3",
+  "name": "Зелёный бархат",
+  "themeVariant": "dark",
+  "themeTokens": {
+    "background": "#153A2C",
+    "surface": "#224C3A",
+    "raised": "#315C46",
+    "text": "#F7F3E5",
+    "muted": "#CCD9BC",
+    "action": "#CFDDB1",
+    "actionText": "#193C2B",
+    "border": "#70896C",
+    "course": "#F0D5A8",
+    "radius": {
+      "surface": 24,
+      "action": 24
+    },
+    "spacing": [
+      8,
+      12,
+      16,
+      24
+    ],
+    "type": {
+      "title": 28,
+      "name": 21,
+      "dose": 21,
+      "secondary": 17
+    }
+  },
+  "styleFamily": "Botanical Tactile Utility",
+  "referenceIds": [
+    "R4-VD1",
+    "RF1",
+    "RF2",
+    "RF3"
+  ],
+  "prompt": "Edit this synthetic Medika app screenshot. Keep EXACTLY its deep forest-green palette, matte tonal groups, words, medicine forms, course days, phase badges, four medication rows, family tabs, breakfast/lunch headings, voice button and bottom navigation. Preserve the clean portrait format and all wording. Change only the medication-row layout, so it is a useful alternative rather than a hue swap. In each of the FOUR rows create four aligned regions: a smaller medicine-form miniature on the far left, a central-left text region with NAME and COURSE on the line below it, a distinct RIGHT-ALIGNED dose region with DAILY DOTS underneath it, and the independent round intake control on the far right. Right-align dose values «2 пшика», «5 капель», «1 мл», «1 капс.» in a vertically consistent column. Doses must no longer appear below medicine names. Let the long name «Спрей для носа» wrap naturally on two lines in the left text region, rather than shrinking the font. Keep all names and doses comfortably large and bold at phone size. Course lines remain left, under the respective name: «Ещё 5 дней», «Ещё 3 дня», «Ещё 4 дня», «Последний день». Preserve counts: spray dots 3 with first filled; drops dots 2 both empty; solution dots 2 first filled; capsules dots 1 empty. Checked/filled intake buttons only in spray and solution rows. Drops and capsules intake buttons should be EMPTY outline circles without a check glyph. Keep layout generous, no overlaps, no squeezed labels, all FOUR rows fully shown, no deleted data. Do not add progress numerals, labels, dates, schedules, numbers, warnings or charts. This is a surgical layout edit, not a new brand or colour scheme. Render ONE complete revised mobile screenshot.",
+  "tool": "image_gen.imagegen",
+  "synthetic": true,
+  "revisionReason": "First render kept dose below name instead of the requested right lane; isolate one layout correction.",
+  "referencedImage": "site/public/design-study/round-5/d3.png (initial generated render)"
+}

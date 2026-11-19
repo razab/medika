@@ -1,0 +1,44 @@
+{
+  "id": "d3",
+  "name": "Зелёный бархат",
+  "themeVariant": "dark",
+  "themeTokens": {
+    "background": "#153A2C",
+    "surface": "#224C3A",
+    "raised": "#315C46",
+    "text": "#F7F3E5",
+    "muted": "#CCD9BC",
+    "action": "#CFDDB1",
+    "actionText": "#193C2B",
+    "border": "#70896C",
+    "course": "#F0D5A8",
+    "radius": {
+      "surface": 24,
+      "action": 24
+    },
+    "spacing": [
+      8,
+      12,
+      16,
+      24
+    ],
+    "type": {
+      "title": 28,
+      "name": 21,
+      "dose": 21,
+      "secondary": 17
+    }
+  },
+  "styleFamily": "Botanical Tactile Utility",
+  "referenceIds": [
+    "R4-VD1",
+    "RF1",
+    "RF2",
+    "RF3"
+  ],
+  "prompt": "Precise local correction to this synthetic app screenshot. Preserve every colour, word, medicine row, dose, progress dot, control, layout column and bottom navigation exactly as shown. There is ONE semantic grouping error to fix: «Миша · Поддерживающая» has been placed after his medications. Move that whole heading bar UP to the space immediately BETWEEN the «Капли / 5 капель / Ещё 3 дня» row and the «Раствор / 1 мл / Ещё 4 дня» row. The final strict top-to-bottom order inside breakfast must be: Лена · Острая фаза -> Спрей для носа -> Капли -> Миша · Поддерживающая -> Раствор -> Капсулы -> Обед. Лена has only the first TWO medicines; Миша has the LAST TWO. Split the tonal panel at that boundary accordingly. Use the vertical space released by moving the old bottom Misha heading so total height is unchanged. Do not duplicate the heading. Do not move any medicine to a different place. Do not remove any medicine row. Keep all right-aligned doses and dots and current check states. Do not change type size, palette, frame, dose values, names, course days, voice button or navigation. ONE full portrait screenshot as output, not a collage. This is only moving an existing person heading to its correct boundary.",
+  "tool": "image_gen.imagegen",
+  "synthetic": true,
+  "revisionReason": "Layout change succeeded, but generation moved Misha header after his rows. Stop broad layout edits; correct only the patient group boundary. Inspect before accepting.",
+  "referencedImage": "/Users/dcor/.codex/generated_images/01a1bab3-70d6-7921-9724-d4f6fbecc736/exec-8b5cb909-71a1-4656-8a81-72ead4ac234e.png"
+}

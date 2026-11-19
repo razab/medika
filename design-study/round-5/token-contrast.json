@@ -1,0 +1,130 @@
+{
+  "scope": "Declared text tokens only; not proof of generated pixels or live UI accessibility",
+  "ratios": [
+    {
+      "id": "d1",
+      "pair": "text/background",
+      "ratio": 14.17
+    },
+    {
+      "id": "d1",
+      "pair": "text/surface",
+      "ratio": 11.55
+    },
+    {
+      "id": "d1",
+      "pair": "muted/surface",
+      "ratio": 7.86
+    },
+    {
+      "id": "d1",
+      "pair": "course/surface",
+      "ratio": 7.92
+    },
+    {
+      "id": "d1",
+      "pair": "actionText/action",
+      "ratio": 8.57
+    },
+    {
+      "id": "d2",
+      "pair": "text/background",
+      "ratio": 14.47
+    },
+    {
+      "id": "d2",
+      "pair": "text/surface",
+      "ratio": 12.62
+    },
+    {
+      "id": "d2",
+      "pair": "muted/surface",
+      "ratio": 8.56
+    },
+    {
+      "id": "d2",
+      "pair": "course/surface",
+      "ratio": 8.61
+    },
+    {
+      "id": "d2",
+      "pair": "actionText/action",
+      "ratio": 8.04
+    },
+    {
+      "id": "d3",
+      "pair": "text/background",
+      "ratio": 11.3
+    },
+    {
+      "id": "d3",
+      "pair": "text/surface",
+      "ratio": 8.74
+    },
+    {
+      "id": "d3",
+      "pair": "muted/surface",
+      "ratio": 6.57
+    },
+    {
+      "id": "d3",
+      "pair": "course/surface",
+      "ratio": 6.84
+    },
+    {
+      "id": "d3",
+      "pair": "actionText/action",
+      "ratio": 8.49
+    },
+    {
+      "id": "l1",
+      "pair": "text/background",
+      "ratio": 11.24
+    },
+    {
+      "id": "l1",
+      "pair": "text/surface",
+      "ratio": 12.17
+    },
+    {
+      "id": "l1",
+      "pair": "muted/surface",
+      "ratio": 5.84
+    },
+    {
+      "id": "l1",
+      "pair": "course/surface",
+      "ratio": 6.71
+    },
+    {
+      "id": "l1",
+      "pair": "actionText/action",
+      "ratio": 6.94
+    },
+    {
+      "id": "l2",
+      "pair": "text/background",
+      "ratio": 10.94
+    },
+    {
+      "id": "l2",
+      "pair": "text/surface",
+      "ratio": 11.92
+    },
+    {
+      "id": "l2",
+      "pair": "muted/surface",
+      "ratio": 6.21
+    },
+    {
+      "id": "l2",
+      "pair": "course/surface",
+      "ratio": 6.06
+    },
+    {
+      "id": "l2",
+      "pair": "actionText/action",
+      "ratio": 7.4
+    }
+  ]
+}

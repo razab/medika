@@ -1,0 +1,42 @@
+{
+  "id": "d2",
+  "name": "Тихий графит",
+  "themeVariant": "dark",
+  "themeTokens": {
+    "background": "#1C2420",
+    "surface": "#252F29",
+    "raised": "#344138",
+    "text": "#F4F5EE",
+    "muted": "#C2CFC1",
+    "action": "#B7CDA0",
+    "actionText": "#243024",
+    "border": "#63715F",
+    "course": "#DECAA1",
+    "radius": {
+      "surface": 24,
+      "action": 24
+    },
+    "spacing": [
+      8,
+      12,
+      16,
+      24
+    ],
+    "type": {
+      "title": 28,
+      "name": 21,
+      "dose": 21,
+      "secondary": 17
+    }
+  },
+  "styleFamily": "Botanical Tactile Utility",
+  "referenceIds": [
+    "R4-VD1",
+    "RF1",
+    "RF2",
+    "RF3"
+  ],
+  "prompt": "Use case: ui-mockup. Generate ONE standalone high fidelity Russian mobile app screenshot, portrait 1024x2048 approximately, front-on full-bleed, no physical phone, no poster, no perspective, no surrounding canvas. The attached image is the USER-APPROVED PALETTE AND MATERIAL REFERENCE, not an image to copy exactly. Retain botanical green identity, useful small medicine-form renderings, generous standalone intake actions, grouping by person within the breakfast meal, and native bottom navigation. This is the same Medika synthetic concept, now refining light and dark green variants. Reduce header height slightly to give medicine rows more room. Crisp highly readable text, no tiny labels. Standard large sans typography, no editorial serif, no charts, no date, no Today, no numerals such as 1/3, no blue or navy or purple hue. No floating overlays. Colours must be comfortably readable, no green text disappearing into green surfaces.\nSHARED EXACT CONTENT, same in all directions: small wordmark «медика» at top. Compact main heading «Приёмы». Family selection «Все», «Лена», «Миша», «Мама», «Папа», with «Все» selected. Open meal heading «Завтрак». Four medication rows, organised clearly for their respective people:\nЛена, passive small status «Острая фаза».\n1. «Спрей для носа» — «2 пшика» — «Ещё 5 дней». Three progress dots, first filled, two outlined. Separate generous round checked intake action.\n2. «Капли» — «5 капель» — «Ещё 3 дня». Two outlined dots. Separate generous outlined intake action.\nМиша, passive small status «Поддерживающая».\n3. «Раствор» — «1 мл» — «Ещё 4 дня». Two dots, first filled. Separate checked intake action.\n4. «Капсулы» — «1 капс.» — «Последний день». One outlined dot. Separate outlined intake action.\nAfter these, start open heading «Обед» to establish a continuing scrollable schedule. A comfortable lower full-width voice event button «Событие голосом» with a restrained mic symbol, then three native-looking bottom destinations «Приёмы», «Лекарства», «История». Maintain proper safe areas and legible, realistic finger-sized targets. Russian copy accurately spelled. Dose, patient identity, remaining days and actionable take check are primary; no unnecessary text, no fraction like 1/3 or «1 из 3». No popup or toast. Keep all medication text comfortably readable, enough room for both patients and four medications in a believable normal first viewport; lower meal heading can be near the fold. Never copy another brand's interface.\n\nUnrecorded intake actions are empty outlined round controls, NOT filled. Recorded actions have a clearly contrasting check. Daily dots and single intake action are distinct. Four medication rows must be fully present. The next open meal heading «Обед» starts below them; no collapsed Other doses section. The images must remain clear at actual phone size. No copied external brand.\nD2 DARK MATTE GRAPHITE WITH OLIVE GREEN. A quieter flatter sister to the supplied reference, no glowing rim, no neumorphism. Green-charcoal #1C2420 background, one matte task surface #252F29, warm pale #F4F5EE text, #C2CFC1 secondary, olive-sage #B7CDA0 actions with #243024 check. Course labels #DECAA1. Fine deliberate separators, small monochrome medicine-form pictograms on subtle tonal lozenges, human identity as a compact heading over their two rows. Form objects minimal instead of photoreal bottles; do not waste horizontal space. Confident dense typographic list, generous readable rows, person groups not separate detached cards. Flat brass-free warm graphite, not blue or purple. Let the data and dose lead.",
+  "tool": "image_gen.imagegen",
+  "synthetic": true
+}

@@ -1,0 +1,45 @@
+{
+  "synthetic": true,
+  "kind": "image concepts, not functional app screens",
+  "images": [
+    {
+      "id": "d1",
+      "width": 887,
+      "height": 1774,
+      "bytes": 1597610
+    }
+  ],
+  "viewports": [
+    {
+      "width": 320,
+      "images": true,
+      "links": true,
+      "geometry": true
+    },
+    {
+      "width": 390,
+      "images": true,
+      "links": true,
+      "geometry": true
+    },
+    {
+      "width": 768,
+      "images": true,
+      "links": true,
+      "geometry": true
+    },
+    {
+      "width": 1024,
+      "images": true,
+      "links": true,
+      "geometry": true
+    },
+    {
+      "width": 1600,
+      "images": true,
+      "links": true,
+      "geometry": true
+    }
+  ],
+  "auth": true
+}

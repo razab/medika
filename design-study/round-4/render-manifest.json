@@ -39,5 +39,18 @@
       "inspected": true,
       "functionalUI": false
     }
-  ]
+  ],
+  "userFeedback": {
+    "paletteChoice": "VD1",
+    "rejectedPalettes": [
+      "VD2",
+      "VD3"
+    ],
+    "scope": "palette only; final theme and composition not locked",
+    "nextExploration": "../round-5/render-manifest.json",
+    "requestedVariants": {
+      "dark": 3,
+      "light": 2
+    }
+  }
 }
