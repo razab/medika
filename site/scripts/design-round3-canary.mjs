@@ -52,6 +52,10 @@ try{
   const label=`${variant} ${width} ${large?'large':'normal'}`;
   assert.equal(await page.locator('.med').count(),11,label);
   assert.equal(await page.locator('.is-taken').count(),2);
+  assert((await page.locator('.progress').allTextContents()).every(s=>s.trim()===''),'Daily progress should be dots only');
+  assert.equal(await page.locator('[data-row="spray-Обед"] .course-summary').textContent(),'Ещё 5 дней');
+  assert.equal(await page.locator('[data-row="capsule-Завтрак"] .course-summary').textContent(),'Курс не указан');
+  assert.equal(await page.locator('[data-row="tablet-Ужин"] .course-summary').textContent(),'Последний день');
   if(variant==='large')assert(await page.locator('.full-take').first().evaluate(el=>el.getBoundingClientRect().width>el.closest('.med').getBoundingClientRect().width*.7),'Large action must remain full width');
   assert(await page.locator('main').getByRole('heading',{name:'Обед',exact:true}).count()>0);
   assert(await page.locator('main').getByRole('heading',{name:'Ужин',exact:true}).count()>0);
@@ -60,6 +64,7 @@ try{
   for(const edge of ['center','left','right']){
    await touch(page,take,edge);assert.equal(await take.getAttribute('aria-pressed'),'true');
    assert.equal(await page.locator('[data-row="spray-Обед"] .progress').getAttribute('aria-label'),'2 из 3 приёмов отмечено');
+   assert.equal(await page.locator('[data-row="spray-Обед"] .course-summary').textContent(),'Ещё 5 дней','Marking an intake must not reduce the remaining course days');
    assert.equal(await page.locator('[data-row="spray-Обед"] .rx-detail').count(),0);
    await take.click();assert.equal(await take.getAttribute('aria-pressed'),'false');
   }

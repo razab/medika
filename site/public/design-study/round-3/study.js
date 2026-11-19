@@ -2,12 +2,12 @@ import {directions} from './variants.js';
 const variant=directions.find(v=>location.pathname.endsWith('/'+v.id))||directions[0];
 const people=[{id:'alice',name:'Алиса',initial:'А',phase:'Острая фаза'},{id:'danya',name:'Даня',initial:'Д',phase:'Острая фаза'},{id:'mom',name:'Мама',initial:'М',phase:'Поддерживающая'},{id:'dad',name:'Папа',initial:'П',phase:'Поддерживающая'}];
 const medicines=[
- {id:'spray',person:'alice',name:'Спрей для носа',dose:'2',unit:'пшика',form:'Назальный спрей',slots:['Завтрак','Обед','Ужин']},
- {id:'drops',person:'alice',name:'Капли',dose:'5',unit:'капель',form:'Капли для приёма внутрь',slots:['Завтрак','Ужин']},
- {id:'solution',person:'danya',name:'Первая ингаляция',dose:'1',unit:'мл',form:'Раствор для ингаляции',slots:['Завтрак','Ужин']},
- {id:'second',person:'danya',name:'Вторая ингаляция',dose:'1',unit:'мл',form:'Суспензия для ингаляции',slots:['Завтрак']},
- {id:'capsule',person:'mom',name:'Капсулы',dose:'1',unit:'капс.',form:'Капсулы',slots:['Завтрак','Ужин']},
- {id:'tablet',person:'dad',name:'Таблетки',dose:'1',unit:'табл.',form:'Таблетки',slots:['Ужин']}
+ {id:'spray',person:'alice',name:'Спрей для носа',dose:'2',unit:'пшика',form:'Назальный спрей',courseDaysLeft:5,slots:['Завтрак','Обед','Ужин']},
+ {id:'drops',person:'alice',name:'Капли',dose:'5',unit:'капель',form:'Капли для приёма внутрь',courseDaysLeft:3,slots:['Завтрак','Ужин']},
+ {id:'solution',person:'danya',name:'Первая ингаляция',dose:'1',unit:'мл',form:'Раствор для ингаляции',courseDaysLeft:4,slots:['Завтрак','Ужин']},
+ {id:'second',person:'danya',name:'Вторая ингаляция',dose:'1',unit:'мл',form:'Суспензия для ингаляции',courseDaysLeft:4,slots:['Завтрак']},
+ {id:'capsule',person:'mom',name:'Капсулы',dose:'1',unit:'капс.',form:'Капсулы',courseDaysLeft:null,slots:['Завтрак','Ужин']},
+ {id:'tablet',person:'dad',name:'Таблетки',dose:'1',unit:'табл.',form:'Таблетки',courseDaysLeft:1,slots:['Ужин']}
 ];
 const meals=['Завтрак','Обед','Ужин'];
 const numberForms=new Intl.PluralRules('ru');
@@ -31,7 +31,9 @@ if(query.get('text')==='large'){largeText=true;document.documentElement.classLis
 document.title=variant.title+' — Медика';
 
 function save(){try{sessionStorage.setItem(storageKey,JSON.stringify([...taken]));}catch{}}
-function progress(r){const count=r.slots.filter(s=>taken.has(r.id+'-'+s)).length;return `<span class="progress" aria-label="${count} из ${r.slots.length} приёмов отмечено"><span class="dots" aria-hidden="true">${r.slots.map(s=>`<i class="${taken.has(r.id+'-'+s)?'filled':''}"></i>`).join('')}</span><span>${count} из ${r.slots.length}</span></span>`;}
+function progress(r){const count=r.slots.filter(s=>taken.has(r.id+'-'+s)).length;return `<span class="progress" aria-label="${count} из ${r.slots.length} приёмов отмечено"><span class="dots" aria-hidden="true">${r.slots.map(s=>`<i class="${taken.has(r.id+'-'+s)?'filled':''}"></i>`).join('')}</span></span>`;}
+// Synthetic display fields; a working prescription must calculate this from its end date.
+function course(r){const n=r.courseDaysLeft;return n==null?'Курс не указан':n===1?'Последний день':`Ещё ${n} ${plural(n,'день','дня','дней')}`;}
 function timerText(){const first=taken.get('solution-Завтрак');if(!first)return 'Первый приём не отмечен';const elapsed=Date.now()-first;if(elapsed<15*60_000)return 'Ещё '+Math.ceil((15*60_000-elapsed)/60_000)+' мин';if(elapsed<=30*60_000)return 'Интервал 15–30 мин';return 'Интервал истёк';}
 function timer(r){return r.id==='second'&&!taken.has(r.key)?`<div class="interval"><span class="clock-icon" aria-hidden="true"></span><div><strong data-timer>${timerText()}</strong><p>После первой ингаляции</p></div></div>`:'';}
 function takeButton(r,full=false){const done=taken.has(r.key);return `<button type="button" class="take ${full?'full-take':''}" data-take="${r.key}" aria-pressed="${done}" aria-label="${done?'Отменить отметку':'Отметить приём'}: ${p(r.person).name}, ${r.name}, ${r.slot}">${check}${full?`<span>${done?'Принято · отменить':'Отметить приём'}</span>`:''}</button>`;}
@@ -40,8 +42,8 @@ function drug(r,{person=true,full=false}={}){
  return `<article class="med ${done?'is-taken':''}" data-row="${r.key}">
   ${person?`<div class="med-person">${avatar(r.person)}<span>${p(r.person).name}</span><small>${p(r.person).phase}</small></div>`:''}
   <div class="med-main"><button class="disclose" type="button" data-expand="${r.key}" aria-expanded="${open}" aria-label="${open?'Скрыть':'Показать'} назначение: ${p(r.person).name}, ${r.name}, ${r.slot}"><span class="med-copy"><span class="med-name">${r.name}</span><span class="med-group">Группа не уточнена</span></span><span class="dose"><strong>${r.dose}</strong> ${r.unit}</span><i class="chevron" aria-hidden="true"></i></button>${!full?takeButton(r):''}</div>
-  <div class="med-status">${progress(r)}<span class="status-label">${done?'Принято':'Не отмечено'}</span></div>${timer(r)}
-  ${open?`<section class="rx-detail" aria-label="Назначение ${r.name}"><h3>Назначение</h3><dl><div><dt>Разовая доза</dt><dd>${r.dose} ${r.unit}</dd></div><div><dt>Когда</dt><dd>${r.slot}</dd></div><div><dt>Кратность</dt><dd>${r.slots.length} ${r.slots.length===1?'раз':'раза'} в день</dd></div></dl><p>Условный пример. Курс и связь с едой не заданы.</p><button class="text-button" data-medicine="${r.id}" type="button">О препарате</button></section>`:''}
+  <div class="med-status">${progress(r)}${done?'<span class="status-label">Принято</span>':''}<span class="course-summary">${course(r)}</span></div>${timer(r)}
+  ${open?`<section class="rx-detail" aria-label="Назначение ${r.name}"><h3>Назначение</h3><dl><div><dt>Разовая доза</dt><dd>${r.dose} ${r.unit}</dd></div><div><dt>Когда</dt><dd>${r.slot}</dd></div><div><dt>Кратность</dt><dd>${r.slots.length} ${r.slots.length===1?'раз':'раза'} в день</dd></div><div><dt>Курс</dt><dd>${course(r)}</dd></div></dl><p>Условный пример. Связь с едой не задана.</p><button class="text-button" data-medicine="${r.id}" type="button">О препарате</button></section>`:''}
   ${full?takeButton(r,true):''}
  </article>`;
 }
