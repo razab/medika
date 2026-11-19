@@ -1,0 +1,43 @@
+{
+  "selectionStatus": "awaiting-user-selection",
+  "selectionSource": "pending",
+  "visualLock": {
+    "status": "unlocked",
+    "chosenDirectionId": null
+  },
+  "images": [
+    {
+      "direction": "VD1",
+      "path": "site/public/design-study/round-4/vd1.png",
+      "sha256": "450bf6a9e92428835e9214c520aeefaf65713875eb68d0b7786052705ab40d57",
+      "width": 887,
+      "height": 1774,
+      "synthetic": true,
+      "kind": "generated visual concept",
+      "inspected": true,
+      "functionalUI": false
+    },
+    {
+      "direction": "VD2",
+      "path": "site/public/design-study/round-4/vd2.png",
+      "sha256": "c1f6733ed6b6469f9f0e99d9458c709a6647e51d9c6d45f255d2f7f54912059d",
+      "width": 887,
+      "height": 1774,
+      "synthetic": true,
+      "kind": "generated visual concept",
+      "inspected": true,
+      "functionalUI": false
+    },
+    {
+      "direction": "VD3",
+      "path": "site/public/design-study/round-4/vd3.png",
+      "sha256": "8b33a4b473aa5715d2d279344dea62c53f7f65e737e2b13858327383248ab55a",
+      "width": 887,
+      "height": 1774,
+      "synthetic": true,
+      "kind": "generated visual concept",
+      "inspected": true,
+      "functionalUI": false
+    }
+  ]
+}
