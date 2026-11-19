@@ -1,0 +1,41 @@
+{
+  "id": "v1",
+  "name": "Лаванда",
+  "themeVariant": "light",
+  "styleFamily": "Calm Violet Utility",
+  "referenceIds": [
+    "RF1",
+    "RF2",
+    "RF3",
+    "R6-C1"
+  ],
+  "themeTokens": {
+    "background": "#F1EDF8",
+    "surface": "#FFFFFF",
+    "text": "#2D233B",
+    "muted": "#61556E",
+    "action": "#76509E",
+    "actionText": "#FFFFFF",
+    "course": "#51435F",
+    "border": "#BBAECD",
+    "radius": {
+      "surface": 16,
+      "action": 24
+    },
+    "spacing": [
+      8,
+      12,
+      16,
+      24
+    ],
+    "type": {
+      "heading": 26,
+      "name": 21,
+      "dose": 22,
+      "secondary": 17
+    }
+  },
+  "prompt": "Use case: ui-mockup. Create ONE full-bleed high fidelity Russian medication-organiser iPhone screen for «медика», portrait approximately 1024x2048, front-on, no phone hardware or promotional canvas. Synthetic design comparison only, no medical advice. The user found the prior white/violet concept acceptable but wants five clearly varied visual options; dark wine/red was rejected, orange is only a reserve. Keep a calm, very readable, large-text working app. NO GREEN, mint, olive, blue, navy, red, burgundy, vermilion, orange danger-coloured controls, neon, gradient, glass or sculpted rounded outer tray. Plain sans typography, meaningful small medicine-form symbols, no hero art, no dashboards or charts. Limit decoration; task dominates. The screen should feel designed for sick people who need easy reading and clear actions. Distinguish people by headings and grouping, never only colour.\nEXACT shared content and top-to-bottom order, preserve every value: compact small wordmark «медика», main heading «Приёмы», family tabs «Все», «Лена», «Миша», «Мама», «Папа» with «Все» selected. Meal heading «Завтрак».\nFIRST person heading «Лена» with passive small plain-text status «Острая фаза», NOT a filled pill or button. Exactly TWO rows below this heading:\n1 «Спрей для носа», dose «2 пшика», course «Ещё 5 дней». Three daily progress dots: first filled, two outlined. Separate filled intake action with checkmark.\n2 «Капли», dose «5 капель», course «Ещё 3 дня». Two daily dots, both outlined. Separate EMPTY outlined intake circle, with NO checkmark.\nTHEN second person heading «Миша» with passive small plain-text status «Поддерживающая». Exactly TWO rows below this heading:\n3 «Раствор», dose «1 мл», course «Ещё 4 дня». Two daily dots, first filled, second outlined. Separate filled intake action with checkmark.\n4 «Капсулы», dose «1 капс.», course «Последний день». One outlined daily dot. Separate EMPTY outlined intake circle, no checkmark.\nThen beginning of next OPEN meal «Обед» visible. No collapsed Other doses. Bottom full-width button «Событие голосом» with mic; below it native destinations «Приёмы», «Лекарства», «История», active «Приёмы». No date, Today, absolute hours, popup, toast, numerical progress fraction such as 1/3 or 1 из 3, statistics or charts.\nLAYOUT: Each medication row has a small meaningful form symbol at left (spray/dropper/ampoule/capsule), a left text region NAME plus COURSE below, a right-aligned bold DOSE with progress DOTS underneath, and an independent generous intake circle on the far right. Long name can wrap on two lines, NEVER shrink it. Do not swap group headings or move a person's medicine under the other person. Keep all FOUR rows fully present and comfortably readable, approx 20–22 CSS px names/doses and 17px course. Separate large 48px-equivalent actions, at least 8px free gaps. The small form symbols should use only the chosen palette and occupy at most 32px equivalent. No large pictures or hero art. Safe areas and mobile navigation believable. Type is a readable modern sans, no editorial serif.\n\nStrict semantic order inside breakfast: Лена -> spray -> drops -> Миша -> solution -> capsules -> Обед. Do not move a person header below their medicine rows. Dose in right-side column, course underneath the name. Preserve dot counts and clear checked/empty distinction. All four rows fully visible, with empty outline controls for drops/capsules. A colour accent is a visual theme, not an urgency flag.\nV1 LAVENDER. A softer, better composed continuation of the acceptable violet concept. Pale lavender #F1EDF8 background, porcelain-white #FFFFFF patient work surfaces, deep plum #2D233B names and bold doses, #61556E secondary. Muted medium violet #76509E primary controls and active filter with white glyphs; #51435F course text. A subtle narrow lavender margin anchors the person groups, no pill phase badge. Flat smooth material, extremely restrained shadows, 16px group radius, 12px row spacing. No bright electric purple wash. Small consistent violet medicine-form symbols. Compact heading and readable 20–22px equivalent medicine names/doses. Keep the flow content-led and calm.",
+  "tool": "image_gen.imagegen",
+  "synthetic": true
+}

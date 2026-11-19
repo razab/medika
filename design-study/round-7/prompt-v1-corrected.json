@@ -1,0 +1,43 @@
+{
+  "id": "v1",
+  "name": "Лаванда",
+  "themeVariant": "light",
+  "styleFamily": "Calm Violet Utility",
+  "referenceIds": [
+    "RF1",
+    "RF2",
+    "RF3",
+    "R6-C1"
+  ],
+  "themeTokens": {
+    "background": "#F1EDF8",
+    "surface": "#FFFFFF",
+    "text": "#2D233B",
+    "muted": "#61556E",
+    "action": "#76509E",
+    "actionText": "#FFFFFF",
+    "course": "#51435F",
+    "border": "#BBAECD",
+    "radius": {
+      "surface": 16,
+      "action": 24
+    },
+    "spacing": [
+      8,
+      12,
+      16,
+      24
+    ],
+    "type": {
+      "heading": 26,
+      "name": 21,
+      "dose": 22,
+      "secondary": 17
+    }
+  },
+  "prompt": "Precise text correction to this synthetic Russian app screenshot. Keep ALL colours, layout, person headings, four medicines, doses, course days, daily dots, take actions, footer and navigation unchanged. Only correct the FIRST medicine name. It currently incorrectly reads «Спрей для». It MUST read the complete «Спрей для носа». Put it on two lines in the same name region: line 1 «Спрей для», line 2 «носа». Keep course «Ещё 5 дней» immediately below that name. Use the same readable bold font; do not shrink it. If necessary slightly increase only the first row height using the existing spare vertical spacing, but keep all four rows and next «Обед» visible. Dose «2 пшика» and its three dots remain in the right column and must not move under the name. Do not change any other word or group. Final order remains Лена → Спрей для носа → Капли → Миша → Раствор → Капсулы → Обед. This is a one-label correction, not a redesign. One complete revised portrait screenshot.",
+  "tool": "image_gen.imagegen",
+  "synthetic": true,
+  "revisionReason": "Generated spray name omitted носа. Correct only that label, preserving all data/grouping.",
+  "referencedImage": "/Users/dcor/.codex/generated_images/01a1bab3-70d6-7921-9724-d4f6fbecc736/exec-69e2da8f-cc25-4bda-9a98-2cb48e2cda05.png"
+}

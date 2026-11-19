@@ -70,5 +70,15 @@
       "inspected": true,
       "functionalUI": false
     }
-  ]
+  ],
+  "userFeedback": {
+    "preferredCandidate": "c1",
+    "preferenceScope": "partial preference, not a final selection",
+    "reserveCandidate": "c2",
+    "rejectedCandidates": [
+      "c3"
+    ],
+    "nextExploration": "../round-7/render-manifest.json",
+    "requestedVariants": 5
+  }
 }

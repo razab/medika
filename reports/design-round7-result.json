@@ -1,0 +1,79 @@
+{
+  "synthetic": true,
+  "kind": "image concepts, not functional app screens",
+  "images": [
+    {
+      "id": "v1",
+      "width": 887,
+      "height": 1774,
+      "bytes": 1513303
+    },
+    {
+      "id": "v2",
+      "width": 887,
+      "height": 1774,
+      "bytes": 1262896
+    },
+    {
+      "id": "v3",
+      "width": 887,
+      "height": 1774,
+      "bytes": 1366852
+    },
+    {
+      "id": "v4",
+      "width": 887,
+      "height": 1774,
+      "bytes": 1328289
+    },
+    {
+      "id": "v5",
+      "width": 887,
+      "height": 1774,
+      "bytes": 1413055
+    }
+  ],
+  "viewports": [
+    {
+      "width": 320,
+      "height": 1000,
+      "images": true,
+      "links": true,
+      "geometry": true,
+      "touchCentersAndEdges": true
+    },
+    {
+      "width": 390,
+      "height": 1000,
+      "images": true,
+      "links": true,
+      "geometry": true,
+      "touchCentersAndEdges": true
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "images": true,
+      "links": true,
+      "geometry": true,
+      "touchCentersAndEdges": true
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "images": true,
+      "links": true,
+      "geometry": true,
+      "touchCentersAndEdges": true
+    },
+    {
+      "width": 1600,
+      "height": 1000,
+      "images": true,
+      "links": true,
+      "geometry": true,
+      "touchCentersAndEdges": true
+    }
+  ],
+  "auth": true
+}

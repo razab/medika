@@ -1,0 +1,129 @@
+{
+  "selectionStatus": "awaiting-user-selection",
+  "selectionSource": "pending",
+  "visualLock": {
+    "status": "unlocked",
+    "chosenDirectionId": null
+  },
+  "previousFeedback": {
+    "reference": "round-6/c1",
+    "reserve": "round-6/c2",
+    "rejected": [
+      "round-6/c3",
+      "round-5 green palette"
+    ]
+  },
+  "requestedVariants": 5,
+  "images": [
+    {
+      "id": "v1",
+      "name": "Лаванда",
+      "themeVariant": "light",
+      "styleFamily": "Calm Violet Utility",
+      "referenceIds": [
+        "RF1",
+        "RF2",
+        "RF3",
+        "R6-C1"
+      ],
+      "path": "site/public/design-study/round-7/v1.png",
+      "sourceRender": "/Users/dcor/.codex/generated_images/01a1bab3-70d6-7921-9724-d4f6fbecc736/exec-7d7f2519-9a37-4a6e-bf1e-81b603517794.png",
+      "prompt": "prompt-v1-corrected.json",
+      "sha256": "b5cecfcd8b5ef351008b461633e169523863cd5d02dcf062d47aea5b249fc763",
+      "width": 887,
+      "height": 1774,
+      "tool": "image_gen.imagegen",
+      "synthetic": true,
+      "inspected": true,
+      "functionalUI": false
+    },
+    {
+      "id": "v2",
+      "name": "Лимон и графит",
+      "themeVariant": "light",
+      "styleFamily": "Bright Signal Utility",
+      "referenceIds": [
+        "RF1",
+        "RF2",
+        "RF3",
+        "R6-C1"
+      ],
+      "path": "site/public/design-study/round-7/v2.png",
+      "sourceRender": "/Users/dcor/.codex/generated_images/01a1bab3-70d6-7921-9724-d4f6fbecc736/exec-07e9d438-bb67-4ce4-9366-1c192506bef7.png",
+      "prompt": "prompt-v2.json",
+      "sha256": "1aaab8e9cac978719442be079299e079647753564c02a972435aada1a4be1071",
+      "width": 887,
+      "height": 1774,
+      "tool": "image_gen.imagegen",
+      "synthetic": true,
+      "inspected": true,
+      "functionalUI": false
+    },
+    {
+      "id": "v3",
+      "name": "Песок и какао",
+      "themeVariant": "light",
+      "styleFamily": "Warm Neutral Utility",
+      "referenceIds": [
+        "RF1",
+        "RF2",
+        "RF3",
+        "R6-C1"
+      ],
+      "path": "site/public/design-study/round-7/v3.png",
+      "sourceRender": "/Users/dcor/.codex/generated_images/01a1bab3-70d6-7921-9724-d4f6fbecc736/exec-491b41d4-c1e3-4614-bff4-a4ba8d194d81.png",
+      "prompt": "prompt-v3.json",
+      "sha256": "8409853f784b145c6005a6763debddeec53a5f7e46d9047cdfc51de7da390314",
+      "width": 887,
+      "height": 1774,
+      "tool": "image_gen.imagegen",
+      "synthetic": true,
+      "inspected": true,
+      "functionalUI": false
+    },
+    {
+      "id": "v4",
+      "name": "Пудра и слива",
+      "themeVariant": "light",
+      "styleFamily": "Soft Plum Utility",
+      "referenceIds": [
+        "RF1",
+        "RF2",
+        "RF3",
+        "R6-C1"
+      ],
+      "path": "site/public/design-study/round-7/v4.png",
+      "sourceRender": "/Users/dcor/.codex/generated_images/01a1bab3-70d6-7921-9724-d4f6fbecc736/exec-60308d78-f282-42ba-a1aa-09b9061f64bf.png",
+      "prompt": "prompt-v4.json",
+      "sha256": "0a6f9fe3ec55b763327b059a3f823c336d6fc5f8db77b39681068727a2294df0",
+      "width": 887,
+      "height": 1774,
+      "tool": "image_gen.imagegen",
+      "synthetic": true,
+      "inspected": true,
+      "functionalUI": false
+    },
+    {
+      "id": "v5",
+      "name": "Тёмный аметист",
+      "themeVariant": "dark",
+      "styleFamily": "Dark Amethyst Utility",
+      "referenceIds": [
+        "RF1",
+        "RF2",
+        "RF3",
+        "R6-C1"
+      ],
+      "path": "site/public/design-study/round-7/v5.png",
+      "sourceRender": "/Users/dcor/.codex/generated_images/01a1bab3-70d6-7921-9724-d4f6fbecc736/exec-b38a56e1-ff55-4149-9a37-356a90cc93f6.png",
+      "prompt": "prompt-v5.json",
+      "sha256": "6f3e464ff3aaf169d8b306f3f3133f226837c224c9acd0845db0eafb4a0cb0d5",
+      "width": 887,
+      "height": 1774,
+      "tool": "image_gen.imagegen",
+      "synthetic": true,
+      "inspected": true,
+      "functionalUI": false
+    }
+  ]
+}

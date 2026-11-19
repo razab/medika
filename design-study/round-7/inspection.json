@@ -1,0 +1,50 @@
+{
+  "kind": "manual full-detail visual review",
+  "notes": {
+    "v1": "Initial name omitted носа; single-label correction passed. Correct person grouping and all four dose/course/dot values preserved. Softer lavender panels than C1, four intact rows.",
+    "v2": "Bright yellow/graphite clearly distinct. Correct four rows, group headings, dot counts and course/doses. Large title retained, but all medication data and next meal visible. Yellow controls use dark glyphs.",
+    "v4": "Powder background/plum actions and tonal person headers; exact names and four row values, dots and checked/empty state preserved.",
+    "v3": "Sand/ivory/cocoa palette, clear person regions, all four exact names/doses/course/dots and correct check states. Chocolate action colour avoids prior orange/red alarm impression. No further edits needed.",
+    "v5": "Warm dark amethyst with pale lavender actions. Exact four names/doses/course/dots and correct patient grouping/check states. No wine/red/green palette. Readable light-on-dark text; no further edits."
+  },
+  "sourceRenders": {
+    "v1": "/Users/dcor/.codex/generated_images/01a1bab3-70d6-7921-9724-d4f6fbecc736/exec-7d7f2519-9a37-4a6e-bf1e-81b603517794.png",
+    "v2": "/Users/dcor/.codex/generated_images/01a1bab3-70d6-7921-9724-d4f6fbecc736/exec-07e9d438-bb67-4ce4-9366-1c192506bef7.png",
+    "v4": "/Users/dcor/.codex/generated_images/01a1bab3-70d6-7921-9724-d4f6fbecc736/exec-60308d78-f282-42ba-a1aa-09b9061f64bf.png",
+    "v3": "/Users/dcor/.codex/generated_images/01a1bab3-70d6-7921-9724-d4f6fbecc736/exec-491b41d4-c1e3-4614-bff4-a4ba8d194d81.png",
+    "v5": "/Users/dcor/.codex/generated_images/01a1bab3-70d6-7921-9724-d4f6fbecc736/exec-b38a56e1-ff55-4149-9a37-356a90cc93f6.png"
+  },
+  "rejectedRender": {
+    "source": "/Users/dcor/.codex/generated_images/01a1bab3-70d6-7921-9724-d4f6fbecc736/exec-69e2da8f-cc25-4bda-9a98-2cb48e2cda05.png",
+    "reason": "Spray label incomplete"
+  },
+  "physicalDeviceTest": false,
+  "sharedInvariants": {
+    "people": [
+      "Лена",
+      "Миша"
+    ],
+    "rowsPerPerson": 2,
+    "doses": [
+      "2 пшика",
+      "5 капель",
+      "1 мл",
+      "1 капс."
+    ],
+    "courses": [
+      "Ещё 5 дней",
+      "Ещё 3 дня",
+      "Ещё 4 дня",
+      "Последний день"
+    ],
+    "dots": [
+      "filled-empty-empty",
+      "empty-empty",
+      "filled-empty",
+      "empty"
+    ],
+    "passivePhase": true,
+    "progressNumerals": false,
+    "medicalDataUsed": false
+  }
+}
