@@ -1,0 +1,30 @@
+{
+  "id": "r3",
+  "name": "Сводка курсов",
+  "coursePresentation": "one independent plain-text course list after the breakfast doses",
+  "styleFamily": "Quiet medication log",
+  "referenceIds": [
+    "RF1",
+    "RF2",
+    "RF3",
+    "R8"
+  ],
+  "themeVariant": "light",
+  "themeTokens": {
+    "background": "#F6F5F4",
+    "surface": "#FFFFFF",
+    "text": "#2A2430",
+    "muted": "#615768",
+    "action": "#624384",
+    "actionText": "#FFFFFF",
+    "radius": 12,
+    "spacing": [
+      8,
+      12,
+      16,
+      24
+    ]
+  },
+  "synthetic": true,
+  "prompt": "Design one full-height portrait 9:20 screenshot of a Russian iPhone medication log named «медика». Visually polished real working-app layout with purposeful typography, ample space and crisp accessible text. Straight front-on, device-free canvas. Use a restrained light theme. The user's requested correction is decisive: precisely ONE vertical column of medicines spanning the screen. NO side-by-side medication cards, three columns, or calendar imagery anywhere (use a capsule icon for bottom «Приёмы»). No calendar page, chip, badge or graphic for remaining days. All course indicators must be ordinary readable Russian words, same secondary type scale as other details, not giant numbers or any bars/percentages. Doses are sober body text with units TOGETHER on one line, not tiles, number art or giant digits; only medicine names and section headings get weight. Quiet passive phase labels. Distinct, generous take controls, visually independent from row; long names may wrap and must be complete. Voice button above bottom navigation. No dates, time, charts, fake notifications, blue, green or red.\nExact content: «Приёмы»; filter «Все», «Лена», «Миша», «Мама», «Папа»; «Завтрак». Four synthetic meds: Лена · Острая фаза — «Спрей для носа», «2 пшика», «Ещё 5 дней», dots ●○○, breakfast marked; «Капли», «5 капель», «Ещё 3 дня», dots ○○, breakfast unmarked. Миша · Поддерживающая — «Раствор», «1 мл», «Ещё 4 дня», dots ●○, breakfast marked; «Капсулы», «1 капс.», «Последний день», dot ○, breakfast unmarked. Daily progress dots are small round dots with no visible fractions. Exact ownership, doses and remaining days mandatory. Use «Обед», «Событие голосом», bottom «Приёмы» «Лекарства» «История». Show all four medicines. Large readable type, no unnecessary art, microtext or huge header. Follow the specific architecture below.\nA short and readable breakfast list with two quiet person headings, four single-column rows, plain dose text and round daily dots, independent right-side checks. OMIT the course labels inside those four action rows. Below the four, add ONE wide inset light lavender panel headed «Курсы за завтраком». It is a plain one-column prose list with four short text lines, matching the same four medicines and explicit owners: «Миша · Капсулы — последний день»; «Лена · Капли — ещё 3 дня»; «Миша · Раствор — ещё 4 дня»; «Лена · Спрей для носа — ещё 5 дней». All four lines are absolutely required. Normal uniform type size, no icons, capsules-as-decoration, rows of badges, columns, highlighted big numbers or calendar art. Set the heading with a thin accent line for hierarchy. A warm near-white canvas, monochrome graphite typography, lavender panel and plum controls. Place «Обед» after the course panel. Do not make the panel taller than necessary. Keep all names clear and bold and courses readable at real phone scale."
+}

@@ -6,7 +6,7 @@ import {fileURLToPath} from 'node:url';
 import {request} from 'node:http';
 import {createApp} from '../server.mjs';
 const {chromium}=await import(process.env.PLAYWRIGHT_MODULE||'playwright');
-const rounds={4:['vd1','vd2','vd3'],5:['d1','d2','d3','l1','l2'],6:['c1','c2','c3'],7:['v1','v2','v3','v4','v5'],8:['s1','s2','s3','s4','s5']};
+const rounds={4:['vd1','vd2','vd3'],5:['d1','d2','d3','l1','l2'],6:['c1','c2','c3'],7:['v1','v2','v3','v4','v5'],8:['s1','s2','s3','s4','s5'],9:['r1','r2','r3']};
 const round=Object.keys(rounds).map(Number).find(n=>process.argv.includes('--round-'+n))||4;
 const allIds=rounds[round];
 const ids=process.argv.includes('--first')?allIds.slice(0,1):allIds;

@@ -1,0 +1,45 @@
+{
+  "selectionStatus": "awaiting-user-selection",
+  "selectionSource": "pending",
+  "visualLock": {
+    "status": "unlocked",
+    "chosenDirectionId": null
+  },
+  "sharedData": "../round-8/shared-data.json",
+  "tool": "image_gen.imagegen",
+  "functionalUI": false,
+  "inspection": "Во всех трёх изображениях сверены имена, четыре дозы, группы людей, дни и точки. Доза обычного размера, курс текстом, лекарства в одной колонке.",
+  "images": [
+    {
+      "id": "r1",
+      "name": "В строке",
+      "path": "site/public/design-study/round-9/r1.png",
+      "prompt": "prompt-r1.json",
+      "sha256": "f9087c6aabd6cde2fbe20df63be946daae9a2611e4918660f4ecf901c97d91a1",
+      "width": 887,
+      "height": 1774,
+      "observation": "Доза и дни в общей подписи, приёмы по людям."
+    },
+    {
+      "id": "r2",
+      "name": "Под приёмом",
+      "path": "site/public/design-study/round-9/r2.png",
+      "prompt": "prompt-r2.json",
+      "sha256": "e10e345a2b31c5e1d94fbb43e86a942dd476839b9afe7af02104949302088c5e",
+      "width": 887,
+      "height": 1774,
+      "observation": "Дни под разделителем каждой карточки, записи по состоянию."
+    },
+    {
+      "id": "r3",
+      "name": "Сводка курсов",
+      "path": "site/public/design-study/round-9/r3.png",
+      "prompt": "prompt-r3.json",
+      "sha256": "a10445cc2302b0bc53e6585e879337d9709d5192d7854e37d64b6f0a728554b6",
+      "width": 887,
+      "height": 1774,
+      "observation": "Все четыре срока в единой сводке, без дублирования в расписании.",
+      "revisionPrompt": "prompt-r3-revised.json"
+    }
+  ]
+}
