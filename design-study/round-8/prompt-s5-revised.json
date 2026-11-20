@@ -1,0 +1,46 @@
+{
+  "id": "s5",
+  "name": "Курс на ладони",
+  "themeVariant": "light",
+  "styleFamily": "Remaining Course Board",
+  "referenceIds": [
+    "RF1",
+    "RF2",
+    "RF3",
+    "R7-negative",
+    "UF-core"
+  ],
+  "structure": "one wide final-day block above three vertical remaining-course strips side by side",
+  "coursePresentation": "one final-day calendar panel plus three vertical calendar-count columns",
+  "displayOrder": [
+    "capsules",
+    "drops",
+    "solution",
+    "spray"
+  ],
+  "themeTokens": {
+    "background": "#F5F2FA",
+    "surface": "#FFFFFF",
+    "text": "#2D233B",
+    "muted": "#61556E",
+    "action": "#76509E",
+    "actionText": "#FFFFFF",
+    "course": "#51435F",
+    "border": "#BBAECD",
+    "spacing": [
+      8,
+      12,
+      16,
+      24
+    ],
+    "type": {
+      "name": 21,
+      "dose": 24,
+      "secondary": 17
+    }
+  },
+  "prompt": "Use case: ui-mockup. Create ONE complete standalone portrait iPhone app screenshot, approximately 1024x2240, front-on full bleed, no physical phone, no poster canvas. Russian family medication organiser «медика». This is a synthetic visual design experiment, no medical advice. IMPORTANT: the user rejected five near-identical four-row lists with dose/dots/check aligned on the right. This new round explores genuinely DIFFERENT INFORMATION ARCHITECTURES and component silhouettes. DO NOT default to that old row template. Follow the specific architecture below, even though it differs from a standard medication list. Interface must remain clear and operable at phone size: readable sans typography, generous independent 48px-equivalent actions and 8px free gaps. No giant heading or hero art. Plain passive phase labels, never phase switches or bright badges. LIGHT theme; restrained white/ivory and muted violet/graphite. No green, blue/navy, red/burgundy, orange danger controls, neon, glow or ceramic ridges. Artwork small and meaningful or omitted according to the architecture.\nSAME DATA, NOT SAME GEOMETRY: all FOUR medicines must be present, with unambiguous person ownership and exact doses/course/day-dot states.\nЛена, «Острая фаза»: «Спрей для носа», «2 пшика», remaining course 5 days; daily dots 3 (first filled, 2 empty), intake already recorded. «Капли», «5 капель», remaining course 3 days; daily dots 2 both empty, intake not recorded.\nМиша, «Поддерживающая»: «Раствор», «1 мл», remaining course 4 days; daily dots 2 (first filled, 1 empty), intake recorded. «Капсулы», «1 капс.», remaining course one final day («Последний день»); 1 empty daily dot, intake not recorded.\nDaily intake progress MUST remain small ROUND DOTS only, no 1/3, 1 из 3 or percentages. Course duration is different data: unknown total/start/end, so do NOT invent course completion percentages, elapsed/total progress, dates, full course length or a fabricated timeline to a completion date. You may change how the remaining duration is rendered, as specified below. Recorded and unrecorded actions clearly distinct. Do not recommend taking more medicine.\nCompact wordmark «медика» and screen heading «Приёмы», family filter «Все», «Лена», «Миша», «Мама», «Папа» with «Все» active. Current meal «Завтрак», open next heading «Обед» visible below the medicines. No date, Today, absolute hours, forecast, collapsed Other doses or hidden facts. Bottom voice button «Событие голосом», then destinations «Приёмы», «Лекарства», «История». All four medicines and their required fields must be clearly visible in the rendered portrait; do not hide data behind a selected tab. Long names can wrap, never truncate «Спрей для носа».\nS5 REVISED ARCHITECTURE: 1+3 COURSE BOARD, NOT FOUR HORIZONTAL ROWS. The user demands clearly different STRUCTURES. Render one wide low FINAL-DAY FEATURE BLOCK above THREE TALL NARROW COURSE COLUMNS SIDE BY SIDE across the phone. This 1+3 silhouette is mandatory and must look different from both a 2×2 person grid and four full-width dose tickets.\nAfter compact heading/family controls and «Завтрак», show small passive caption «По остатку курса». FIRST a full-width feature block for «Капсулы»: explicit «Миша» / «Поддерживающая», dose «1 капс.», a large calendar label «Последний день», one empty daily dot and an independent empty intake circle. Feature block should be only about 130–150px equivalent tall, never a huge hero.\nBELOW IT: exactly THREE equally wide VERTICAL COURSE STRIPS side by side, all visible at once, NOT a carousel. Left strip is «Капли» for «Лена» / «Острая фаза», dose «5 капель», huge calendar count «3» / «дня» below the caption «Осталось», two empty daily dots, independent empty intake circle. Middle strip is «Раствор» for «Миша» / «Поддерживающая», dose «1 мл», huge «4» / «дня» remaining, daily dots two with first filled, separate checked intake circle. Right strip is full name «Спрей для носа» wrapped on two or three readable lines for «Лена» / «Острая фаза», dose «2 пшика», huge «5» / «дней» remaining, daily dots three with first filled, independent checked intake circle. Keep numbers as days remaining, not total-course progress. No progress bars, dates or percentages.\nMake each vertical strip roomy enough: person+phase can wrap; readable 18px equivalent body, 21px name/dose, 40px day count, generous independent circle at the bottom. Course rectangles/calendars and small daily ROUND dots must remain distinct. Do not omit any of the four medicines, full name, dose, person, phase, course count or daily-dot states. All three strips and the feature block fit in the portrait, followed by the open «Обед» heading, voice action and bottom navigation. Light violet/white subtle alternating column backgrounds, deep plum text, calm violet actions, no charts, no icons that replace words. Do not turn this into a standard row list, four horizontal number ribbons, two-by-two tile grid, a timeline or a left-checkbox checklist. The one-wide-plus-three-vertical composition must be unmistakable.",
+  "tool": "image_gen.imagegen",
+  "synthetic": true,
+  "revisionReason": "Original four horizontal left-number bands visually repeat the dose-ticket silhouette S3. Replace only S5 architecture with a 1+3 board, preserving all semantic fields."
+}

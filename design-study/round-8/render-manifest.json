@@ -1,0 +1,168 @@
+{
+  "selectionStatus": "awaiting-user-selection",
+  "selectionSource": "pending",
+  "visualLock": {
+    "status": "unlocked",
+    "chosenDirectionId": null
+  },
+  "previousSetStatus": "round-7 retained as reserve",
+  "sharedSemanticData": "shared-data.json",
+  "geometryPolicy": "distinct per candidate, not shared",
+  "images": [
+    {
+      "id": "s1",
+      "name": "Плитки по людям",
+      "themeVariant": "light",
+      "styleFamily": "Person Tile Workspace",
+      "referenceIds": [
+        "RF1",
+        "RF2",
+        "RF3",
+        "R7-negative",
+        "UF-core"
+      ],
+      "structure": "two person sections, two side-by-side medicine tiles each",
+      "coursePresentation": "calendar-page number",
+      "displayOrder": [
+        "spray",
+        "drops",
+        "solution",
+        "capsules"
+      ],
+      "path": "site/public/design-study/round-8/s1.png",
+      "sourceRender": "/Users/dcor/.codex/generated_images/01a1bab3-70d6-7921-9724-d4f6fbecc736/exec-eba82606-a4bc-4a74-adb9-296f9f3dbf5d.png",
+      "prompt": "prompt-s1.json",
+      "sha256": "81a76d30d6a51b717f45442829816ddb970caef8e5bb5435860f0308712dfc86",
+      "width": 848,
+      "height": 1855,
+      "tool": "image_gen.imagegen",
+      "synthetic": true,
+      "inspected": true,
+      "functionalUI": false
+    },
+    {
+      "id": "s2",
+      "name": "Маршрут по слотам",
+      "themeVariant": "light",
+      "styleFamily": "Meal Route Workspace",
+      "referenceIds": [
+        "RF1",
+        "RF2",
+        "RF3",
+        "R7-negative",
+        "UF-core"
+      ],
+      "structure": "vertical meal spine with four named stops",
+      "coursePresentation": "edge ribbons with course text",
+      "displayOrder": [
+        "spray",
+        "drops",
+        "solution",
+        "capsules"
+      ],
+      "path": "site/public/design-study/round-8/s2.png",
+      "sourceRender": "/Users/dcor/.codex/generated_images/01a1bab3-70d6-7921-9724-d4f6fbecc736/exec-41c63259-d812-43fa-bb20-f8173ca84ac7.png",
+      "prompt": "prompt-s2.json",
+      "sha256": "69fc43c37f9b78a7b8262bf64a0f73b748f13e67ff139d4e32774d6ac4af17bf",
+      "width": 848,
+      "height": 1855,
+      "tool": "image_gen.imagegen",
+      "synthetic": true,
+      "inspected": true,
+      "functionalUI": false
+    },
+    {
+      "id": "s3",
+      "name": "Карточки действий",
+      "themeVariant": "light",
+      "styleFamily": "Dose Action Tickets",
+      "referenceIds": [
+        "RF1",
+        "RF2",
+        "RF3",
+        "R7-negative",
+        "UF-core"
+      ],
+      "structure": "four asymmetric horizontal dose tickets",
+      "coursePresentation": "calendar corner tab",
+      "displayOrder": [
+        "spray",
+        "drops",
+        "solution",
+        "capsules"
+      ],
+      "path": "site/public/design-study/round-8/s3.png",
+      "sourceRender": "/Users/dcor/.codex/generated_images/01a1bab3-70d6-7921-9724-d4f6fbecc736/exec-0bbb76fa-e7fb-4164-846d-3ac27a9c52b6.png",
+      "prompt": "prompt-s3.json",
+      "sha256": "5bafbbe7999e3e569599793b0229ecd3b931a29cc58de93456efef5e23188f67",
+      "width": 848,
+      "height": 1855,
+      "tool": "image_gen.imagegen",
+      "synthetic": true,
+      "inspected": true,
+      "functionalUI": false
+    },
+    {
+      "id": "s4",
+      "name": "Сначала неотмеченное",
+      "themeVariant": "light",
+      "styleFamily": "Task State Checklist",
+      "referenceIds": [
+        "RF1",
+        "RF2",
+        "RF3",
+        "R7-negative",
+        "UF-core"
+      ],
+      "structure": "pending group first, recorded group visible below, no images or card frames",
+      "coursePresentation": "course in plain language words",
+      "displayOrder": [
+        "drops",
+        "capsules",
+        "spray",
+        "solution"
+      ],
+      "path": "site/public/design-study/round-8/s4.png",
+      "sourceRender": "/Users/dcor/.codex/generated_images/01a1bab3-70d6-7921-9724-d4f6fbecc736/exec-04c059ff-0253-499d-972b-10a5198071ff.png",
+      "prompt": "prompt-s4.json",
+      "sha256": "117a7a2ece503922ad22bb926858fd8d41f78c058ac14b7b3810154af38e271c",
+      "width": 848,
+      "height": 1855,
+      "tool": "image_gen.imagegen",
+      "synthetic": true,
+      "inspected": true,
+      "functionalUI": false
+    },
+    {
+      "id": "s5",
+      "name": "Курс на ладони",
+      "themeVariant": "light",
+      "styleFamily": "Remaining Course Board",
+      "referenceIds": [
+        "RF1",
+        "RF2",
+        "RF3",
+        "R7-negative",
+        "UF-core"
+      ],
+      "structure": "one wide final-day block above three vertical remaining-course strips side by side",
+      "coursePresentation": "one final-day calendar panel plus three vertical calendar-count columns",
+      "displayOrder": [
+        "capsules",
+        "drops",
+        "solution",
+        "spray"
+      ],
+      "path": "site/public/design-study/round-8/s5.png",
+      "sourceRender": "/Users/dcor/.codex/generated_images/01a1bab3-70d6-7921-9724-d4f6fbecc736/exec-de6d11fb-2a9b-4429-911b-c5b6cafae1e6.png",
+      "prompt": "prompt-s5-revised.json",
+      "sha256": "e382e99031d08b77897784028bff2193278c4799085fda23e1c3afe5e11d1707",
+      "width": 848,
+      "height": 1855,
+      "tool": "image_gen.imagegen",
+      "synthetic": true,
+      "inspected": true,
+      "functionalUI": false
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "id": "s3",
+  "name": "Карточки действий",
+  "themeVariant": "light",
+  "styleFamily": "Dose Action Tickets",
+  "referenceIds": [
+    "RF1",
+    "RF2",
+    "RF3",
+    "R7-negative",
+    "UF-core"
+  ],
+  "structure": "four asymmetric horizontal dose tickets",
+  "coursePresentation": "calendar corner tab",
+  "displayOrder": [
+    "spray",
+    "drops",
+    "solution",
+    "capsules"
+  ],
+  "themeTokens": {
+    "background": "#F5F2FA",
+    "surface": "#FFFFFF",
+    "text": "#2D233B",
+    "muted": "#61556E",
+    "action": "#76509E",
+    "actionText": "#FFFFFF",
+    "course": "#51435F",
+    "border": "#BBAECD",
+    "spacing": [
+      8,
+      12,
+      16,
+      24
+    ],
+    "type": {
+      "name": 21,
+      "dose": 24,
+      "secondary": 17
+    }
+  },
+  "prompt": "Use case: ui-mockup. Create ONE complete standalone portrait iPhone app screenshot, approximately 1024x2240, front-on full bleed, no physical phone, no poster canvas. Russian family medication organiser «медика». This is a synthetic visual design experiment, no medical advice. IMPORTANT: the user rejected five near-identical four-row lists with dose/dots/check aligned on the right. This new round explores genuinely DIFFERENT INFORMATION ARCHITECTURES and component silhouettes. DO NOT default to that old row template. Follow the specific architecture below, even though it differs from a standard medication list. Interface must remain clear and operable at phone size: readable sans typography, generous independent 48px-equivalent actions and 8px free gaps. No giant heading or hero art. Plain passive phase labels, never phase switches or bright badges. LIGHT theme; restrained white/ivory and muted violet/graphite. No green, blue/navy, red/burgundy, orange danger controls, neon, glow or ceramic ridges. Artwork small and meaningful or omitted according to the architecture.\nSAME DATA, NOT SAME GEOMETRY: all FOUR medicines must be present, with unambiguous person ownership and exact doses/course/day-dot states.\nЛена, «Острая фаза»: «Спрей для носа», «2 пшика», remaining course 5 days; daily dots 3 (first filled, 2 empty), intake already recorded. «Капли», «5 капель», remaining course 3 days; daily dots 2 both empty, intake not recorded.\nМиша, «Поддерживающая»: «Раствор», «1 мл», remaining course 4 days; daily dots 2 (first filled, 1 empty), intake recorded. «Капсулы», «1 капс.», remaining course one final day («Последний день»); 1 empty daily dot, intake not recorded.\nDaily intake progress MUST remain small ROUND DOTS only, no 1/3, 1 из 3 or percentages. Course duration is different data: unknown total/start/end, so do NOT invent course completion percentages, elapsed/total progress, dates, full course length or a fabricated timeline to a completion date. You may change how the remaining duration is rendered, as specified below. Recorded and unrecorded actions clearly distinct. Do not recommend taking more medicine.\nCompact wordmark «медика» and screen heading «Приёмы», family filter «Все», «Лена», «Миша», «Мама», «Папа» with «Все» active. Current meal «Завтрак», open next heading «Обед» visible below the medicines. No date, Today, absolute hours, forecast, collapsed Other doses or hidden facts. Bottom voice button «Событие голосом», then destinations «Приёмы», «Лекарства», «История». All four medicines and their required fields must be clearly visible in the rendered portrait; do not hide data behind a selected tab. Long names can wrap, never truncate «Спрей для носа».\nS3 ARCHITECTURE: DOSE-FIRST ACTION TICKETS. After compact breakfast heading, show FOUR tightly composed, full-width RECTANGULAR TICKETS, not conventional list rows or person containers. Each ticket has a STRONG LEFT DOSE BLOCK: huge «2 пшика» / «5 капель» / «1 мл» / «1 капс.» on a pale violet panel occupying about a quarter of its width. The centre identifies person/phase and wrapped medicine name. At the top-right CORNER a folded calendar tab says «Ещё 5 дней», «Ещё 3 дня», «Ещё 4 дня», «Последний день». Along the bottom of each ticket a clear action strip: small daily dots plus a generous labelled «Отметить» button for drops/capsules; for already recorded spray/solution a non-intrusive checked «Принято» status. Do not invent intake times. The left huge dose is the focal point, not a bottle icon. Keep each ticket roughly 140–155px equivalent so all four fit with compact header/footer. Modest 8px corners, small notched edges, warm white task plane, deep plum text, muted violet dose panels. Avoid four stacked round cards with right aligned dose/check columns. A functional action-ticket layout, not promotional coupons.",
+  "tool": "image_gen.imagegen",
+  "synthetic": true
+}

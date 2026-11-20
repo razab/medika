@@ -1,0 +1,67 @@
+{
+  "kind": "manual full-detail content and structural review",
+  "sourceRenders": {
+    "s1": "/Users/dcor/.codex/generated_images/01a1bab3-70d6-7921-9724-d4f6fbecc736/exec-eba82606-a4bc-4a74-adb9-296f9f3dbf5d.png",
+    "s3": "/Users/dcor/.codex/generated_images/01a1bab3-70d6-7921-9724-d4f6fbecc736/exec-0bbb76fa-e7fb-4164-846d-3ac27a9c52b6.png",
+    "s4": "/Users/dcor/.codex/generated_images/01a1bab3-70d6-7921-9724-d4f6fbecc736/exec-04c059ff-0253-499d-972b-10a5198071ff.png",
+    "s2": "/Users/dcor/.codex/generated_images/01a1bab3-70d6-7921-9724-d4f6fbecc736/exec-41c63259-d812-43fa-bb20-f8173ca84ac7.png",
+    "s5": "/Users/dcor/.codex/generated_images/01a1bab3-70d6-7921-9724-d4f6fbecc736/exec-de6d11fb-2a9b-4429-911b-c5b6cafae1e6.png"
+  },
+  "observations": {
+    "s1": {
+      "silhouette": "two stacked people, two tiles side by side for each",
+      "course": "separate calendar pages with 5/3/4 days and final-day label",
+      "data": "all four exact names/doses/people/course values/dots/check states present",
+      "differenceFromRound7": true
+    },
+    "s3": {
+      "silhouette": "four rectangular action tickets with a giant dose block on the left",
+      "course": "calendar corner tab on each ticket",
+      "data": "all four exact names/doses/people/course values/dots and taken/pending labels present",
+      "differenceFromS1": "one full-width dose ticket per medicine instead of two-column person tiles",
+      "differenceFromRound7": true
+    },
+    "s4": {
+      "silhouette": "flat no-image checklist with pending and recorded groups and left checkboxes",
+      "course": "remaining days spelled in words below medicine; dose also below name",
+      "data": "pending drops/capsules and recorded spray/solution preserved, all names/doses/people/course/dots correct",
+      "differenceFromS1S3": "no cards, no object images, new recording-state grouping",
+      "differenceFromRound7": true
+    },
+    "s2": {
+      "silhouette": "vertical meal spine with four explicit patient stops; no person card containers",
+      "course": "edge ribbons, dose placed below name",
+      "data": "all four names/doses/people/phases/course/dots/check states correct",
+      "differenceFromRound7": true
+    },
+    "s5": {
+      "silhouette": "one wide final-day capsule feature above three simultaneous vertical course columns",
+      "course": "final-day calendar plus large 3/4/5 day pages; no fabricated total/progress",
+      "data": "capsules/Misha/1 capsule/final day/one empty; drops/Lena/5 drops/3 days/two empty; solution/Misha/1 ml/4 days/first of two filled; spray/Lena/2 sprays/5 days/first of three filled; all check states correct",
+      "differenceFromS1": "one-plus-three course grouping instead of two-plus-two person grouping",
+      "differenceFromS3": "vertical course columns instead of four horizontal dose tickets",
+      "differenceFromRound7": true
+    }
+  },
+  "knownLimits": [
+    "Raster does not prove touch geometry or working navigation.",
+    "Some generated navigation icons use a chart-like glyph for history; icon semantics must be corrected in a selected implementation.",
+    "S5 narrow columns have small secondary phase text; selected implementation needs large-text reflow and verified targets."
+  ],
+  "physicalDeviceTest": false,
+  "rejectedRenders": [
+    {
+      "id": "s5",
+      "path": "/Users/dcor/.codex/generated_images/01a1bab3-70d6-7921-9724-d4f6fbecc736/exec-59c3ada4-f0c6-4f6e-9b67-80066b577078.png",
+      "reason": "Data correct, but four horizontal left-number bands repeat S3 silhouette. Change only S5 to 1+3 board."
+    }
+  ],
+  "structuralComparison": {
+    "s1": "2x2 person tiles",
+    "s2": "vertical meal spine",
+    "s3": "horizontal dose action tickets",
+    "s4": "flat pending/recorded left-checkbox checklist",
+    "s5": "1+3 remaining-course board"
+  },
+  "allFiveSemanticallyReviewed": true
+}

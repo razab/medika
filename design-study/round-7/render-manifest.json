@@ -125,5 +125,11 @@
       "inspected": true,
       "functionalUI": false
     }
-  ]
+  ],
+  "userFeedback": {
+    "status": "reserve set",
+    "problem": "near-identical standard structure despite colour changes",
+    "requestedChange": "five new materially different structures and remaining-course presentations",
+    "nextExploration": "../round-8/render-manifest.json"
+  }
 }

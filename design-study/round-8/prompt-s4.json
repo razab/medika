@@ -1,0 +1,45 @@
+{
+  "id": "s4",
+  "name": "Сначала неотмеченное",
+  "themeVariant": "light",
+  "styleFamily": "Task State Checklist",
+  "referenceIds": [
+    "RF1",
+    "RF2",
+    "RF3",
+    "R7-negative",
+    "UF-core"
+  ],
+  "structure": "pending group first, recorded group visible below, no images or card frames",
+  "coursePresentation": "course in plain language words",
+  "displayOrder": [
+    "drops",
+    "capsules",
+    "spray",
+    "solution"
+  ],
+  "themeTokens": {
+    "background": "#F5F2FA",
+    "surface": "#FFFFFF",
+    "text": "#2D233B",
+    "muted": "#61556E",
+    "action": "#76509E",
+    "actionText": "#FFFFFF",
+    "course": "#51435F",
+    "border": "#BBAECD",
+    "spacing": [
+      8,
+      12,
+      16,
+      24
+    ],
+    "type": {
+      "name": 21,
+      "dose": 24,
+      "secondary": 17
+    }
+  },
+  "prompt": "Use case: ui-mockup. Create ONE complete standalone portrait iPhone app screenshot, approximately 1024x2240, front-on full bleed, no physical phone, no poster canvas. Russian family medication organiser «медика». This is a synthetic visual design experiment, no medical advice. IMPORTANT: the user rejected five near-identical four-row lists with dose/dots/check aligned on the right. This new round explores genuinely DIFFERENT INFORMATION ARCHITECTURES and component silhouettes. DO NOT default to that old row template. Follow the specific architecture below, even though it differs from a standard medication list. Interface must remain clear and operable at phone size: readable sans typography, generous independent 48px-equivalent actions and 8px free gaps. No giant heading or hero art. Plain passive phase labels, never phase switches or bright badges. LIGHT theme; restrained white/ivory and muted violet/graphite. No green, blue/navy, red/burgundy, orange danger controls, neon, glow or ceramic ridges. Artwork small and meaningful or omitted according to the architecture.\nSAME DATA, NOT SAME GEOMETRY: all FOUR medicines must be present, with unambiguous person ownership and exact doses/course/day-dot states.\nЛена, «Острая фаза»: «Спрей для носа», «2 пшика», remaining course 5 days; daily dots 3 (first filled, 2 empty), intake already recorded. «Капли», «5 капель», remaining course 3 days; daily dots 2 both empty, intake not recorded.\nМиша, «Поддерживающая»: «Раствор», «1 мл», remaining course 4 days; daily dots 2 (first filled, 1 empty), intake recorded. «Капсулы», «1 капс.», remaining course one final day («Последний день»); 1 empty daily dot, intake not recorded.\nDaily intake progress MUST remain small ROUND DOTS only, no 1/3, 1 из 3 or percentages. Course duration is different data: unknown total/start/end, so do NOT invent course completion percentages, elapsed/total progress, dates, full course length or a fabricated timeline to a completion date. You may change how the remaining duration is rendered, as specified below. Recorded and unrecorded actions clearly distinct. Do not recommend taking more medicine.\nCompact wordmark «медика» and screen heading «Приёмы», family filter «Все», «Лена», «Миша», «Мама», «Папа» with «Все» active. Current meal «Завтрак», open next heading «Обед» visible below the medicines. No date, Today, absolute hours, forecast, collapsed Other doses or hidden facts. Bottom voice button «Событие голосом», then destinations «Приёмы», «Лекарства», «История». All four medicines and their required fields must be clearly visible in the rendered portrait; do not hide data behind a selected tab. Long names can wrap, never truncate «Спрей для носа».\nS4 ARCHITECTURE: RADICALLY SIMPLE TASK CHECKLIST, GROUP BY RECORDING STATE. No medicine pictures, no cards, no calendar chips, no person-container headers. Under breakfast show the heading «Осталось отметить» and TWO pending lines: Lena / «Капли» / «5 капель» / course in WORDS «Ещё три дня»; Misha / «Капсулы» / «1 капс.» / «Последний день». Each line begins with a generous EMPTY CHECKBOX on the LEFT; name and dose underneath as readable text, small explicit person+phase label; daily dots remain visible on a separate compact line. Then heading «Уже отмечено» and TWO fully VISIBLE recorded lines: Lena / «Спрей для носа» / «2 пшика» / «Ещё пять дней», and Misha / «Раствор» / «1 мл» / «Ещё четыре дня», each left checkbox checked and their original daily dots (3 first filled; 2 first filled). Completed content remains readable, not crossed out or hidden. This sorting is recording state only, not medical urgency. Course displayed as ordinary human words below medicine, no numeric badge or column. White page, strong graphite typography, restrained violet checkboxes, generous blank-space grouping, slim rules only. Distinct from every card/route/grid version. Do not produce the old standard name-left dose-right list. Dose goes UNDER the medicine name. All four entries and both state headings fit in portrait.",
+  "tool": "image_gen.imagegen",
+  "synthetic": true
+}

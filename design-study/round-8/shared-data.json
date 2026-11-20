@@ -1,0 +1,62 @@
+{
+  "synthetic": true,
+  "meal": "Завтрак",
+  "nextMeal": "Обед",
+  "totalCourseDays": null,
+  "startDate": null,
+  "endDate": null,
+  "medicines": [
+    {
+      "id": "spray",
+      "person": "Лена",
+      "phase": "Острая фаза",
+      "name": "Спрей для носа",
+      "dose": "2 пшика",
+      "remainingDays": 5,
+      "dailyDots": [
+        true,
+        false,
+        false
+      ],
+      "taken": true
+    },
+    {
+      "id": "drops",
+      "person": "Лена",
+      "phase": "Острая фаза",
+      "name": "Капли",
+      "dose": "5 капель",
+      "remainingDays": 3,
+      "dailyDots": [
+        false,
+        false
+      ],
+      "taken": false
+    },
+    {
+      "id": "solution",
+      "person": "Миша",
+      "phase": "Поддерживающая",
+      "name": "Раствор",
+      "dose": "1 мл",
+      "remainingDays": 4,
+      "dailyDots": [
+        true,
+        false
+      ],
+      "taken": true
+    },
+    {
+      "id": "capsules",
+      "person": "Миша",
+      "phase": "Поддерживающая",
+      "name": "Капсулы",
+      "dose": "1 капс.",
+      "remainingDays": 1,
+      "dailyDots": [
+        false
+      ],
+      "taken": false
+    }
+  ]
+}
