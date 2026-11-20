@@ -43,8 +43,8 @@ h1, h2, h3, h4, h5, p { margin: 0; }
   --muted: #d5baaa;
   --accent: #ecc396;
   --on-accent: #2c1d13;
-  --icon-ink: #fff4e8;
-  --tint: #b4855b;
+  --icon-ink: #ebd0b7;
+  --tint: #a37550;
   --tab: #291f1a;
 }
 .stone {
@@ -57,8 +57,8 @@ h1, h2, h3, h4, h5, p { margin: 0; }
   --muted: #cec3b7;
   --accent: #cdc6ae;
   --on-accent: #24211b;
-  --icon-ink: #fff9ed;
-  --tint: #978f7e;
+  --icon-ink: #e2d7c6;
+  --tint: #878071;
   --tab: #2b2926;
 }
 .espresso, .stone { --icon-weight: 2.6; }
