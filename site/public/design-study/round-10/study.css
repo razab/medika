@@ -43,7 +43,8 @@ h1, h2, h3, h4, h5, p { margin: 0; }
   --muted: #d5baaa;
   --accent: #ecc396;
   --on-accent: #2c1d13;
-  --tint: #745234;
+  --icon-ink: #fff4e8;
+  --tint: #b4855b;
   --tab: #291f1a;
 }
 .stone {
@@ -56,9 +57,11 @@ h1, h2, h3, h4, h5, p { margin: 0; }
   --muted: #cec3b7;
   --accent: #cdc6ae;
   --on-accent: #24211b;
-  --tint: #6d6657;
+  --icon-ink: #fff9ed;
+  --tint: #978f7e;
   --tab: #2b2926;
 }
+.espresso, .stone { --icon-weight: 2.6; }
 .screen {
   background: var(--bg); color: var(--ink); overflow: hidden;
   box-shadow: 0 12px 28px #34261915; border-radius: 19px;
@@ -91,6 +94,10 @@ h1, h2, h3, h4, h5, p { margin: 0; }
 .medicine + .medicine { border-top: 1px solid var(--rule); }
 .form-icon { color: var(--accent); }
 .glyph { display: block; width: 100%; height: auto; }
+.form-icon .glyph, .app-tabs .glyph {
+  color: var(--icon-ink, currentColor);
+  stroke-width: var(--icon-weight, 2.1);
+}
 .tint { fill: var(--tint); }
 .medicine-copy { min-width: 0; }
 .medicine-copy strong { display: block; font-size: 1rem; line-height: 1.2; overflow-wrap: anywhere; }
