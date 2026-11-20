@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Медика — светлая и тёмные темы</title>
+  <link rel="stylesheet" href="/design-study/round-10/study.css">
+  <script type="module" src="/design-study/round-10/study.js"></script>
+</head>
+<body>
+  <main class="gallery">
+    <header class="intro">
+      <h1>Цветовые темы Медики</h1>
+      <p>Один экран расписания на условных данных.</p>
+      <nav class="theme-links" aria-label="Темы"></nav>
+    </header>
+    <div class="previews"></div>
+  </main>
+
+  <template id="screen">
+    <div class="screen">
+      <div class="screen-content">
+        <header class="screen-heading">
+          <span class="wordmark">медика</span>
+          <h3>Приёмы</h3>
+        </header>
+        <ul class="family" aria-label="Семья">
+          <li aria-current="true">Все</li>
+          <li>Лена</li>
+          <li>Миша</li>
+          <li>Мама</li>
+          <li>Папа</li>
+        </ul>
+        <h4 class="meal">Завтрак</h4>
+        <div class="people"></div>
+        <h4 class="meal next">Обед</h4>
+      </div>
+      <ul class="app-tabs" aria-label="Разделы приложения"></ul>
+    </div>
+  </template>
+</body>
+</html>
