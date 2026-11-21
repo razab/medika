@@ -29,7 +29,6 @@ test('API: источник, изоляция, история, версии, PRN
     const beforeParse=(await call('/state')).activities.length;
     await call('/parse-entry',{text:'температура 38,2 сейчас',timeZone:'Europe/Chisinau'});
     assert.equal((await call('/state')).activities.length,beforeParse);
-    await call('/transcribe',{audio:'AAAA',language:'fr'},400);
     const anna=await call('/people',{name:'Анна'},201),boris=await call('/people',{name:'Борис'},201);
     const knownAge=await call('/people/'+anna.id,{name:anna.name,displayName:'Имя на доске · тест',ageYears:4,ageAsOf:'2026-11-08',version:anna.version},200,'PUT');assert.equal(knownAge.ageYears,4);assert.equal(knownAge.birthday,'');assert.equal(knownAge.displayName,'Имя на доске · тест');
     const home=await call('/documents',{personId:anna.id,name:'Синтетическая доска',text:'12:00 тестовый препарат 5 мл. План или факт не указан.',sourceKind:'household'},201);assert.deepEqual(home.suggestions,[]);

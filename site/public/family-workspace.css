@@ -5,8 +5,6 @@
 .family-app .care-board{padding-bottom:160px}
 .family-app .family-preview-footer{position:fixed;bottom:0;left:0;right:0;z-index:5;max-width:1280px;margin:auto;background:#f4f7fc;border-top:1px solid #dce4ee;display:grid;grid-template-columns:minmax(0,1fr) 96px;gap:8px;padding:12px 14px max(12px,env(safe-area-inset-bottom))}
 .family-preview-footer button,.family-preview-footer select{min-height:3.5rem;min-width:3.5rem;padding:8px;border:1px solid #cbd5e3;border-radius:9px;background:white;color:#315ac1;font:1.125rem Golos,system-ui,sans-serif}
-.family-preview-footer .voice{border:0;background:#315ac1;color:white;font-weight:600}
-.family-preview-footer p{grid-column:1/-1;font-size:1rem;color:#526176;margin:0}
 .family-tools{display:grid;gap:12px;margin-top:16px}
 .family-tools a,.family-tools button{display:flex;align-items:center;min-height:3.5rem;border:1px solid #cbd5e3;background:white;border-radius:9px;padding:8px 12px;font:1.125rem Golos,system-ui,sans-serif;color:#315ac1;text-decoration:none}
 .family-photos{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px}
@@ -63,12 +61,6 @@
 #treatment-preview ul{padding-left:20px;font-size:1.125rem;line-height:1.6}
 #family-info .family-setting-note{font-size:1rem;color:#46566b;margin-top:12px}
 
-.family-preview-footer .family-voice-queue{grid-column:2;grid-row:2;font-size:1rem;padding:6px}
-.family-preview-footer .family-voice-queue[hidden]{display:none}
-.family-preview-footer:has(.family-voice-queue:not([hidden])) p{grid-column:1;grid-row:2;align-self:center}
-#family-info .family-voice-jobs>section{padding:16px 0;border-top:1px solid #dce4ee}
-#family-info .family-voice-jobs h3{font-size:1.125rem;margin:0 0 8px}
-#family-info .family-voice-jobs p{font-size:1.125rem;white-space:pre-wrap;overflow-wrap:anywhere}
 .family-slot-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:8px 0}
 .family-slot-heading h3{margin:0}.family-slot-heading button{width:3.5rem;min-width:3.5rem;height:3.5rem;border:1px solid #cbd5e3;border-radius:8px;background:white;color:#315ac1;font:22px Golos,system-ui,sans-serif;touch-action:manipulation}
 .family-add-medicine{display:block;width:100%;min-height:3.5rem;margin:12px 0;border:1px solid #cbd5e3;border-radius:8px;background:white;color:#315ac1;font:1.125rem Golos,system-ui,sans-serif}
@@ -184,8 +176,6 @@
 .family-app .family-event-open>span{grid-column:2;grid-row:1}
 .family-app .family-event-open>strong{grid-column:2;grid-row:2;font-size:1.125rem;line-height:1.5}
 .family-app .family-preview-footer{display:flex;flex-wrap:wrap;gap:12px}
-.family-app .family-preview-footer>button{flex:1 1 10rem;min-height:4rem;font-size:1.125rem;line-height:1.4;padding:12px}
-.family-app .family-preview-footer>p{flex-basis:100%;font-size:1rem;line-height:1.5}
 .family-app .family-supply :is(p,strong,h3){font-size:1.125rem;line-height:1.6}
 .family-app :focus-visible{outline:3px solid #2059cc;outline-offset:4px}
 .family-app #family-status{font-size:1.125rem;line-height:1.5}
@@ -398,7 +388,6 @@
   width: 24px;
   height: 24px;
 }
-.family-app .family-preview-footer p { color: var(--course-text); }
 
 .family-app #family-info {
   background: var(--group);
@@ -407,7 +396,7 @@
 }
 .family-app #family-info>header { background: var(--group); }
 .family-app #family-info :is(dt,legend,.family-setting-note,.medicine-source p,.medicine-reference summary,.medicine-reference p,.family-photos figcaption) { color: var(--course-text); }
-.family-app :is(.family-title>button,.family-tools a,.family-tools button,.family-tabs+button,.family-voice-queue,.family-add-medicine,.sandbox-empty-event,.sandbox-outside,.sandbox-row-actions button,.sandbox-history-head button,.family-slot-heading button,.family-timers button,.family-refresh-warning button),
+.family-app :is(.family-title>button,.family-tools a,.family-tools button,.family-add-medicine,.sandbox-empty-event,.sandbox-outside,.sandbox-row-actions button,.sandbox-history-head button,.family-slot-heading button,.family-timers button,.family-refresh-warning button),
 .family-app #family-info :is(input,select,textarea,button) {
   background: var(--group);
   color: var(--ink);

@@ -1,64 +1,75 @@
 import assert from 'node:assert/strict';
-import {mkdtemp,rm,writeFile} from 'node:fs/promises';
+import {mkdtemp,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {createApp} from '../server.mjs';
-import {parseEntry} from '../lib/entry-parser.mjs';
+
 const {chromium}=await import(process.env.PLAYWRIGHT_MODULE||'playwright');
-const dir=await mkdtemp(join(tmpdir(),'medika-voice-queue-')),port=14414,origin=`http://127.0.0.1:${port}`,checks=[],errors=[];let app,browser,token,parserCalls=0;
-const wait=ms=>new Promise(r=>setTimeout(r,ms));
-const gate=()=>{let release;const promise=new Promise(r=>release=r);return {promise,release};};
-async function api(path,body){const response=await fetch(origin+'/api'+path,{method:body?'POST':'GET',headers:{'X-Medika-Token':token,...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{})});const value=await response.json();assert(response.ok,JSON.stringify(value));return value;}
+const dataDir=await mkdtemp(join(tmpdir(),'medika-retired-voice-'));
+const port=14414,origin=`http://127.0.0.1:${port}`;
+const app=await createApp({dataDir,port});
+let browser;
 try{
- app=await createApp({dataDir:dir,port,entryParser:(state,input)=>{parserCalls++;return parseEntry(state,input);}});await new Promise(r=>app.server.listen(port,'127.0.0.1',r));token=(await(await fetch(origin+'/api/session')).json()).token;
- const alice=await api('/people',{name:'Алиса'}),danya=await api('/people',{name:'Даня'});
- browser=await chromium.launch({headless:true,args:['--use-fake-ui-for-media-stream','--use-fake-device-for-media-stream']});
- const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,permissions:['microphone']});const page=await context.newPage();page.setDefaultTimeout(15000);page.on('pageerror',error=>errors.push(error.message));
- await page.route('**/api/family',async route=>{const response=await route.fetch(),data=await response.json();data.capabilities.voice.ready=true;await route.fulfill({json:data});});
- let speechCalls=0,active=0,maxActive=0,firstGate=gate(),nextGate=null,mode='normal';
- const spoken=['Даня температура 37,7 две минуты назад','температура 37,2','Алиса температура 36,8 сейчас'];
- await page.route('**/api/transcribe',async route=>{speechCalls++;active++;maxActive=Math.max(maxActive,active);const n=speechCalls,holding=n===1?firstGate:nextGate;nextGate=null;
-  try{if(holding)await holding.promise;if(mode==='limit'){await route.fulfill({status:429,json:{error:'Тестовый лимит распознавания'}});return;}await route.fulfill({json:{text:spoken[n-1]||'Даня температура 38,3 две минуты назад'}});}catch{}finally{active--;}});
- const jobs=()=>page.evaluate(()=>new Promise((resolve,reject)=>{const request=indexedDB.open('medika-voice-queue',1);request.onsuccess=()=>{const db=request.result,r=db.transaction('jobs').objectStore('jobs').getAll();r.onsuccess=()=>{resolve(r.result.map(j=>({...j,audio:j.audio?{size:j.audio.size}:null})));db.close();};r.onerror=()=>reject(r.error);};request.onerror=()=>reject(request.error);}));
- async function until(check){const start=Date.now();while(Date.now()-start<15000){if(await check())return;await wait(50);}throw Error('Timed out waiting for voice queue condition');}
- const voice=()=>page.locator('[data-voice]');
- // The schedule no longer offers new recordings. Trigger the capture handler for legacy queue coverage.
- async function dictate(edge='center'){
-  await until(()=>voice().isEnabled());
-  assert.equal(await voice().isVisible(),false);
-  await voice().evaluate(button=>button.click());
-  await voice().waitFor({state:'visible'});
-  const rect=await voice().boundingBox();
-  assert.ok(rect.width>=48&&rect.height>=48);
-  await wait(150);
-  await page.touchscreen.tap(edge==='left'?rect.x+1:edge==='right'?rect.x+rect.width-1:rect.x+rect.width/2,rect.y+rect.height/2);
-  await voice().waitFor({state:'hidden'});
-  await until(()=>voice().isEnabled());
- }
- async function openQueue(){await page.locator('[data-voice-queue]').tap();await page.locator('.family-voice-jobs').waitFor();}
- const close=()=>page.getByRole('button',{name:'Закрыть',exact:true}).tap();
- await page.goto(origin+'/');await page.locator('.family-preview-footer').waitFor();await dictate();await until(()=>speechCalls===1);await dictate();await dictate();const initial=await jobs();assert.equal(initial.length,3);assert.equal(initial.filter(j=>j.state==='queued').length,2);assert.equal(speechCalls,1);assert(await voice().isEnabled());assert.equal(await page.locator('#family-info').evaluate(n=>n.open),false);
- await page.locator('.family-preview-footer [data-add-event]').tap();await page.locator('#event-form [name=person]').selectOption(danya.id);await page.locator('#event-form [name=kind]').selectOption('retching');await page.getByRole('button',{name:'Записать',exact:true}).tap();await until(()=>page.locator('#family-status [data-undo]').isVisible());assert.equal(speechCalls,1);assert(await voice().isEnabled());const separation=await page.evaluate(()=>document.querySelector('.family-preview-footer').getBoundingClientRect().top-document.querySelector('#family-status').getBoundingClientRect().bottom);assert(separation>=7.9);checks.push('Manual event entry remains usable during held ASR; confirmation/undo stays above the composer with at least 8 px separation');
- checks.push('Three actual browser microphone captures accepted while first ASR request is held; one processor; stable per-recording timestamp and key');
- if(process.env.VOICE_QUEUE_CANARY_ONLY!=='1'){const other=await context.newPage();let otherPosts=0;await other.route('**/api/**',async route=>{if(route.request().method()==='POST'){otherPosts++;await route.abort();}else await route.continue();});await other.goto(origin+'/');await other.locator('.family-preview-footer').waitFor();await wait(2300);assert.equal(otherPosts,0);assert.equal((await jobs()).filter(j=>j.state==='processing').length,1);await other.close();checks.push('A second same-origin tab cannot start another worker or interrupt the active one');}
- await page.evaluate(()=>{window.voiceSuccessPopups=[];new MutationObserver(()=>{const text=document.querySelector('#family-status').textContent;if(text.includes('Событие записано'))window.voiceSuccessPopups.push(text);}).observe(document.querySelector('#family-status'),{childList:true,subtree:true,characterData:true});});
- firstGate.release();await until(async()=>{const j=await jobs();return j.length===1&&j[0].state==='review';});assert.equal(maxActive,1);assert.deepEqual(await page.evaluate(()=>window.voiceSuccessPopups),[]);checks.push('Successful recognition updates history without creating a success popup or undo banner');const facts=(await api('/state')).activities;assert.equal(facts.find(r=>r.personId===danya.id&&r.kind==='temperature').occurredAt,new Date(Date.parse(initial[0].recordedAt)-120000).toISOString());assert.equal(facts.find(r=>r.personId===alice.id).occurredAt,initial[2].recordedAt);assert.equal(await page.locator('#family-info').evaluate(n=>n.open),false);checks.push('FIFO facts retain capture time, not completion time; ambiguous job stays reviewable without opening a modal or blocking later jobs; audio removed after ASR');
- await openQueue();await page.getByRole('button',{name:'Уточнить',exact:true}).tap();await page.getByRole('button',{name:'Исправить вручную',exact:true}).tap();await page.locator('#event-form [name=person]').selectOption(alice.id);await page.getByRole('button',{name:'Записать',exact:true}).tap();await until(async()=>(await jobs()).length===0);checks.push('Explicit manual clarification writes once and removes its queued draft only on success');
- if(process.env.VOICE_QUEUE_CANARY_ONLY!=='1'){
-  const geometryGate=gate();nextGate=geometryGate;await dictate();await until(async()=>(await jobs()).some(j=>j.state==='processing'));
-  for(const [width,height]of [[320,844],[390,844],[768,1024],[1024,768]]){await page.setViewportSize({width,height});const geometry=await page.locator('.family-preview-footer').evaluate(n=>{const rs=[...n.querySelectorAll('a,button')].filter(x=>!x.hidden).map(x=>x.getBoundingClientRect());let gap=Infinity;for(let i=0;i<rs.length;i++)for(let j=i+1;j<rs.length;j++){const a=rs[i],b=rs[j];gap=Math.min(gap,Math.hypot(Math.max(0,a.x-b.right,b.x-a.right),Math.max(0,a.y-b.bottom,b.y-a.bottom)));}return {width:Math.min(...rs.map(r=>r.width)),height:Math.min(...rs.map(r=>r.height)),gap,overflow:document.documentElement.scrollWidth>innerWidth};});assert(geometry.width>=48&&geometry.height>=48&&geometry.gap>=8&&!geometry.overflow,JSON.stringify(geometry));await openQueue();const modal=await page.locator('#family-info').evaluate(n=>({overflow:n.scrollWidth>n.clientWidth}));assert(!modal.overflow);await close();await dictate('left');await dictate('right');await page.screenshot({path:`reports/voice-queue-synthetic-${width}.png`});checks.push({width,height,geometry,sendCenterAndEdges:true});}
- geometryGate.release();await until(async()=>(await jobs()).length===0);
- }
- // Simulate navigation while ASR is in flight; queued audio must survive, interrupted work requires explicit continuation.
- const held=gate();nextGate=held;await dictate();await until(async()=>(await jobs()).some(j=>j.state==='processing'));await dictate();const interrupted=await jobs();await page.reload();held.release();await page.locator('.family-preview-footer').waitFor();await until(async()=>(await jobs()).some(j=>j.state==='interrupted'));const callsBefore=speechCalls;await wait(2300);assert.equal(speechCalls,callsBefore);assert((await jobs()).every(j=>j.audio?.size>0));await openQueue();await page.getByRole('button',{name:'Продолжить',exact:true}).tap();await until(async()=>(await jobs()).length===0);const resumed=(await api('/state')).activities.find(r=>r.clientKey===interrupted[0].id);assert.equal(resumed.occurredAt,new Date(Date.parse(interrupted[0].recordedAt)-120000).toISOString());checks.push('Reload preserves queued blobs, keys and timestamps; interrupted work does not auto-repeat, explicit resume drains the queue');
- // The server commits, but its response is lost. Retry must reuse the transcript and clientKey.
- let lose=true,semanticGate=null;await page.route('**/api/record-entry',async route=>{if(semanticGate){const hold=semanticGate;semanticGate=null;await hold.promise;}if(lose){lose=false;await route.fetch();await route.abort();}else await route.continue();});await dictate();await until(async()=>(await jobs()).some(j=>j.state==='failed'));const failed=(await jobs())[0],beforeRetry=(await api('/state')).activities.length,asrBefore=speechCalls,parsesBefore=parserCalls;assert(failed.text&&!failed.audio);await openQueue();await page.getByRole('button',{name:'Повторить сохранение',exact:true}).tap();await until(async()=>(await jobs()).length===0);assert.equal((await api('/state')).activities.length,beforeRetry);assert.equal(speechCalls,asrBefore);assert.equal(parserCalls,parsesBefore);checks.push('Lost post-commit response pauses queue; explicit retry reuses saved transcript and idempotency key, without new ASR/model work or duplicate fact');
- const parseGate=gate();semanticGate=parseGate;await dictate();await until(async()=>{const j=await jobs();return j.length===1&&j[0].text&&j[0].state==='processing';});const whileParsing=speechCalls;await dictate();assert.equal(speechCalls,whileParsing);assert.equal((await jobs()).filter(j=>j.state==='queued').length,1);parseGate.release();await until(async()=>(await jobs()).length===0);checks.push('A new capture is also accepted during semantic parsing/saving, without launching the next ASR early');
- mode='limit';await dictate();await until(async()=>(await jobs()).some(j=>j.state==='failed'));await dictate();const atLimit=speechCalls;await wait(2300);assert.equal(speechCalls,atLimit);const paused=await jobs();assert.equal(paused[0].audio,null);assert(paused[1].audio.size>0);mode='normal';await page.evaluate(()=>{window.originalQueueMic=navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);navigator.mediaDevices.getUserMedia=async()=>{throw new DOMException('Test permission denial','NotAllowedError');};});await openQueue();await page.getByRole('button',{name:'Повторить голосом',exact:true}).tap();await until(async()=>(await page.locator('#family-status').innerText()).includes('Разрешите'));assert.equal((await jobs()).length,2);await page.evaluate(()=>navigator.mediaDevices.getUserMedia=window.originalQueueMic);await dictate();assert((await jobs()).some(j=>j.id===paused[0].id));checks.push('A denied redo keeps the old job; an unrelated subsequent recording cannot silently replace it');await openQueue();await page.locator('[data-voice-remove="'+paused[0].sequence+'"]').tap();await close();await until(async()=>(await jobs()).length===0);checks.push('429 stops processing without automatic retries; later captures remain accepted and durable; failed audio removed; explicit dismissal resumes pending work');
- if(process.env.VOICE_QUEUE_CANARY_ONLY!=='1'){
-  const isolated=await browser.newContext(),boundary=await isolated.newPage();await boundary.route(origin+'/queue-spec',route=>route.fulfill({contentType:'text/html',body:'<!doctype html><title>Queue bounds</title>'}));await boundary.goto(origin+'/queue-spec');
-  const bounds=await boundary.evaluate(async()=>{const {createVoiceQueue}=await import('/voice-queue.js');let calls=0,failed;const failure=new Promise(resolve=>failed=resolve);const q=await createVoiceQueue({onChange:jobs=>{if(jobs?.some(j=>j.state==='failed'))failed();},api:async()=>{calls++;throw Error('Тестовая остановка');}}),meta={id:'boundary-000001',recordedAt:new Date().toISOString(),language:'ru',timeZone:'Europe/Chisinau'};const rejects=[];for(const [file,changes]of [[new Blob([]),{}],[new Blob([new Uint8Array(8*1024*1024+1)]),{}],[new Blob(['ok']),{language:'de'}],[new Blob(['ok']),{recordedAt:'invalid'}]]){try{await q.add(file,{...meta,...changes});}catch{rejects.push(true);}}
-   await q.add(new Blob(['first']),meta);await failure;for(let i=1;i<10;i++)await q.add(i===1?new Blob([new Uint8Array(8*1024*1024)]):new Blob(['next']),{...meta,id:'boundary-'+i});let full=false;try{await q.add(new Blob(['extra']),{...meta,id:'boundary-extra'});}catch{full=true;}q.close();return {rejected:rejects.length,full,calls};});assert.deepEqual(bounds,{rejected:4,full:true,calls:1});await isolated.close();checks.push('Durable queue bounds: ten jobs, 8 MiB exact/over boundary, empty audio, RU/EN only, invalid time; stopped work is never retried automatically');
- }
- assert.deepEqual(errors,[]);await writeFile('reports/voice-queue-canary.json',JSON.stringify({status:'PASS',syntheticOnly:true,microphone:'Chromium fake device; real capture/encoding',recognitionStubbed:true,physicalDeviceTested:false,checks},null,2));console.log('PASS nonblocking durable voice queue');
-}catch(error){await writeFile('reports/voice-queue-canary.json',JSON.stringify({status:'FAIL',syntheticOnly:true,error:error.message,checks},null,2));throw error;}finally{await browser?.close();await app?.close();await rm(dir,{recursive:true,force:true});}
+  await new Promise(resolve=>app.server.listen(port,'127.0.0.1',resolve));
+  const {token}=await fetch(origin+'/api/session').then(response=>response.json());
+  async function api(path,body){
+    const response=await fetch(origin+'/api'+path,{method:body?'POST':'GET',headers:{'X-Medika-Token':token,...(body?{'Content-Type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});
+    const data=await response.json();
+    assert.ok(response.ok,JSON.stringify(data));
+    return data;
+  }
+  const person=await api('/people',{name:'Тест'});
+  await api('/activities',{personId:person.id,kind:'temperature',celsius:'37.2',occurredAt:new Date().toISOString(),timeZone:'Europe/Chisinau',clientKey:'saved-before-retirement'});
+  const before=(await api('/state')).activities;
+  browser=await chromium.launch();
+  const context=await browser.newContext({viewport:{width:390,height:844}});
+  const oldTab=await context.newPage();
+  await oldTab.route(origin+'/old-tab',route=>route.fulfill({contentType:'text/html',body:'<title>Voice migration fixture</title>'}));
+  await oldTab.goto(origin+'/old-tab');
+  await oldTab.evaluate(async()=>{
+    const seed=(name,rows)=>new Promise((resolve,reject)=>{
+      const request=indexedDB.open(name,1);
+      request.onerror=()=>reject(request.error);
+      request.onupgradeneeded=()=>{
+        const store=request.result.createObjectStore('jobs',{keyPath:'sequence',autoIncrement:true});
+        rows.forEach(row=>store.add(row));
+      };
+      request.onsuccess=()=>resolve(request.result);
+    });
+    window.oldVoiceConnection=await seed('medika-voice-queue',[
+      {id:'test-audio',state:'queued',audio:new Blob(['synthetic audio'])},
+      {id:'test-transcript',state:'review',text:'synthetic transcript'},
+    ]);
+    (await seed('unrelated-fixture',[{text:'preserve me'}])).close();
+  });
+
+  const page=await context.newPage(),unexpected=[];
+  context.on('request',request=>{
+    if(/\/api\/(transcribe|record-entry)$/.test(request.url()))unexpected.push(request.url());
+  });
+  await page.goto(origin+'/family');
+  await page.locator('.family-preview-footer').waitFor();
+  assert.equal(await page.locator('[data-voice],[data-voice-queue]').count(),0);
+  await page.getByRole('button',{name:'Ещё',exact:true}).click();
+  assert.equal(await page.getByRole('button',{name:'Голосовой ввод',exact:true}).count(),0);
+  await page.getByRole('button',{name:'Закрыть',exact:true}).click();
+  await page.getByRole('button',{name:'Вручную',exact:true}).click();
+  await page.locator('#event-form').waitFor();
+  await oldTab.close();
+  await page.waitForFunction(async()=>!(await indexedDB.databases()).some(db=>db.name==='medika-voice-queue'));
+  assert.ok(await page.evaluate(async()=>(await indexedDB.databases()).some(db=>db.name==='unrelated-fixture')));
+  await page.goto(origin+'/manage');
+  await page.locator('.patient-app').waitFor();
+  assert.equal(await page.locator('[data-act=voice],#language').count(),0);
+  const textButton=page.getByRole('button',{name:'Текстом',exact:true});
+  assert.ok(await textButton.isVisible());
+  const target=await textButton.boundingBox();
+  assert.ok(target.width>=48&&target.height>=48);
+  assert.deepEqual(unexpected,[]);
+  assert.deepEqual((await api('/state')).activities,before);
+  console.log('PASS old voice drafts deleted after the old tab closes, zero processing requests, unrelated storage and journal preserved');
+}finally{
+  await browser?.close();
+  await app.close();
+  await rm(dataDir,{recursive:true,force:true});
+}
