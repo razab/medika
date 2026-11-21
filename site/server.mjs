@@ -32,6 +32,8 @@ const accountPages=new Map([['/login','account.html'],['/register','register.htm
 const accountAssets=new Map([['/account.js','text/javascript'],['/account.css','text/css'],['/icon.svg','image/svg+xml'],['/google-logo.png','image/png']]);
 // Public design shells and synthetic specimens; copied medical data stays behind the API.
 const designStudyAssets=Object.fromEntries([
+  ['/family-appearance.js',['family-appearance.js','text/javascript']],
+  ['/family-appearance.css',['family-appearance.css','text/css']],
   ['/design-study/round-10',['design-study/round-10/index.html','text/html']],
   ['/design-study/round-10/',['design-study/round-10/index.html','text/html']],
   ['/design-study/round-10/study.css',['design-study/round-10/study.css','text/css']],

@@ -22,7 +22,19 @@ try{
  const jobs=()=>page.evaluate(()=>new Promise((resolve,reject)=>{const request=indexedDB.open('medika-voice-queue',1);request.onsuccess=()=>{const db=request.result,r=db.transaction('jobs').objectStore('jobs').getAll();r.onsuccess=()=>{resolve(r.result.map(j=>({...j,audio:j.audio?{size:j.audio.size}:null})));db.close();};r.onerror=()=>reject(r.error);};request.onerror=()=>reject(request.error);}));
  async function until(check){const start=Date.now();while(Date.now()-start<15000){if(await check())return;await wait(50);}throw Error('Timed out waiting for voice queue condition');}
  const voice=()=>page.locator('[data-voice]');
- async function dictate(edge='center'){await voice().waitFor({state:'visible'});await until(()=>voice().isEnabled());const tap=async()=>{const r=await voice().boundingBox();await page.touchscreen.tap(edge==='left'?r.x+1:edge==='right'?r.x+r.width-1:r.x+r.width/2,r.y+r.height/2);};await tap();await until(async()=>(await voice().innerText()).includes('Отправить'));await wait(150);await tap();await until(async()=>(await voice().innerText()).includes('Событие голосом')&&await voice().isEnabled());}
+ // The schedule no longer offers new recordings. Trigger the capture handler for legacy queue coverage.
+ async function dictate(edge='center'){
+  await until(()=>voice().isEnabled());
+  assert.equal(await voice().isVisible(),false);
+  await voice().evaluate(button=>button.click());
+  await voice().waitFor({state:'visible'});
+  const rect=await voice().boundingBox();
+  assert.ok(rect.width>=48&&rect.height>=48);
+  await wait(150);
+  await page.touchscreen.tap(edge==='left'?rect.x+1:edge==='right'?rect.x+rect.width-1:rect.x+rect.width/2,rect.y+rect.height/2);
+  await voice().waitFor({state:'hidden'});
+  await until(()=>voice().isEnabled());
+ }
  async function openQueue(){await page.locator('[data-voice-queue]').tap();await page.locator('.family-voice-jobs').waitFor();}
  const close=()=>page.getByRole('button',{name:'Закрыть',exact:true}).tap();
  await page.goto(origin+'/');await page.locator('.family-preview-footer').waitFor();await dictate();await until(()=>speechCalls===1);await dictate();await dictate();const initial=await jobs();assert.equal(initial.length,3);assert.equal(initial.filter(j=>j.state==='queued').length,2);assert.equal(speechCalls,1);assert(await voice().isEnabled());assert.equal(await page.locator('#family-info').evaluate(n=>n.open),false);
@@ -34,7 +46,7 @@ try{
  await openQueue();await page.getByRole('button',{name:'Уточнить',exact:true}).tap();await page.getByRole('button',{name:'Исправить вручную',exact:true}).tap();await page.locator('#event-form [name=person]').selectOption(alice.id);await page.getByRole('button',{name:'Записать',exact:true}).tap();await until(async()=>(await jobs()).length===0);checks.push('Explicit manual clarification writes once and removes its queued draft only on success');
  if(process.env.VOICE_QUEUE_CANARY_ONLY!=='1'){
   const geometryGate=gate();nextGate=geometryGate;await dictate();await until(async()=>(await jobs()).some(j=>j.state==='processing'));
-  for(const [width,height]of [[320,844],[390,844],[768,1024],[1024,768]]){await page.setViewportSize({width,height});const rect=await voice().boundingBox();assert(rect.width>=48&&rect.height>=48);const geometry=await page.locator('.family-preview-footer').evaluate(n=>{const rs=[...n.querySelectorAll('button')].filter(x=>!x.hidden).map(x=>x.getBoundingClientRect());let gap=Infinity;for(let i=0;i<rs.length;i++)for(let j=i+1;j<rs.length;j++){const a=rs[i],b=rs[j];gap=Math.min(gap,Math.hypot(Math.max(0,a.x-b.right,b.x-a.right),Math.max(0,a.y-b.bottom,b.y-a.bottom)));}return {width:Math.min(...rs.map(r=>r.width)),height:Math.min(...rs.map(r=>r.height)),gap,overflow:document.documentElement.scrollWidth>innerWidth};});assert(geometry.width>=48&&geometry.height>=48&&geometry.gap>=8&&!geometry.overflow,JSON.stringify(geometry));await openQueue();const modal=await page.locator('#family-info').evaluate(n=>({overflow:n.scrollWidth>n.clientWidth}));assert(!modal.overflow);await close();await dictate('left');await dictate('right');await page.screenshot({path:`reports/voice-queue-synthetic-${width}.png`});checks.push({width,height,geometry,voiceCenterAndEdges:true});}
+  for(const [width,height]of [[320,844],[390,844],[768,1024],[1024,768]]){await page.setViewportSize({width,height});const geometry=await page.locator('.family-preview-footer').evaluate(n=>{const rs=[...n.querySelectorAll('a,button')].filter(x=>!x.hidden).map(x=>x.getBoundingClientRect());let gap=Infinity;for(let i=0;i<rs.length;i++)for(let j=i+1;j<rs.length;j++){const a=rs[i],b=rs[j];gap=Math.min(gap,Math.hypot(Math.max(0,a.x-b.right,b.x-a.right),Math.max(0,a.y-b.bottom,b.y-a.bottom)));}return {width:Math.min(...rs.map(r=>r.width)),height:Math.min(...rs.map(r=>r.height)),gap,overflow:document.documentElement.scrollWidth>innerWidth};});assert(geometry.width>=48&&geometry.height>=48&&geometry.gap>=8&&!geometry.overflow,JSON.stringify(geometry));await openQueue();const modal=await page.locator('#family-info').evaluate(n=>({overflow:n.scrollWidth>n.clientWidth}));assert(!modal.overflow);await close();await dictate('left');await dictate('right');await page.screenshot({path:`reports/voice-queue-synthetic-${width}.png`});checks.push({width,height,geometry,sendCenterAndEdges:true});}
  geometryGate.release();await until(async()=>(await jobs()).length===0);
  }
  // Simulate navigation while ASR is in flight; queued audio must survive, interrupted work requires explicit continuation.

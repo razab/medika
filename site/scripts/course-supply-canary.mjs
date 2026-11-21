@@ -39,8 +39,7 @@ try{
   const settled=()=>page.waitForFunction(()=>document.querySelector('#family')?.getAttribute('aria-busy')==='false');
   const close=()=>page.getByRole('button',{name:'Закрыть',exact:true}).tap();
   await page.goto(origin+'/family');
-  await page.locator('.family-frequency').first().waitFor();
-  assert.match(await page.locator('.family-frequency').first().innerText(),/2 раза в день/);
+  await page.locator('.family-intake-progress').first().waitFor();
   assert.equal(await page.locator('.family-intake-progress').first().getAttribute('aria-label'),'Принято 0 из 2 за день расписания');
   await page.locator('.family-supply>summary').tap();
   assert.match(await page.locator('.family-supply').innerText(),/Всего нужно 9 табл/);
@@ -70,7 +69,7 @@ try{
   await page.getByRole('button',{name:'Сохранить',exact:true}).tap();
   await settled();
   await page.locator('#family-info').waitFor({state:'hidden'});
-  assert.match(await item.locator('.family-frequency').innerText(),/3 раза/);
+  assert.match(await item.locator('.family-intake-progress').getAttribute('aria-label'),/1 из 3/);
   assert.equal((await api('/state')).events[0].id,restoredFact.id);
   assert.equal(await item.locator('.family-intake-dot').count(),3);
   assert.equal(await item.locator('.family-intake-dot.is-taken').count(),1);
@@ -85,7 +84,7 @@ try{
   await page.locator('#family-info').waitFor({state:'hidden'});
   assert.equal((await api('/family')).courseSupply[0].total,8.5);
   await page.reload();
-  await page.locator('.family-frequency').first().waitFor();
+  await page.locator('.family-intake-progress').first().waitFor();
   assert.match(await timer.innerText(),/Интервал 6 ч/);
 
   await page.getByRole('button',{name:'Ещё',exact:true}).tap();
@@ -109,7 +108,7 @@ try{
   for(const [width,height] of [[320,844],[844,390],[768,1024],[1024,768]]){
     await page.setViewportSize({width,height});
     await page.reload();
-    await page.locator('.family-frequency').first().waitFor();
+    await page.locator('.family-intake-progress').first().waitFor();
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
     const summary=page.locator('.family-supply>summary');
     for(const edge of ['left','center','right']){
@@ -145,7 +144,7 @@ try{
   }
   await page.setViewportSize({width:1024,height:900});
   await page.reload();
-  await page.locator('.family-frequency').first().waitFor();
+  await page.locator('.family-intake-progress').first().waitFor();
   await page.locator('.family-supply>summary').tap();
   await page.locator('.family-supply').scrollIntoViewIfNeeded();
   await page.waitForTimeout(400);

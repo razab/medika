@@ -21,47 +21,6 @@ h1, h2, h3, h4, h5, p { margin: 0; }
 .previews { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
 .preview { min-width: 0; scroll-margin-top: 12px; }
 .preview > h2 { margin: 0 0 10px 2px; font-size: 1.15rem; }
-.sand {
-  --bg: #f4eade;
-  --group: #fffaf4;
-  --meal: #e9d9c4;
-  --rule: #d5c1ad;
-  --ink: #332218;
-  --muted: #674e3d;
-  --accent: #69492f;
-  --on-accent: #fffaf2;
-  --tint: #dcc2a5;
-  --tab: #fbf3e8;
-}
-.espresso {
-  color-scheme: dark;
-  --bg: #211814;
-  --group: #2f231d;
-  --meal: #443124;
-  --rule: #614837;
-  --ink: #fff1e3;
-  --muted: #d5baaa;
-  --accent: #ecc396;
-  --on-accent: #2c1d13;
-  --icon-ink: #ebd0b7;
-  --tint: #a37550;
-  --tab: #291f1a;
-}
-.stone {
-  color-scheme: dark;
-  --bg: #242321;
-  --group: #302e2b;
-  --meal: #3e3a35;
-  --rule: #5d5650;
-  --ink: #f6f0e9;
-  --muted: #cec3b7;
-  --accent: #cdc6ae;
-  --on-accent: #24211b;
-  --icon-ink: #e2d7c6;
-  --tint: #878071;
-  --tab: #2b2926;
-}
-.espresso, .stone { --icon-weight: 2.6; }
 .screen {
   background: var(--bg); color: var(--ink); overflow: hidden;
   box-shadow: 0 12px 28px #34261915; border-radius: 19px;
@@ -93,12 +52,11 @@ h1, h2, h3, h4, h5, p { margin: 0; }
 }
 .medicine + .medicine { border-top: 1px solid var(--rule); }
 .form-icon { color: var(--accent); }
-.glyph { display: block; width: 100%; height: auto; }
-.form-icon .glyph, .app-tabs .glyph {
+.family-glyph { display: block; width: 100%; height: auto; }
+.form-icon .family-glyph, .app-tabs .family-glyph {
   color: var(--icon-ink, currentColor);
   stroke-width: var(--icon-weight, 2.1);
 }
-.tint { fill: var(--tint); }
 .medicine-copy { min-width: 0; }
 .medicine-copy strong { display: block; font-size: 1rem; line-height: 1.2; overflow-wrap: anywhere; }
 .course { display: block; margin-top: 3px; color: var(--muted); font-size: .875rem; line-height: 1.22; }
@@ -112,14 +70,14 @@ h1, h2, h3, h4, h5, p { margin: 0; }
   border: 1.75px solid var(--accent); border-radius: 50%; color: var(--accent);
 }
 .mark.marked { background: var(--accent); color: var(--on-accent); }
-.mark .glyph { width: 28px; stroke-width: 3.5; }
+.mark .family-glyph { width: 28px; stroke-width: 3.5; }
 .app-tabs {
   display: flex; justify-content: space-around; min-height: 64px;
   padding: 7px 8px; border-top: 1px solid var(--rule); background: var(--tab); color: var(--muted);
 }
 .app-tabs li { display: grid; align-content: center; justify-items: center; gap: 2px; font-size: .83rem; }
 .app-tabs li[aria-current] { color: var(--ink); font-weight: 700; }
-.app-tabs .glyph { width: 24px; }
+.app-tabs .family-glyph { width: 24px; }
 @media (max-width: 1139px) {
   .gallery { max-width: 550px; }
   .previews { grid-template-columns: 1fr; gap: 32px; }

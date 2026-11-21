@@ -37,26 +37,10 @@ try{
   const errors=[];
   page.on('pageerror',error=>errors.push(error.message));
   const settled=()=>page.waitForFunction(()=>document.querySelector('#family')?.getAttribute('aria-busy')==='false');
-  const item=page.locator(`[data-demo-row="${row.key}"]`);
-  for(const [width,height] of [[320,844],[390,844],[844,390],[768,1024],[1024,768]]){
-    await page.setViewportSize({width,height});
-    await page.goto(origin+'/family');
-    await page.locator('.family-intake-progress').first().waitFor();
-    await settled();
-    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
-    assert.equal(await page.locator('.sandbox-jump').isVisible(),width<1000);
-    const typography=await page.evaluate(()=>Object.fromEntries([
-      ['.care-med-name',22],['.care-dose',22],['.care-person-head h2',24],['.family-medicine-group',16],
-      ['.family-phase-status',16],['.family-intake-timer',18],['.family-progress-count',16],['.family-preview-footer button',18]
-    ].map(([selector,minimum])=>[selector,{actual:parseFloat(getComputedStyle(document.querySelector(selector)).fontSize),minimum}])));
-    for(const [selector,value] of Object.entries(typography))assert.ok(value.actual>=value.minimum,JSON.stringify({width,selector,...value}));
-    assert.equal(await page.locator('#family-timers [data-timer-state]').count(),1);
-    assert.match(await page.locator('#family-timers').innerText(),/Интервал 15–30 мин|До второго препарата/);
-    if(!checks.length)assert.equal(await page.locator('#family-timers [data-timer-state=ready]').count(),1);
-    const contrast=await page.evaluate(()=>{
+  const measureContrast=()=>page.evaluate(()=>{
       const luminance=rgb=>rgb.slice(0,3).map(channel=>{const value=channel/255;return value<=.04045?value/12.92:((value+.055)/1.055)**2.4;}).reduce((sum,value,index)=>sum+value*[.2126,.7152,.0722][index],0);
       const rgb=color=>color.match(/[\d.]+/g).map(Number);
-      return ['.care-med-name','.family-medicine-group','.family-intake-timer','.family-phase-status','.family-progress-count','.family-preview-footer p'].map(selector=>{
+      return ['.care-med-name','.family-medicine-group','.family-intake-timer','.family-phase-status','.family-course','.family-tabs button','#family-timers [data-timer-state]'].map(selector=>{
         const node=document.querySelector(selector),foreground=luminance(rgb(getComputedStyle(node).color));
         let parent=node,background=[255,255,255];
         while(parent){const color=rgb(getComputedStyle(parent).backgroundColor);if(color.length===3||color[3]===1){background=color;break;}parent=parent.parentElement;}
@@ -64,10 +48,35 @@ try{
         return {selector,ratio:(Math.max(foreground,back)+.05)/(Math.min(foreground,back)+.05)};
       });
     });
+  const footer=page.locator('.family-preview-footer');
+  const item=page.locator(`[data-demo-row="${row.key}"]`);
+  for(const [width,height] of [[320,844],[390,844],[844,390],[768,1024],[1024,768]]){
+    await page.setViewportSize({width,height});
+    await page.goto(origin+'/family');
+    await page.locator('.family-intake-progress').first().waitFor();
+    await settled();
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+    assert.ok(await footer.getByRole('link',{name:'История',exact:true}).isVisible());
+    const typography=await page.evaluate(()=>Object.fromEntries([
+      ['.care-med-name',22],['.care-dose',22],['.care-person-head h2',24],['.family-medicine-group',16],
+      ['.family-phase-status',16],['.family-intake-timer',18],['.family-course',16],['.family-tabs button',14]
+    ].map(([selector,minimum])=>[selector,{actual:parseFloat(getComputedStyle(document.querySelector(selector)).fontSize),minimum}])));
+    for(const [selector,value] of Object.entries(typography))assert.ok(value.actual>=value.minimum,JSON.stringify({width,selector,...value}));
+    assert.equal(await page.locator('#family-timers [data-timer-state]').count(),1);
+    assert.match(await page.locator('#family-timers').innerText(),/Интервал 15–30 мин|До второго препарата/);
+    if(!checks.length)assert.equal(await page.locator('#family-timers [data-timer-state=ready]').count(),1);
+    const contrast=await measureContrast();
     for(const value of contrast)assert.ok(value.ratio>=4.5,JSON.stringify({width,...value}));
+    const controls=await footer.locator('.family-tabs > *').evaluateAll(nodes=>nodes.map(node=>node.getBoundingClientRect().toJSON()));
+    assert.ok(controls.every(rect=>rect.width>=48&&rect.height>=48));
+    assert.ok(controls.slice(1).every((rect,index)=>rect.left-controls[index].right>=8));
+    assert.equal(await footer.locator('[data-voice]').isVisible(),false);
+    assert.equal(await item.locator('.family-course').textContent(),'Ещё 3 дня');
+    assert.equal(await item.locator('.family-progress-count').count(),0);
+    assert.ok(await page.locator('.family-form-icon svg').count()>=2);
     const dot=await item.locator('.family-intake-dot').first().boundingBox();
     assert.ok(dot.width>=22&&dot.height>=22);
-    assert.equal(await item.locator('.family-progress-count').innerText(),'1 из 3');
+    assert.match(await item.locator('.family-intake-progress').getAttribute('aria-label'),/1 из 3/);
     for(const edge of ['left','center','right']){
       await item.locator('.care-take').scrollIntoViewIfNeeded();
       let rect=await item.locator('.care-take').boundingBox();
@@ -82,7 +91,7 @@ try{
         assert.equal(await item.locator('details').evaluate(node=>node.open),false);
       }
     }
-    assert.equal(await item.locator('.family-progress-count').innerText(),'1 из 3');
+    assert.match(await item.locator('.family-intake-progress').getAttribute('aria-label'),/1 из 3/);
     const disclosure=item.locator('summary');
     await disclosure.tap();
     await item.getByRole('button',{name:'Изменить назначение',exact:true}).tap();
@@ -100,7 +109,7 @@ try{
 
   await page.setViewportSize({width:390,height:844});
   await page.goto(origin+'/family');
-  await page.locator('.family-progress-count').first().waitFor();
+  await page.locator('.family-intake-progress').first().waitFor();
   const normalSize=await item.locator('.care-med-name').evaluate(node=>parseFloat(getComputedStyle(node).fontSize));
   await page.evaluate(()=>document.documentElement.style.fontSize='200%');
   assert.equal(await item.locator('.care-med-name').evaluate(node=>parseFloat(getComputedStyle(node).fontSize)),normalSize*2);
@@ -120,10 +129,21 @@ try{
   const labelRect=await selected.boundingBox(),listRect=await page.locator('.care-family fieldset').boundingBox();
   assert.ok(labelRect.x>=listRect.x&&labelRect.x+labelRect.width<=listRect.x+listRect.width);
   await page.locator('.care-family label').first().tap();
+  for(const theme of ['espresso','stone','sand']){
+    await page.getByRole('button',{name:'Ещё',exact:true}).tap();
+    await page.getByLabel('Тема расписания').selectOption(theme);
+    await page.getByRole('button',{name:'Закрыть',exact:true}).tap();
+    await page.reload();
+    await page.locator('.family-intake-progress').first().waitFor();
+    assert.equal(await page.locator('body').getAttribute('data-theme'),theme);
+    for(const result of await measureContrast())assert.ok(result.ratio>=4.5,JSON.stringify({theme,...result}));
+    assert.match(await item.locator('.family-intake-progress').getAttribute('aria-label'),/1 из 3/);
+    await page.screenshot({path:`reports/family-theme-${theme}.png`});
+  }
   for(const [width,height,name] of [[390,844,'phone'],[1024,900,'tablet']]){
     await page.setViewportSize({width,height});
     await page.goto(origin+'/family');
-    await page.locator('.family-progress-count').first().waitFor();
+    await page.locator('.family-intake-progress').first().waitFor();
     await page.screenshot({path:`reports/family-readable-${name}.png`});
   }
   assert.deepEqual(errors,[]);
