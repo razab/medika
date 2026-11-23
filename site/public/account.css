@@ -17,8 +17,11 @@ button:disabled{opacity:.65;cursor:wait}
 #password-status{margin:0;color:#405171;font-size:.875rem}
 #password-status:not(:empty){margin-top:8px}
 :focus-visible{outline:3px solid #466ccd;outline-offset:2px}
+.autofill-hint{display:none;margin:0;color:#405171;font-size:.875rem}
+#account-form:has(#current-password:autofill) .autofill-hint{display:block}
 #account-error{margin:0;color:#9b3226}
-#account-error:not(:empty){margin-top:14px}
+#account-error:empty{display:none}
+main>#account-error:not(:empty){margin-top:14px}
 #account-name{margin:0;overflow-wrap:anywhere}
 .google-button{display:flex;justify-content:center;gap:10px;margin:0;background:#fff;color:#1f1f1f;border-color:#747775;font-weight:550}
 .google-button img{flex:none}

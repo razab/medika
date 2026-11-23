@@ -17,9 +17,10 @@ test('Публичная Медика: регистрация по пригла�
     base='http://127.0.0.1:'+app.server.address().port;
   }
   function request(path,{body,headers={},method=body?'POST':'GET'}={}){
+    const form=body instanceof URLSearchParams;
     return new Promise((resolve,reject)=>{
       const req=http.request(base+path,{
-        method,headers:{Host:host,'X-Forwarded-Proto':'https','X-Medika-Client-IP':'192.0.2.1',...(body?{Origin:origin,'Content-Type':'application/json'}:{}),...headers}
+        method,headers:{Host:host,'X-Forwarded-Proto':'https','X-Medika-Client-IP':'192.0.2.1',...(body?{Origin:origin,'Content-Type':form?'application/x-www-form-urlencoded':'application/json'}:{}),...headers}
       },res=>{
         const chunks=[];
         res.on('data',chunk=>chunks.push(chunk));
@@ -27,7 +28,7 @@ test('Публичная Медика: регистрация по пригла�
         res.on('end',()=>resolve(new Response(Buffer.concat(chunks),{status:res.statusCode,headers:res.headers})));
       });
       req.on('error',reject);
-      req.end(body?JSON.stringify(body):undefined);
+      req.end(form?body.toString():body?JSON.stringify(body):undefined);
     });
   }
   try{
@@ -39,11 +40,14 @@ test('Публичная Медика: регистрация по пригла�
     assert.equal(landing.headers.get('location'),'/login');
     const loginPage=await request('/login'),registerPage=await request('/register');
     assert.equal(loginPage.status,200);
+    assert.equal(loginPage.headers.get('referrer-policy'),'same-origin');
     assert.equal(registerPage.status,200);
     const loginHTML=await loginPage.text(),registerHTML=await registerPage.text();
     assert.match(loginHTML,/<form[^>]*method="post"[^>]*action="\/login"/);
     assert.match(loginHTML,/Электронная почта<input[^>]*name="email"[^>]*type="email"[^>]*autocomplete="username"/);
     assert.match(loginHTML,/<input[^>]*type="password"[^>]*autocomplete="current-password"/);
+    assert.equal((loginHTML.match(/type="password"/g)||[]).length,1);
+    assert.doesNotMatch(loginHTML,/google-link-form/);
     assert.match(registerHTML,/<form[^>]*method="post"[^>]*action="\/register"/);
     assert.match(registerHTML,/Электронная почта<input[^>]*name="email"[^>]*type="email"[^>]*autocomplete="username"/);
     assert.match(registerHTML,/<input[^>]*type="password"[^>]*autocomplete="new-password"/);
@@ -68,6 +72,26 @@ test('Публичная Медика: регистрация по пригла�
     assert.match(setCookie,/^__Host-medika=[a-f0-9]{64}; Secure; HttpOnly; SameSite=Lax; Path=\//);
     assert.equal((await request('/api/account/register',{body:{...credentials,email:'another-user@example.test'}})).status,403);
     assert.equal((await request('/api/account/login',{body:{email,password:'wrong input'}})).status,401);
+    const form=new URLSearchParams({email,password});
+    assert.equal((await request('/login',{body:form,headers:{Origin:'https://other.example.test'}})).status,403);
+    assert.equal((await request('/login',{body:form,headers:{Origin:'null'}})).status,403);
+    const rejected=await request('/login',{body:new URLSearchParams({email,password:'<synthetic wrong password>'})});
+    assert.equal(rejected.status,401);
+    assert.equal(rejected.headers.get('set-cookie'),null);
+    const rejectedHTML=await rejected.text();
+    assert.match(rejectedHTML,/role="alert">Проверьте email и пароль/);
+    assert.doesNotMatch(rejectedHTML,/synthetic wrong password/);
+    const native=await request('/login',{body:form});
+    assert.equal(native.status,303);
+    assert.equal(native.headers.get('location'),'/family');
+    const nativeCookie=native.headers.get('set-cookie');
+    assert.match(nativeCookie,/^__Host-medika=[a-f0-9]{64}; Secure; HttpOnly; SameSite=Lax; Path=\//);
+    const signedIn=await request('/account',{headers:{Cookie:nativeCookie.split(';')[0]}});
+    assert.equal(signedIn.status,200);
+    const accountHTML=await signedIn.text();
+    assert.match(accountHTML,/id="google-link-form"/);
+    assert.doesNotMatch(accountHTML,/id="current-password"/);
+
     const authHeaders=await (async()=>{
       const response=await request('/api/session',{headers:{Cookie:cookie}});
       assert.equal(response.status,200);

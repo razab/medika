@@ -1,7 +1,6 @@
 const form=document.querySelector('#account-form,#registration-form');
-const title=document.querySelector('#account-title');
 const error=document.querySelector('#account-error');
-const register=form.id==='registration-form';
+const register=form?.id==='registration-form';
 const account=location.pathname==='/account';
 const googleMessages={
   cancelled:'Вход через Google отменён.',
@@ -45,8 +44,6 @@ function showGoogleError(){
 }
 
 if(account){
-  title.textContent='Аккаунт';
-  form.hidden=true;
   const button=document.querySelector('#account-logout');
   action(button,async()=>{
     const session=await request('session');
@@ -73,9 +70,8 @@ if(account){
     showGoogleError();
   });
 }else{
-  const button=form.querySelector('button[type="submit"]');
-  const passwordActions=form.querySelectorAll('.password-actions button');
   if(register){
+    const passwordActions=form.querySelectorAll('.password-actions button');
     const [generate,copy]=passwordActions;
     const field=form.elements['new-password'];
     const status=document.querySelector('#password-status');
@@ -97,23 +93,21 @@ if(account){
       copy.hidden=true;
       status.textContent='';
     });
-  }
-  form.addEventListener('submit',event=>{
-    event.preventDefault();
-    action(button,async()=>{
-      passwordActions.forEach(control=>control.disabled=true);
-      try{
-        const fields=new FormData(form);
-        const input=register?{
-          email:fields.get('email'),password:fields.get('new-password'),invite:fields.get('invite').trim()
-        }:Object.fromEntries(fields);
-        await request('account/'+(register?'register':'login'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)});
-        location.replace('/family');
-      }finally{
-        passwordActions.forEach(control=>control.disabled=false);
-      }
+    form.addEventListener('submit',event=>{
+      event.preventDefault();
+      action(form.querySelector('button[type="submit"]'),async()=>{
+        passwordActions.forEach(control=>control.disabled=true);
+        try{
+          const fields=new FormData(form);
+          const input={email:fields.get('email'),password:fields.get('new-password'),invite:fields.get('invite').trim()};
+          await request('account/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)});
+          location.replace('/family');
+        }finally{
+          passwordActions.forEach(control=>control.disabled=false);
+        }
+      });
     });
-  });
+  }
   showGoogleError();
   request('account/providers').then(providers=>{
     if(!providers.google)return;
