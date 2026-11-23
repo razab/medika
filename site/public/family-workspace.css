@@ -413,3 +413,16 @@
 @media (max-width: 350px) {
   .family-form-icon { width: 1.8rem; }
 }
+
+#family-intake-timers p+p {
+  border-top: 1px solid var(--rule);
+  padding-top: 8px;
+}
+#family-intake-timers :is(strong,span,small) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+#family-intake-timers small {
+  flex-basis: 100%;
+  color: var(--course-text);
+}

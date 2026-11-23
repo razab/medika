@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {intakeTimer,prescribedInterval,dailyIntakeProgress} from '../public/intake-timer.js';
+import {intakeTimer,prescribedInterval,dailyIntakeProgress,manualIntakeTimers,suggestedManualInterval} from '../public/intake-timer.js';
 
 const start=Date.parse('2026-11-18T06:00:00Z');
 const input={personId:'p',name:'ТестПрепарат',medicineId:'m',minHours:'12',timeZone:'Europe/Chisinau'};
@@ -70,4 +70,35 @@ test('По необходимости точки используют указа
   assert.equal(dailyIntakeProgress(copy,row,[],start+86400000).taken,0);
   copy.model.history[0].occurredAt=null;
   assert.equal(dailyIntakeProgress(copy,row,[],start),null);
+});
+
+test('Внеплановые приёмы используют явный интервал и только факты того же человека с тем же названием',()=>{
+  const manual={...event,source:'activities',status:'recorded',prescriptionId:'',name:'ТестПрепарат',input:{minHours:'4',createdAt:new Date(start).toISOString()}};
+  const view={timeZone:'Europe/Chisinau',prescriptions:[],model:{date:'2026-11-18',cards:[{id:'p',name:'Тест'},{id:'other',name:'Другой'}],history:[manual]}};
+  assert.equal(suggestedManualInterval(view,'p',' тестпрепарат '),4);
+  assert.equal(suggestedManualInterval(view,'other','ТестПрепарат'),'');
+  assert.equal(suggestedManualInterval(view,'p','Другой препарат'),'');
+  const hours=n=>n*3600000;
+  assert.equal(manualIntakeTimers(view,'all',start)[0].until,start+hours(4));
+  const next={...manual,id:'next',input:{},occurredAt:new Date(start+hours(3)).toISOString()};
+  view.model.history.push({...next,id:'unrelated',personId:'other'},next);
+  assert.equal(manualIntakeTimers(view,'all',start+hours(3))[0].until,start+hours(7));
+  assert.deepEqual(manualIntakeTimers(view,'other',start+hours(3)),[]);
+  assert.equal(manualIntakeTimers(view,'p',start+hours(7))[0].state,'elapsed');
+  next.occurredAt=null;
+  assert.equal(manualIntakeTimers(view,'p',start+hours(3))[0].state,'unknown');
+  next.status='void';
+  assert.equal(manualIntakeTimers(view,'p',start+hours(3))[0].until,start+hours(4));
+  manual.status='void';
+  assert.deepEqual(manualIntakeTimers(view,'p',start+hours(3)),[]);
+});
+
+test('При известном назначении ручная запись учитывает больший интервал и максимум за 24 часа',()=>{
+  const manual={...event,source:'activities',status:'recorded',prescriptionId:'',name:input.name,input:{minHours:'4'}};
+  const view={timeZone:input.timeZone,prescriptions:[{id:'r',personId:'p',name:input.name,confirmed:true,startDate:'2026-11-18',input:{...input,maxPer24h:'1'}}],
+    model:{date:'2026-11-18',cards:[{id:'p',name:'Тест'}],history:[manual]}};
+  assert.equal(suggestedManualInterval(view,'p',input.name),12);
+  const [timer]=manualIntakeTimers(view,'all',start);
+  assert.equal(timer.until,start+86400000);
+  assert.match(timer.text,/Достигнут максимум/);
 });

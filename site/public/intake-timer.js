@@ -38,7 +38,7 @@ export function prescribedInterval(rx){
 export function intakeTimer(snapshot,row,now=Date.now()){
   const rx=snapshot.prescriptions.find(r=>r.id===row.prescriptionId)?.input;
   if(!rx)return null;
-  const interval=prescribedInterval(rx);
+  const interval=Math.max(prescribedInterval(rx)?.hours||0,manualHours(snapshot,row.personId,rx.name));
   const max=Number(rx.maxPer24h)||0;
   if(!interval&&!max)return null;
   const prescriptions=snapshot.prescriptions.filter(p=>p.personId===row.personId);
@@ -49,22 +49,82 @@ export function intakeTimer(snapshot,row,now=Date.now()){
   const history=snapshot.model.history.filter(event=>event.personId===row.personId&&
     ['taken','recorded'].includes(event.status)&&['medication','inhalation'].includes(event.kind)&&
     (ids.has(event.prescriptionId)||names.has(normalize(event.input?.name||event.name))));
-  const lookback=Math.max(interval?.hours||0,max?24:0);
-  const since=new Date(now-lookback*3600000).toLocaleDateString('sv-SE',{timeZone:rx.timeZone});
+  return countdown(history,{hours:interval,max,timeZone:rx.timeZone},now);
+}
+
+const medicineName=event=>normalize(event.input?.name||event.name);
+const recordedMedication=event=>event.kind==='medication'&&['taken','recorded'].includes(event.status);
+
+function manualHours(snapshot,personId,name,history=snapshot.model.history){
+  const key=normalize(name);
+  let latestRule, latestAt=-Infinity;
+  for(const event of history){
+    if(event.source!=='activities'||event.personId!==personId||!recordedMedication(event)||medicineName(event)!==key)continue;
+    const hours=Number(event.input?.minHours);
+    const at=Date.parse(event.input?.createdAt||event.occurredAt);
+    if(hours>=0.01&&hours<=720&&at>latestAt){latestRule=hours;latestAt=at;}
+  }
+  return latestRule||0;
+}
+
+function prescriptionRule(snapshot,personId,name){
+  const date=snapshot.model.date;
+  const phase=snapshot.model.cards.find(person=>person.id===personId)?.phaseKey;
+  const matches=snapshot.prescriptions.filter(rx=>rx.input&&rx.personId===personId&&rx.confirmed&&normalize(rx.name)===normalize(name)&&
+    (!rx.phase||rx.phase===phase)&&rx.startDate<=date&&(!rx.endDate||rx.endDate>=date));
+  const limits=matches.map(rx=>Number(rx.input.maxPer24h)).filter(max=>Number.isInteger(max)&&max>0);
+  return {hours:Math.max(0,...matches.map(rx=>prescribedInterval(rx.input)?.hours||0)),max:limits.length?Math.min(...limits):0};
+}
+
+export function suggestedManualInterval(snapshot,personId,name){
+  if(!personId||!normalize(name))return '';
+  return Math.max(manualHours(snapshot,personId,name),prescriptionRule(snapshot,personId,name).hours)||'';
+}
+
+export function manualIntakeTimers(snapshot,selected,now=Date.now()){
+  const groups=new Map();
+  const people=new Map(snapshot.model.cards.map(person=>[person.id,person.name]));
+  for(const event of snapshot.model.history){
+    if(!recordedMedication(event)||!people.has(event.personId)||selected!=='all'&&event.personId!==selected)continue;
+    const key=JSON.stringify([event.personId,medicineName(event)]);
+    if(!groups.has(key))groups.set(key,[]);
+    groups.get(key).push(event);
+  }
+  const timers=[];
+  for(const history of groups.values()){
+    const manual=history.find(event=>event.source==='activities');
+    if(!manual)continue;
+    const person=manual.personId,name=manual.input?.name||manual.name;
+    const preset=prescriptionRule(snapshot,person,name);
+    const hours=Math.max(manualHours(snapshot,person,name,history),preset.hours);
+    if(!hours&&!preset.max)continue;
+    const timer=countdown(history,{hours,max:preset.max,timeZone:snapshot.timeZone},now,true);
+    if(timer&&(timer.state!=='elapsed'||timer.until>now-86400000))timers.push({...timer,person:people.get(person),name});
+  }
+  return timers;
+}
+
+function countdown(history,{hours,max,timeZone},now,manual=false){
+  const lookback=Math.max(hours,max?24:0);
+  const since=new Date(now-lookback*3600000).toLocaleDateString('sv-SE',{timeZone});
   if(history.some(event=>!event.occurredAt&&event.date>=since))return {state:'unknown',text:'Есть приём с неизвестным временем · проверьте историю'};
-  const events=history.filter(event=>Date.parse(event.occurredAt)<=now).sort((a,b)=>Date.parse(b.occurredAt)-Date.parse(a.occurredAt));
+  const events=history.map(event=>({id:event.id,time:Date.parse(event.occurredAt)})).filter(event=>event.time<=now).sort((a,b)=>b.time-a.time);
   const latest=events[0];
   if(!latest)return null;
-  let until=interval?Date.parse(latest.occurredAt)+interval.hours*3600000:0;
-  const recent=events.filter(event=>Date.parse(event.occurredAt)>now-86400000);
+  let until=hours?latest.time+hours*3600000:0;
+  const recent=events.filter(event=>event.time>now-86400000);
   const atLimit=max>0&&recent.length>=max;
-  if(!interval&&!atLimit)return {state:'count',text:`${recent.length} из ${max} приёмов за 24 ч · интервал не указан`};
-  if(atLimit)until=Math.max(until,Date.parse(recent[Math.ceil(max)-1].occurredAt)+86400000);
-  const time=new Date(until).toLocaleTimeString('ru-RU',{timeZone:rx.timeZone,hour:'2-digit',minute:'2-digit'});
+  if(!hours&&!atLimit)return {state:'count',text:`${recent.length} из ${max} приёмов за 24 ч · интервал не указан`};
+  if(atLimit)until=Math.max(until,recent[Math.ceil(max)-1].time+86400000);
   const seconds=Math.max(0,Math.ceil((until-now)/1000));
   const clock=[Math.floor(seconds/3600),Math.floor(seconds/60)%60,seconds%60].map(n=>String(n).padStart(2,'0')).join(':');
+  const end=new Date(manual?Math.ceil(until/60000)*60000:until);
+  const time=end.toLocaleTimeString('ru-RU',{timeZone,hour:'2-digit',minute:'2-digit'});
+  const endDay=end.toLocaleDateString('sv-SE',{timeZone});
+  const nowDay=new Date(now).toLocaleDateString('sv-SE',{timeZone});
+  const date=manual&&endDay!==nowDay?end.toLocaleDateString('ru-RU',{timeZone,day:'numeric',month:'long'})+' ':'';
   return {state:until>now?'waiting':'elapsed',until,eventId:latest.id,
-    text:until>now?`${atLimit?'Достигнут максимум за 24 ч':'До следующего приёма'} · ${clock} · не ранее ${time}`:
+    text:until>now?`${atLimit?'Достигнут максимум за 24 ч':manual?'До конца интервала':'До следующего приёма'} · ${clock} · ${manual?'до':'не ранее'} ${date}${time}`:
       'Указанный интервал прошёл',
-    detail:interval?`Интервал ${interval.hours} ч от фактического приёма`:max?`Не более ${max} приёмов за 24 ч`:''};
+    detail:hours?`Интервал ${hours.toLocaleString('ru-RU')} ч от фактического приёма`:max?`Не более ${max} приёмов за 24 ч`:''};
 }

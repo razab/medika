@@ -128,7 +128,9 @@ export function activityInput(input){
   assert(!quick||!amount,'Для этого симптома количество препарата не требуется');
   const clientKey=string(input.clientKey,'Ключ записи',120,true);assert(/^[a-zA-Z0-9_-]{8,120}$/.test(clientKey),'Некорректный ключ записи');
   assert(!input.relatedRxId||['medication','inhalation'].includes(input.kind),'Назначение можно связать только с лекарством или ингаляцией');
-  return {...occurrence,...(input.kind==='temperature'?{celsius:temperatureInput(input).celsius}:{}),...entryContext(input),kind:input.kind,name:quick?activityKinds[input.kind]:string(input.name,'Что сделали / препарат',200,true),amount,unit,strength:string(input.strength,'Концентрация',150),note:string(input.note,'Примечание',2000),author:string(input.author||'Я','Автор',100),clientKey};
+  const minHours=positive(input.minHours,'Минимальный интервал',true);
+  if(minHours!==null)assert(input.kind==='medication'&&Number(minHours)>=0.01&&Number(minHours)<=720,'Минимальный интервал для лекарства: от 0,01 до 720 часов');
+  return {...occurrence,...(input.kind==='temperature'?{celsius:temperatureInput(input).celsius}:{}),...entryContext(input),...(input.minHours!==undefined?{minHours}:{}),kind:input.kind,name:quick?activityKinds[input.kind]:string(input.name,'Что сделали / препарат',200,true),amount,unit,strength:string(input.strength,'Концентрация',150),note:string(input.note,'Примечание',2000),author:string(input.author||'Я','Автор',100),clientKey};
 }
 export function courseEnd(startDate,count,unit){
   day(startDate);assert(Number.isInteger(Number(count))&&Number(count)>0&&Number(count)<=3660,'Длительность: положительное целое число');count=Number(count);

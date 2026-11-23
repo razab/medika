@@ -366,7 +366,7 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
         const occurrence=occurrenceInput({personId:old.personId,timeZone:old.timeZone,...(input.timeUnknown===true?{timeUnknown:true,knownDate:input.knownDate,occurredAt:input.occurredAt??null}:{timeUnknown:false,occurredAt:input.occurredAt})});
         let patch;if(table==='events'){assert(old.status==='taken','Исправляется фактический приём');patch={...occurrence,actualDose:positive(input.amount,'Фактическая доза'),note:string(input.note??old.note,'Примечание',2000)};}
         else if(table==='temperatures')patch=temperatureInput({...old,...occurrence,celsius:input.celsius});
-        else patch=activityInput({...old,...occurrence,...Object.fromEntries(['celsius','amount','unit','name','note'].filter(k=>input[k]!==undefined).map(k=>[k,input[k]]))});
+        else patch=activityInput({...old,...occurrence,...Object.fromEntries(['celsius','amount','unit','name','note','minHours'].filter(k=>input[k]!==undefined).map(k=>[k,input[k]]))});
         if(table==='events'&&['впрыскивание','кап.'].includes(old.unit))assert(Number.isInteger(Number(patch.actualDose)),'Капли и впрыскивания: целое количество');
         return send(200,store.update(table,id,patch,input.version));
       }
