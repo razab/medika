@@ -53,6 +53,27 @@ if(account){
       await request('account/logout',{method:'POST',headers:{'X-Medika-Token':session.token}});
       location.replace('/login');
     }));
+    const createCode=document.querySelector('#create-login-code');
+    const codeResult=document.querySelector('#device-login-result');
+    const codeInput=document.querySelector('#device-login-code');
+    const codeStatus=document.querySelector('#device-login-status');
+    createCode.addEventListener('click',()=>action(createCode,async()=>{
+      codeResult.hidden=true;
+      codeInput.value='';
+      codeStatus.textContent='';
+      const {code}=await request('account/login-code',{method:'POST',headers:{'X-Medika-Token':session.token}});
+      codeInput.value=code;
+      codeResult.hidden=false;
+    }));
+    document.querySelector('#copy-login-code').addEventListener('click',async()=>{
+      try{
+        await navigator.clipboard.writeText(codeInput.value);
+        codeStatus.textContent='Код скопирован.';
+      }catch{
+        codeInput.select();
+        codeStatus.textContent='Скопируйте выделенный код.';
+      }
+    });
     const providers=await request('account/providers');
     if(providers.google){
       document.querySelector('#google-linked').hidden=!providers.linked;

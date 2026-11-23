@@ -9,6 +9,8 @@ const hexToken=/^[a-f0-9]{64}$/;
 const emailAddress=/^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/;
 const legacyUsername=/^[a-z0-9][a-z0-9._-]{2,39}$/;
 const randomToken=()=>randomBytes(32).toString('hex');
+const loginCodeAlphabet='0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+const loginCodeLifetime=10*minute;
 const digest=value=>createHash('sha256').update(value).digest('hex');
 const passwordHash=(password,salt)=>derive(password,salt,64,{N:2**17,r:8,p:1,maxmem:160*1024*1024});
 const dummySalt=randomToken();
@@ -34,6 +36,10 @@ export function openAuth(db){
     CREATE TABLE IF NOT EXISTS auth_google(
       subject TEXT PRIMARY KEY, username TEXT UNIQUE NOT NULL REFERENCES auth_users(username) ON DELETE CASCADE
     );
+    CREATE TABLE IF NOT EXISTS auth_login_codes(
+      secret_hash TEXT PRIMARY KEY, username TEXT UNIQUE NOT NULL REFERENCES auth_users(username) ON DELETE CASCADE,
+      source_session TEXT REFERENCES auth_sessions(secret_hash) ON DELETE CASCADE, expires_at INTEGER NOT NULL
+    );
   `);
   const attempts=new Map();
   let hashing=0;
@@ -45,12 +51,12 @@ export function openAuth(db){
     entry.count++;
     attempts.set(key,entry);
   }
-  function limit(ip){
+  function limit(ip,scope='password'){
     const now=Date.now();
     for(const [key,entry] of attempts)if(entry.until<=now)attempts.delete(key);
     assert(attempts.size<10_000,'Слишком много попыток. Попробуйте позже.',429);
     useAttempt('global',90,minute,now);
-    useAttempt('ip:'+ip,12,15*minute,now);
+    useAttempt('ip:'+scope+':'+ip,12,15*minute,now);
     return now;
   }
   function readUsername(input,register){
@@ -123,6 +129,30 @@ export function openAuth(db){
       await verifyPassword(username,password);
       attempts.delete('user:'+username);
       return issue(username);
+    },
+    createLoginCode(username,sourceSession=null){
+      assert(db.prepare('SELECT 1 FROM auth_users WHERE username=?').get(username),'Аккаунт не найден',404);
+      const code=Array.from(randomBytes(12),byte=>loginCodeAlphabet[byte&31]).join('');
+      const expiresAt=Date.now()+loginCodeLifetime;
+      db.prepare(`INSERT INTO auth_login_codes VALUES(?,?,?,?)
+        ON CONFLICT(username) DO UPDATE SET secret_hash=excluded.secret_hash,
+        source_session=excluded.source_session, expires_at=excluded.expires_at`
+      ).run(digest(code),username,sourceSession,expiresAt);
+      return code.match(/.{4}/g).join('-');
+    },
+    loginWithCode(input,ip){
+      const now=limit(ip,'code');
+      const code=typeof input==='string'&&input.length<=32?input.replace(/[\s-]/g,'').toUpperCase():'';
+      const message='Код неверный, уже использован или истёк. Получите новый код.';
+      assert(/^[0-9A-HJKMNP-TV-Z]{12}$/.test(code),message,401);
+      return transaction(()=>{
+        const account=db.prepare(`DELETE FROM auth_login_codes WHERE secret_hash=? AND expires_at>? AND
+          (source_session IS NULL OR EXISTS (SELECT 1 FROM auth_sessions
+           WHERE secret_hash=source_session AND expires_at>? AND last_seen>?)) RETURNING username`
+        ).get(digest(code),now,now,now-day);
+        assert(account,message,401);
+        return issue(account.username);
+      });
     },
     googleLinked(username){
       return Boolean(db.prepare('SELECT 1 FROM auth_google WHERE username=?').get(username));

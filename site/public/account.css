@@ -28,4 +28,11 @@ main>#account-error:not(:empty){margin-top:14px}
 #google-linked{margin:0;color:#405171}
 #google-link summary{display:flex;align-items:center;min-height:48px;cursor:pointer;color:#294995}
 #google-link-form{margin-top:8px}
+.login-options,.device-login{display:grid;gap:8px}
+.login-options{margin-top:14px}
+.secondary-action{margin:0;background:#fff;color:#294995;border:1px solid #aab8cd;text-decoration:none;font-weight:650}
+.account-help{margin:0 0 12px;color:#405171;line-height:1.45}
+.device-login .account-help{margin:0}
+#device-login-code{font-family:ui-monospace,monospace}
+#device-login-status:empty{display:none}
 [hidden]{display:none!important}

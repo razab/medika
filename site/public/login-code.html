@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Вход по коду · Медика</title>
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/account.css">
+</head>
+<body>
+  <main>
+    <header><img src="/icon.svg" alt="" width="36" height="36"><span>Медика</span></header>
+    <h1>Вход по коду</h1>
+    <p class="account-help" id="code-help">На устройстве, где вы уже вошли в Медику, откройте «Аккаунт» и нажмите «Получить код для входа».</p>
+    <form method="post" action="/login/code">
+      <label>Одноразовый код<input name="code" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="32" aria-describedby="code-help" required></label>
+      <p id="account-error" role="alert"></p>
+      <button type="submit">Войти</button>
+    </form>
+    <nav class="login-options" aria-label="Другие способы входа">
+      <a href="/login">Войти с паролем</a>
+    </nav>
+  </main>
+</body>
+</html>

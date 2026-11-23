@@ -27,7 +27,8 @@ import {isLinux} from './lib/linux-media.mjs';
 
 const root=dirname(fileURLToPath(import.meta.url));
 const familyDayStart='06:00';
-const accountPages=new Map([['/login','login.html'],['/register','register.html'],['/account','account.html']]);
+const accountPages=new Map([['/login','login.html'],['/login/code','login-code.html'],['/register','register.html'],['/account','account.html']]);
+const loginPages=new Set(['/login','/login/code']);
 const accountAssets=new Map([['/account.js','text/javascript'],['/account.css','text/css'],['/icon.svg','image/svg+xml'],['/google-logo.png','image/png']]);
 // Public design shells and synthetic specimens; copied medical data stays behind the API.
 const designStudyAssets=Object.fromEntries([
@@ -150,7 +151,7 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
       const redirect=(location,headers={})=>{res.writeHead(303,{Location:location,...headers});res.end();};
       if(auth){
         // Native form navigation sends Origin: null under no-referrer.
-        if(route==='/login')res.setHeader('Referrer-Policy','same-origin');
+        if(loginPages.has(route))res.setHeader('Referrer-Policy','same-origin');
         res.setHeader('X-Robots-Tag','noindex, nofollow, noarchive');
         res.setHeader('X-Frame-Options','DENY');
         res.setHeader('Cross-Origin-Resource-Policy','same-origin');
@@ -201,23 +202,28 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
             return redirect(destination()+'?google='+reason,flow?{'Set-Cookie':clear}:{});
           }
         }
-        if(['/login','/api/account/login','/api/account/register'].includes(route)&&method==='POST'){
+        if(route==='/api/account/login-code'&&method==='POST'){
+          assert(session&&req.headers.origin===url.origin&&sameToken(session.csrf,req.headers['x-medika-token']),'Войдите в Медику и обновите страницу',403);
+          return send(201,{code:auth.createLoginCode(session.username,session.id)});
+        }
+        if((loginPages.has(route)||['/api/account/login','/api/account/register'].includes(route))&&method==='POST'){
           assert(req.headers.origin===url.origin,'Запрос с другого сайта отклонён',403);
           const suppliedIp=req.headers['x-medika-client-ip'],ip=isIP(suppliedIp||'')?suppliedIp:req.socket.remoteAddress;
-          const nativeLogin=route==='/login',login=nativeLogin||route.endsWith('/login');
+          const nativeLogin=loginPages.has(route),codeLogin=route==='/login/code',login=nativeLogin||route.endsWith('/login');
           let input;
           if(nativeLogin){
             assert(req.headers['content-type']?.split(';')[0].trim().toLowerCase()==='application/x-www-form-urlencoded','Ожидается форма входа',415);
             const fields=new URLSearchParams(await rawBody(req,4096));
-            input={email:fields.get('email'),password:fields.get('password')};
+            input=codeLogin?fields.get('code'):{email:fields.get('email'),password:fields.get('password')};
           }else input=await body(req,4096);
           let secret;
           try{
-            secret=await (login?auth.login(input,ip):auth.register(input,ip));
+            secret=codeLogin?auth.loginWithCode(input,ip):await (login?auth.login(input,ip):auth.register(input,ip));
           }catch(error){
             if(!nativeLogin||!(error instanceof InputError))throw error;
-            const message=error.status===429?'Слишком много попыток. Попробуйте позже.':'Проверьте email и пароль.';
-            const html=await readFile(join(root,'public',accountPages.get('/login')),'utf8');
+            const message=error.status===429?'Слишком много попыток. Попробуйте позже.'
+              :codeLogin?'Код неверный, уже использован или истёк. Получите новый код.':'Проверьте email и пароль.';
+            const html=await readFile(join(root,'public',accountPages.get(route)),'utf8');
             res.writeHead(error.status||400,{'Content-Type':'text/html; charset=utf-8'});
             return res.end(html.replace('<p id="account-error" role="alert"></p>',`<p id="account-error" role="alert">${message}</p>`));
           }
@@ -228,9 +234,9 @@ export async function createApp({dataDir=join(root,'data'),port=4382,publicHost=
         }
         if(!session){
           if(!['GET','HEAD'].includes(method)||route.startsWith('/api/'))throw new InputError('Войдите в Медику',401);
-          if(!accountAssets.has(route)&&route!=='/login'&&route!=='/register')return redirect('/login');
+          if(!accountAssets.has(route)&&!loginPages.has(route)&&route!=='/register')return redirect('/login');
         }
-        if(session&&(route==='/login'||route==='/register'))return redirect('/family');
+        if(session&&(loginPages.has(route)||route==='/register'))return redirect('/family');
         if(route==='/api/account/logout'&&method==='POST'){
           assert(req.headers.origin===url.origin&&sameToken(session.csrf,req.headers['x-medika-token']),'Запрос с другого сайта отклонён',403);
           auth.logout(session.id);
