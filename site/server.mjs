@@ -27,8 +27,8 @@ import {isLinux} from './lib/linux-media.mjs';
 
 const root=dirname(fileURLToPath(import.meta.url));
 const familyDayStart='06:00';
-const accountPages=new Map([['/login','login.html'],['/login/code','login-code.html'],['/register','register.html'],['/account','account.html']]);
-const loginPages=new Set(['/login','/login/code']);
+const loginPages=new Map([['/login','login.html'],['/login2','login2.html'],['/login/code','login-code.html']]);
+const accountPages=new Map([...loginPages,['/register','register.html'],['/account','account.html']]);
 const accountAssets=new Map([['/account.js','text/javascript'],['/account.css','text/css'],['/icon.svg','image/svg+xml'],['/google-logo.png','image/png']]);
 // Public design shells and synthetic specimens; copied medical data stays behind the API.
 const designStudyAssets=Object.fromEntries([

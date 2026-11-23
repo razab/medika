@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Вход 2 · Медика</title>
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/account.css">
+</head>
+<body>
+  <main>
+    <header><img src="/icon.svg" alt="" width="36" height="36"><span>Медика</span></header>
+    <h1>Вход 2</h1>
+    <form method="post" action="/login2" novalidate>
+      <label>
+        Электронная почта
+        <input id="login-email" name="email" type="email" autocomplete="username" autocapitalize="none" spellcheck="false">
+      </label>
+      <label>
+        Пароль
+        <input id="current-password" name="password" type="password" autocomplete="current-password">
+      </label>
+      <p id="account-error" role="alert"></p>
+      <button type="submit">Войти</button>
+    </form>
+  </main>
+</body>
+</html>
