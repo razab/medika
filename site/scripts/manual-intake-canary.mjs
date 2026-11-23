@@ -32,12 +32,14 @@ try{
   const form=page.locator('#event-form');
   const panel=page.locator('#family-intake-timers');
   const manual=page.getByRole('button',{name:'Вручную',exact:true});
-  const quick=page.locator('[data-add-intake]');
+  const plus=page.locator('#family [data-medicine-actions]');
+  const recordChoice=dialog.getByRole('button',{name:'Записать приём',exact:true});
   const editInterval=dialog.getByLabel('Минимальный интервал, ч');
   const medicine='Тестовый препарат';
   const close=()=>dialog.getByRole('button',{name:'Закрыть',exact:true}).tap();
   const directMedication=async who=>{
-    await quick.tap();
+    await plus.tap();
+    await recordChoice.tap();
     if(who)await form.locator('[name=person]').selectOption(who.id);
     assert.equal(await form.locator('[name=kind]').inputValue(),'medication');
     await form.locator('[name=eventName]').fill(medicine);
@@ -56,12 +58,17 @@ try{
       assert.equal(await form.locator('[name=kind]').inputValue(),'temperature');
       await close();
     }
-    const quickHit=await quick.boundingBox();
-    assert.ok(quickHit.width>=48&&quickHit.height>=48);
-    const filterGap=await quick.evaluate(node=>node.getBoundingClientRect().top-document.querySelector('.care-family').getBoundingClientRect().bottom);
-    assert.ok(filterGap>=8,`quick intake is ${filterGap}px from the family filters`);
-    for(const edge of [2,quickHit.width/2,quickHit.width-2]){
-      await page.touchscreen.tap(quickHit.x+edge,quickHit.y+quickHit.height/2);
+    assert.equal(await page.locator('#family [data-add-intake]').count(),0);
+    const hitPlus=await plus.boundingBox();
+    assert.ok(hitPlus.width>=48&&hitPlus.height>=48);
+    for(const edge of [0,0.5,1]){
+      await page.touchscreen.tap(hitPlus.x+Math.min(hitPlus.width-2,Math.max(2,hitPlus.width*edge)),hitPlus.y+hitPlus.height/2);
+      const rect=await recordChoice.boundingBox();
+      const addOption=await dialog.getByRole('button',{name:'Добавить в расписание',exact:true}).boundingBox();
+      const closeOption=await dialog.getByRole('button',{name:'Закрыть',exact:true}).boundingBox();
+      assert.ok(rect.width>=48&&rect.height>=48&&addOption.y-rect.y-rect.height>=8);
+      assert.ok(rect.y-closeOption.y-closeOption.height>=8);
+      await page.touchscreen.tap(rect.x+Math.min(rect.width-2,Math.max(2,rect.width*edge)),rect.y+rect.height/2);
       await dialog.getByRole('heading',{name:'Записать приём',exact:true}).waitFor();
       assert.equal(await form.locator('[name=kind]').inputValue(),'medication');
       assert.equal(await form.locator('select[name=kind]').count(),0);
@@ -91,7 +98,12 @@ try{
   assert.equal(Date.parse(record.occurredAt),now.getTime()-1800000);
   await page.reload();
   await panel.locator('[data-manual-intake-state=waiting]').waitFor();
-  if(process.env.MEDIKA_SCREENSHOT)await page.screenshot({path:process.env.MEDIKA_SCREENSHOT});
+  if(process.env.MEDIKA_SCREENSHOT){
+    await plus.click();
+    await recordChoice.waitFor();
+    await page.screenshot({path:process.env.MEDIKA_SCREENSHOT});
+    await close();
+  }
   await directMedication(second);
   assert.equal(await editInterval.inputValue(),'');
   await form.locator('[name=person]').selectOption(patient.id);

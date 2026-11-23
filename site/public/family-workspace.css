@@ -62,8 +62,9 @@
 #family-info .family-setting-note{font-size:1rem;color:#46566b;margin-top:12px}
 
 .family-slot-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:8px 0}
-.family-slot-heading h3{margin:0}.family-slot-heading button{width:3.5rem;min-width:3.5rem;height:3.5rem;border:1px solid #cbd5e3;border-radius:8px;background:white;color:#315ac1;font:22px Golos,system-ui,sans-serif;touch-action:manipulation}
-.family-add-medicine{display:block;width:100%;min-height:3.5rem;margin:12px 0;border:1px solid #cbd5e3;border-radius:8px;background:white;color:#315ac1;font:1.125rem Golos,system-ui,sans-serif}
+.family-slot-heading h3{margin:0}.family-medicine-plus{width:3.5rem;min-width:3.5rem;height:3.5rem;border:1px solid #cbd5e3;border-radius:8px;background:white;color:#315ac1;font:22px Golos,system-ui,sans-serif;touch-action:manipulation}
+.family-empty-medication{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:8px 0 12px}
+.family-empty-medication :is(p,h3){margin:0}
 #family-info .family-slot-picker{border:0;padding:0;margin:0;min-width:0}#family-info .family-slot-picker legend{font-size:1.125rem;margin-bottom:8px}#add-medicine-slots{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 #family-info .family-slot-choice{position:relative;display:flex;align-items:center;justify-content:center;text-align:center;min-height:3.5rem;min-width:3.5rem;padding:8px;border:1px solid #cbd5e3;border-radius:8px;cursor:pointer}#family-info .family-slot-choice input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}#family-info .family-slot-choice:has(input:checked){background:#edf2ff;border-color:#315ac1;color:#315ac1}#family-info .family-slot-choice:has(input:focus-visible){outline:2px solid #315ac1;outline-offset:3px}.family-slot-choice small{display:block;font-size:1rem;color:#46566b}
 #family-info .family-prescription-options{margin:0}#family-info .family-prescription-options>label,#family-info .family-prescription-options>.sandbox-time-fields,#add-medicine-inhalation>label{margin-top:16px}#family-info .family-prescription-options summary,#family-info .family-test-tools>summary{display:flex;align-items:center;min-height:3.5rem;cursor:pointer;color:#46566b;font-size:1.125rem}#family-info .family-catalogue-link{display:flex;align-items:center;min-height:3.5rem;color:#315ac1;font-size:1.125rem}
@@ -185,6 +186,8 @@
 .family-dialog-content{min-height:0;overflow:auto;padding:4px}
 .family-dialog-content>section+section{margin-top:24px}
 .family-app #family-info h2{font-size:1.5rem;min-width:0;flex:1 1 12rem;overflow-wrap:anywhere}
+.family-app #family-info:has([data-add-intake]) h2{flex-basis:auto}
+.family-app #family-info:has([data-add-intake]) .family-tools{margin-top:0}
 .family-app #family-info>header>button{margin-left:auto}
 .family-app #family-info h3,.family-app #family-info .prescription-fields{font-size:1.25rem}
 .family-app #family-info :is(input,select,textarea,button,summary,a){min-height:3.5rem;font-size:1.125rem;line-height:1.5}
@@ -241,18 +244,6 @@
 }
 .family-title span { font-weight: 750; letter-spacing: -.03em; }
 .family-title h1 { margin: 0; font-size: 2rem; line-height: 1.16; letter-spacing: -.04em; }
-.family-quick-intake {
-  min-height: 48px;
-  margin: 8px 0 12px;
-  padding: 8px 16px;
-  border: 1px solid var(--theme-accent);
-  border-radius: 10px;
-  background: var(--theme-accent);
-  color: var(--on-accent);
-  font: 650 1.0625rem/1.25 Golos, system-ui, sans-serif;
-  touch-action: manipulation;
-}
-.family-quick-intake:disabled { opacity: .6; }
 
 .family-app .sandbox-plan .care-person {
   --person-surface: var(--group);
@@ -408,7 +399,7 @@
 }
 .family-app #family-info>header { background: var(--group); }
 .family-app #family-info :is(dt,legend,.family-setting-note,.medicine-source p,.medicine-reference summary,.medicine-reference p,.family-photos figcaption) { color: var(--course-text); }
-.family-app :is(.family-title>button,.family-tools a,.family-tools button,.family-add-medicine,.sandbox-empty-event,.sandbox-outside,.sandbox-row-actions button,.sandbox-history-head button,.family-slot-heading button,.family-timers button,.family-refresh-warning button),
+.family-app :is(.family-title>button,.family-tools a,.family-tools button,.family-medicine-plus,.sandbox-empty-event,.sandbox-outside,.sandbox-row-actions button,.sandbox-history-head button,.family-timers button,.family-refresh-warning button),
 .family-app #family-info :is(input,select,textarea,button) {
   background: var(--group);
   color: var(--ink);
