@@ -32,13 +32,14 @@ try{
   const form=page.locator('#event-form');
   const panel=page.locator('#family-intake-timers');
   const manual=page.getByRole('button',{name:'Вручную',exact:true});
+  const quick=page.locator('[data-add-intake]');
   const editInterval=dialog.getByLabel('Минимальный интервал, ч');
   const medicine='Тестовый препарат';
   const close=()=>dialog.getByRole('button',{name:'Закрыть',exact:true}).tap();
-  const openMedication=async who=>{
-    await manual.tap();
-    await form.locator('[name=person]').selectOption(who.id);
-    await form.locator('[name=kind]').selectOption('medication');
+  const directMedication=async who=>{
+    await quick.tap();
+    if(who)await form.locator('[name=person]').selectOption(who.id);
+    assert.equal(await form.locator('[name=kind]').inputValue(),'medication');
     await form.locator('[name=eventName]').fill(medicine);
   };
   await page.goto(origin+'/family');
@@ -55,16 +56,27 @@ try{
       assert.equal(await form.locator('[name=kind]').inputValue(),'temperature');
       await close();
     }
-    await openMedication(patient);
-    assert.equal(await editInterval.inputValue(),'');
-    assert.ok(await editInterval.evaluate(node=>node.getBoundingClientRect().height>=48));
-    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
-    await close();
+    const quickHit=await quick.boundingBox();
+    assert.ok(quickHit.width>=48&&quickHit.height>=48);
+    const filterGap=await quick.evaluate(node=>node.getBoundingClientRect().top-document.querySelector('.care-family').getBoundingClientRect().bottom);
+    assert.ok(filterGap>=8,`quick intake is ${filterGap}px from the family filters`);
+    for(const edge of [2,quickHit.width/2,quickHit.width-2]){
+      await page.touchscreen.tap(quickHit.x+edge,quickHit.y+quickHit.height/2);
+      await dialog.getByRole('heading',{name:'Записать приём',exact:true}).waitFor();
+      assert.equal(await form.locator('[name=kind]').inputValue(),'medication');
+      assert.equal(await form.locator('select[name=kind]').count(),0);
+      assert.equal(await editInterval.inputValue(),'');
+      assert.ok(await editInterval.evaluate(node=>node.getBoundingClientRect().height>=48));
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+      await close();
+    }
   }
   await page.setViewportSize({width:390,height:844});
   const now=new Date();
   await page.clock.setFixedTime(now);
-  await openMedication(patient);
+  await page.locator('.care-family label').filter({hasText:patient.name}).tap();
+  await directMedication();
+  assert.equal(await form.locator('[name=person]').inputValue(),patient.id);
   await form.locator('[name=amount]').fill('1');
   await form.locator('[name=unit]').selectOption('табл.');
   await editInterval.fill('4');
@@ -80,7 +92,7 @@ try{
   await page.reload();
   await panel.locator('[data-manual-intake-state=waiting]').waitFor();
   if(process.env.MEDIKA_SCREENSHOT)await page.screenshot({path:process.env.MEDIKA_SCREENSHOT});
-  await openMedication(second);
+  await directMedication(second);
   assert.equal(await editInterval.inputValue(),'');
   await form.locator('[name=person]').selectOption(patient.id);
   assert.equal(await editInterval.inputValue(),'4');
